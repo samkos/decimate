@@ -288,8 +288,8 @@ class engine:
         self.log_debug("copying file %s into SAVE directory " % f,1)
         os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
 
-    # for f in self.FILES_TO_COPY:
-    #   os.system("cp %s/%s %s/" % (self.INITIAL_DATA_DIR,f,self.JOB_DIR_0))
+      for f in self.FILES_TO_COPY:
+        os.system("cp %s %s/" % (f,self.SAVE_DIR))
 
     self.log_info('environment initialized successfully',4)
 

@@ -32,6 +32,12 @@ class decimate(engine):
     self.JOBS = {}
     self.JOBS_DEPENDS_ON = {}
 
+    self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
+
+    self.FILES_TO_COPY = []
+    for f in ['decimate.py','engine.py','env.py']:
+        self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR,f) ]
+    
     engine.__init__(self,engine_version_required='0.18',app_name=app_name)
 
   def start(self):
@@ -53,11 +59,11 @@ class decimate(engine):
     self.parser.add_argument("--max-retry", type=int, default=3, help='Number of time a step can fail successively')
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--status", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("--workflow-status", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--test", type=str, help=argparse.SUPPRESS)
 
     self.parser.add_argument("--continue", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--check", type=str , help=argparse.SUPPRESS)
+    self.parser.add_argument("--check-previous-step", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--step", default='launch',type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--taskid", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--jobid", type=str , help=argparse.SUPPRESS)
@@ -65,8 +71,13 @@ class decimate(engine):
     self.parser.add_argument("--array-first", type=int , help=argparse.SUPPRESS)
     self.parser.add_argument("--workflowid", type=str , default="0", help=argparse.SUPPRESS)
 
+    self.parser.add_argument("--yes",  action="store_true", help=argparse.SUPPRESS)
 
+    self.user_initialize_parser()
 
+    
+  def user_initialize_parser(self):
+      pass
     
   def run(self):
 
@@ -76,9 +87,9 @@ class decimate(engine):
     
     self.relaunching = False
 
-    if self.args.check:
+    if self.args.check_previous_step:
       try:
-        args = self.args.check.split(",")
+        args = self.args.check_previous_step.split(",")
         self.CHECK = args[0]
         self.CHECK_LAST_TASK_ID = int(args[1])
       except:
@@ -112,7 +123,7 @@ class decimate(engine):
       self.SCENARIO = ""
 
 
-    if self.args.status:
+    if self.args.workflow_status:
       print '!!!!!!!!!!!!! print_workflow infinite loop'
       print self.print_workflow()
       sys.exit(0)
@@ -121,7 +132,7 @@ class decimate(engine):
       self.finalize()
       sys.exit(0)
 
-    if self.args.check:
+    if self.args.check_previous_step:
       self.check_current_state(self.CHECK)
       sys.exit(0)
       
@@ -152,12 +163,12 @@ class decimate(engine):
       self.launch_jobs()
 
       if self.args.mail:
-        self.send_mail('Workflow has just been launched')
+        self.send_mail('Workflow has just been submitted')
 
       sys.exit(0)
 
 
-    if self.args.status:
+    if self.args.workflow_status:
       self.get_current_jobs_status()
       sys.exit(0)
 
@@ -277,6 +288,8 @@ class decimate(engine):
       filename = '%s/Done-%s-%s' % (self.SAVE_DIR,self.args.step,self.TASK_ID)
       open(filename,'w')
 
+      self.send_mail('%s-%s Done' % (self.args.step,self.TASK_ID),3)
+      
       self.log_info('Done! -> creating stub file %s' % filename,3)
 
   #########################################################################
@@ -328,8 +341,8 @@ class decimate(engine):
         if not(user_check):
           self.log_info('task %s_%s rejected by user check' %  (what,i))
 
-        self.log.info('all_complete=%s' % all_complete)
-        self.log.info('not_complete=%s' %  pprint.pformat(not_complete))
+        self.log.info('all_complete=%s' % all_complete,1)
+        self.log.info('not_complete=%s' %  pprint.pformat(not_complete),1)
           
       if not(all_complete):
         s = '!!!!!!!! oooops pb : job missing or uncomplete at last step %s : (%s)' % (what,",".join(not_complete))
@@ -654,7 +667,7 @@ class decimate(engine):
     
     if job['step_before']:
       prefix = '#!/bin/bash\n'
-      prefix = prefix + '#JOB_CHECKING\n%s  --check=%s,%s ' % (l0,job['step_before'],job['last_task_id_before'])
+      prefix = prefix + '#JOB_CHECKING\n%s  --check-previous-step=%s,%s ' % (l0,job['step_before'],job['last_task_id_before'])
       
       if self.args.fake:
         prefix = prefix + ' --fake'
