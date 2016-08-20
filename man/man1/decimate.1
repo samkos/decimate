@@ -1,0 +1,107 @@
+.TH decimate 1  "August 20, 2016" "version 0.1" "USER COMMANDS"
+.SH NAME
+decimate \- KSL many jobs automated submitter
+.
+.
+.SH SYNOPSIS
+.IX Header "SYNOPSIS"
+decimate [\fB\-\-kill\fR | \fB\-\-status\fR | \fB\-\-generate\fR | \fB\-\-launch\fR ]	
+.
+.
+.
+.SH DESCRIPTION
+
+Developped by the KAUST Supercomputing Laboratory (KSL),
+\FBdecimate\FR is a
+framework written in python designed to handle dependent jobs more
+easely and efficiently.
+
+Using \fBdecimate\fR on Shaheen II, one can submit, run, monitor or
+terminate a workflow composed of dependent jobs. If asked, thanks to
+standardized or customized messages, the user will be informed by mail
+of the progress of its workflow on the system.
+
+In case of failure of one part of tne workflow, \fBdecimate\fR automatically
+detects the failure, signals it to the user and launches the
+misbehaving part after having fixed the job dependency. By default if
+the same failure happens three consecutive times, \fBdecimate\fR cancels the
+whole workfow removing all the depending jobs from the scheduling. In
+a next version, \fBdecimate\fR will allow the automatic restarting of the
+workflow once the problem causing its failure has been cured.
+
+\FBdecimate\FR also allows the user to define his own mail alerts that can
+be sent at any point of the workflow through a call to a python
+method. This feature will also be available from bash in a next
+version.
+
+Some customized checking functions can also be designed by the
+user. Their purpose is to validate if a step of the workflow was
+succesful or not. It could involved checking for the presence of some
+result files, grepping some error or success messages in them,
+computing ratio or checksum... These intermediate results can be
+easely transmitted to \fBdecimate\fR validating or not the correctness of
+any step. They can also be forwarded by mail to the user where as the
+workflow is executing.
+
+
+
+\fBdecimate\fR assists the user in submitting Slurm job array of important
+size on shaheen II. It has been designed, developped and officially
+maintained by the Kaust Supercomputing Laboratory.
+.PP
+By policy, on shaheen II, the maximum number of jobs authorized in the
+queue is limited per user. \fBdecimate\fR seamlessly allows the submission of
+job arrays whose total number can be higher than this limit. 
+.
+.
+.SH USE
+.PP
+Not a single modification needs to be made to the Slurm job it self.
+Let assume 1000 occcurences of "\fImy_job\fR" needs to be submitted, the
+command:
+.PP
+.BI "   decimate \-\-job=\fImy-job\fR \-\-array=\fI1-1000\fR \-\-chunk=\fI20\fR"
+.PP
+will submit the 1000 jobs to shaheen II in several chunks of 20
+jobs. At a time, no more than 20 jobs will appear in the queue. In
+reality, \fBdecimate\fR will use job dependency to automate the ongoing
+submission of the remaining jobs. These batches of 20 jobs will be
+seen as successive job arrays in the scheduling queue.
+.PP
+The \fB--array\fR option accept the same type of input as the sbatch command.
+.PP
+If no option \fB--chunk\fR is mentionned, default number of jobs queued simultaneously is set to 8.
+.PP
+The option \fB--kill\fR kills all the jobs of the current study.
+.PP
+The option \fB--status\fR gives a detailed status of the jobs
+currently running, pending, waiting to be submitted or finished
+weither completed or returned with failure.
+.PP
+The option \fB--scratch\fR kills all the running or waiting jobs and
+allows the user to restart a new study from scratch in the same
+directory. An already existing and even currently running study can
+also be partially restarted, resumed or extended using
+\fB--restart\fR.
+.SH AUTHOR
+Written by Samuel Kortas (samuel.kortas (at) kaust.edu.sa)
+.SH "REPORTING BUGS"
+Report decimate bugs to help@hpc.kaust.edu.sa
+.br
+decimate home page: <https://bitbucket.org/kaust_KSL/decimate>
+.br
+KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>
+.SH COPYRIGHT
+Copyright \(co 2016 KAUST Supercomputing Laboratory
+License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+A first light presentation of  \fBdecimate\fR has been given by Samuel Kortas during
+the KSL Workshop entitled 'Boost your efficiency when dealing with
+multiple jobs on the Cray XC40 supercomputer Shaheen II' held at KAUST
+On Sunday June 5th 2016. The workshop slides can be freely downloaded from
+<https://www.hpc.kaust.edu.sa/sites/default/files/files/public/many_jobs.pdf>
+.PP
+ktf(1) breakit(1)

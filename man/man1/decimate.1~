@@ -1,0 +1,75 @@
+.TH breakit 1  "June 29, 2016" "version 0.3" "USER COMMANDS"
+.SH NAME
+breakit \- KSL many jobs automated submitter
+.
+.
+.SH SYNOPSIS
+.IX Header "SYNOPSIS"
+breakit  \fB\-\-job=\fR\fIany-Slurm-Job\fR
+         \fB\-\-array=\fR\fIarray-indexes\fR 
+         [\fB\-\-chunk\fR=\fR\fIMaximum-number-of-jobs-to-be-seen-in-the-queue\fR]
+         [\fB\-\-kill\fR | \fB\-\-status\fR | \fB\-\-restart \fR | \fB\-\-scratch\fR ]	
+.
+.
+.
+.SH DESCRIPTION
+\fBbreakit\fR assists the user in submitting Slurm job array of important
+size on shaheen II. It has been designed, developped and officially
+maintained by the Kaust Supercomputing Laboratory.
+.PP
+By policy, on shaheen II, the maximum number of jobs authorized in the
+queue is limited per user. \fBbreakit\fR seamlessly allows the submission of
+job arrays whose total number can be higher than this limit. 
+.
+.
+.SH USE
+.PP
+Not a single modification needs to be made to the Slurm job it self.
+Let assume 1000 occcurences of "\fImy_job\fR" needs to be submitted, the
+command:
+.PP
+.BI "   breakit \-\-job=\fImy-job\fR \-\-array=\fI1-1000\fR \-\-chunk=\fI20\fR"
+.PP
+will submit the 1000 jobs to shaheen II in several chunks of 20
+jobs. At a time, no more than 20 jobs will appear in the queue. In
+reality, \fBbreakit\fR will use job dependency to automate the ongoing
+submission of the remaining jobs. These batches of 20 jobs will be
+seen as successive job arrays in the scheduling queue.
+.PP
+The \fB--array\fR option accept the same type of input as the sbatch command.
+.PP
+If no option \fB--chunk\fR is mentionned, default number of jobs queued simultaneously is set to 8.
+.PP
+The option \fB--kill\fR kills all the jobs of the current study.
+.PP
+The option \fB--status\fR gives a detailed status of the jobs
+currently running, pending, waiting to be submitted or finished
+weither completed or returned with failure.
+.PP
+The option \fB--scratch\fR kills all the running or waiting jobs and
+allows the user to restart a new study from scratch in the same
+directory. An already existing and even currently running study can
+also be partially restarted, resumed or extended using
+\fB--restart\fR.
+.SH AUTHOR
+Written by Samuel Kortas (samuel.kortas (at) kaust.edu.sa)
+.SH "REPORTING BUGS"
+Report breakit bugs to help@hpc.kaust.edu.sa
+.br
+breakit home page: <https://bitbucket.org/kaust_KSL/breakit>
+.br
+KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>
+.SH COPYRIGHT
+Copyright \(co 2016 KAUST Supercomputing Laboratory
+License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+A comprehensive presentation of \fBbreakit\fR has been given by Samuel Kortas during
+the KSL Workshop entitled 'Boost your efficiency when dealing with
+multiple jobs on the Cray XC40 supercomputer Shaheen II' held at KAUST
+On Sunday June 5th 2016. The workshop slides can be freely downloaded from
+<https://www.hpc.kaust.edu.sa/sites/default/files/files/public/many_jobs.pdf>
+.PP
+ktf(1) decimate(1)
