@@ -809,6 +809,40 @@ class engine:
     sys.exit(0)
       
 
+  #########################################################################
+  # tail log file
+  #########################################################################
+
+  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20):
+
+    try:
+      if filename==None:
+          filename = self.log_file_name
+        
+      if not os.path.isfile(filename):
+          self.error_report("no logfile %s yet..." % filename,exit=True)
+          
+      fic = open(filename, "r")
+      lines = fic.readlines()
+      print "\n","".join(lines[-nb_lines_tailed:])
+      #if str.find(lines[-1], "goodbye") >=0:
+      #    good_bye_reached = True
+      while True:
+          where = fic.tell()
+          line = fic.readline()
+          if not line:
+              time.sleep(10)
+              fic.seek(where)
+          else:
+              print line, # already has newline
+              sys.stdout.flush()
+          if not(keep_probing):
+              break
+    except KeyboardInterrupt:
+        print "\n bye bye come back anytime! with --status"
+        keep_probing = False
+
+    
 
     
 if __name__ == "__main__":

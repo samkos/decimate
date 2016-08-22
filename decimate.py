@@ -223,11 +223,14 @@ class decimate(engine):
       self.log_debug('loading workspace')
     
       workspace_file = self.WORKSPACE_FILE
-      f_workspace = open( self.WORKSPACE_FILE, "rb" )
-      # retrieve data here
-      self.JOBS    = pickle.load(f_workspace)
-      f_workspace.close()
-
+      if os.path.exists(self.WORKSPACE_FILE):
+          f_workspace = open( self.WORKSPACE_FILE, "rb" )
+          # retrieve data here
+          self.JOBS    = pickle.load(f_workspace)
+          f_workspace.close()
+      else:
+          self.log_debug('workspace backup file does not exist yet')
+          
       # for job_dir in self.JOBS.keys():
       #   job_id  = self.JOBS[job_dir]
       #   self.JOB_DIR[job_id] = job_dir
@@ -288,7 +291,7 @@ class decimate(engine):
       filename = '%s/Done-%s-%s' % (self.SAVE_DIR,self.args.step,self.TASK_ID)
       open(filename,'w')
 
-      self.send_mail('%s-%s Done' % (self.args.step,self.TASK_ID),3)
+      self.send_mail('%s-%s Done' % (self.args.step,self.TASK_ID))
       
       self.log_info('Done! -> creating stub file %s' % filename,3)
 
