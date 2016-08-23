@@ -11,6 +11,8 @@ import pprint
 
 from contextlib import contextmanager
 
+DECIMATE_VERSION = '0.1'
+
 @contextmanager
 def working_directory(directory):
     owd = os.getcwd()
@@ -24,10 +26,9 @@ def working_directory(directory):
 
 class decimate(engine):
 
-  def __init__(self,app_name='decimate'):
+  def __init__(self,app_name='decimate', app_version='???', decimate_version_required=DECIMATE_VERSION):
 
-    self.APPLICATION_NAME = app_name
-
+    self.DECIMATE_VERSION = DECIMATE_VERSION 
 
     self.JOBS = {}
     self.JOBS_DEPENDS_ON = {}
@@ -38,8 +39,51 @@ class decimate(engine):
     for f in ['decimate.py','engine.py','env.py']:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR,f) ]
     
-    engine.__init__(self,engine_version_required='0.18',app_name=app_name)
+    # checking
+    self.check_python_version()
+    self.check_decimate_version(decimate_version_required)
 
+    engine.__init__(self,engine_version_required='0.19',app_name=app_name, app_version=app_version)
+
+
+  #########################################################################
+  # welcome message
+  #########################################################################
+
+  def welcome_message(self,print_header=True, print_cmd=True):
+    """ welcome message"""
+
+    if print_header:  
+      print
+      print("          ########################################")
+      print("          #                                      #")
+      print("          # Welcome to %11s version %5s!#" % (self.APPLICATION_NAME, self.APPLICATION_VERSION))
+      print("          #   (using DECIMATE Framework %3s)     #" % self.DECIMATE_VERSION)
+      print("          #                                      #")
+      print("          ########################################")
+      print("       ")
+
+    engine.welcome_message(self,print_header=False, print_cmd=print_cmd)
+
+    
+  #########################################################################
+  # checking methods
+  #########################################################################
+      
+
+  def check_decimate_version(self,version):
+    current = int(("%s" % self.DECIMATE_VERSION).split('.')[1])
+    asked   = int(("%s" % version).split('.')[1])
+    if (asked>current):
+        self.error("Current Decimate version is %s while requiring %s, please fix it!" % (current,asked))
+
+
+
+
+  #########################################################################
+  # starting the dance
+  #########################################################################
+    
   def start(self):
 
     self.log_debug('[Decimate:start] entering')

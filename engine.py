@@ -31,7 +31,10 @@ LOCK_EX = fcntl.LOCK_EX
 LOCK_SH = fcntl.LOCK_SH
 LOCK_NB = fcntl.LOCK_NB
 
-ENGINE_VERSION = '0.18'
+ENGINE_VERSION = '0.19'
+
+ERROR_FILE_DOES_NOT_EXISTS = -33
+ERROR_PATTERN_NOT_FOUND = -34
 
 class LockException(Exception):
     # Error codes:
@@ -580,21 +583,24 @@ class engine:
   # welcome message
   #########################################################################
 
-  def welcome_message(self):
+  def welcome_message(self,print_header=True,print_cmd=True):
       """ welcome message"""
-      
-      print
-      print("          ########################################")
-      print("          #                                      #")
-      print("          #   Welcome to %11s version %3s!#" % (self.APPLICATION_NAME, self.APPLICATION_VERSION))
-      print("          #    (using ENGINE Framework %3s)     #" % self.ENGINE_VERSION)
-      print("          #                                      #")
-      print("          ########################################")
-      print("       ")
 
+      if print_header:
+        print
+        print("          ########################################")
+        print("          #                                      #")
+        print("          #   Welcome to %11s version %3s!#" % (self.APPLICATION_NAME, self.APPLICATION_VERSION))
+        print("          #    (using ENGINE Framework %3s)     #" % self.ENGINE_VERSION)
+        print("          #                                      #")
+        print("          ########################################")
+        print("       ")
 
-      print   ("\trunning on %s (%s) " %(MY_MACHINE_FULL_NAME,MY_MACHINE))
-      print   ("\t\tpython " + " ".join(sys.argv))
+      if print_cmd:
+        print   ("\trunning on %s (%s) " %(MY_MACHINE_FULL_NAME,MY_MACHINE))
+        print   ("\t\tpython " + " ".join(sys.argv))
+        print
+        
       self.MY_MACHINE = MY_MACHINE
 
   #########################################################################
@@ -813,7 +819,7 @@ class engine:
   # tail log file
   #########################################################################
 
-  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20):
+  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True):
 
     try:
       if filename==None:
@@ -821,6 +827,14 @@ class engine:
         
       if not os.path.isfile(filename):
           self.error_report("no logfile %s yet..." % filename,exit=True)
+
+      if message:
+          print 
+          print "="*80
+          print('Currently Tailing ... \n %s' % filename)
+          print('\t\tHit CTRL-C to exit...' * 2)
+          print('='*80)
+
           
       fic = open(filename, "r")
       lines = fic.readlines()
@@ -839,11 +853,155 @@ class engine:
           if not(keep_probing):
               break
     except KeyboardInterrupt:
-        print "\n bye bye come back anytime! with --status"
+        print "\n bye bye come back anytime!   To resume this monitoring type :"
+        print   ("\t\tpython %s --status" % sys.argv[0])
+        print 
+        sys.exit(0)
         keep_probing = False
 
-    
+  #########################################################################
+  # look for a pattern in a set of files
+  #########################################################################
 
-    
+  def check_for_pattern(self,pattern,file_mask=None,files=None,return_all=False,position=None):
+
+      error = 0
+      
+      if not(file_mask) and not(files):
+          self.error("in check_for_pattern('%s') on must add at least file_mask or files parameter" %\
+                     pattern)
+      
+      filter_success = 0
+      pattern_found = {}
+      if file_mask:
+          files = glob.glob(file_mask)
+      else:
+          files_to_scan = files
+          files = []
+          for f in files_to_scan:
+              if os.path.isfile(f):
+                  files = files + [f]
+                  
+      self.log_debug('files : [%s] ' % ",".join(files),2)
+
+      if len(files)==0:
+          error = -1
+      
+      for f in files:
+          (p, return_code) = self.greps(pattern,f,position,return_all=True)
+          if p:
+              pattern_found[f] = [p,len(p)]
+              filter_success = filter_success+len(p)
+          else:
+              pattern_found[f] = [None,0]
+
+      if error<0:
+          filter_success = error
+          
+      if return_all:
+           return (filter_success,files,pattern_found)
+      else:
+           return filter_success
+
+
+  #########################################################################
+  # look for a pattern in a file
+  #########################################################################
+
+  def greps(self,motif, file_name, col = None, nb_lines = -1, return_all=False):
+      """
+       Fonction qui retourne toute ligne contenant un motif dans un fichier
+       et renvoie le contenu d'une colonne de cette ligne
+       
+       fic             --> Nom du fichier
+       motif         --> Motif a chercher
+       col             --> La liste des Numeros de colonne a extraire
+       endroit     --> Un objet de type situation
+       nb_lines  --> nb_lines max a renvoyer
+       Renvoie la colonne col et un indicateur indiquant si le motif a y trouver
+
+       """
+      #
+      self.log_debug("greps called for searching %s in %s " % (motif, file_name),2)
+
+      
+      trouve = -1
+      rep = []
+      motif0 = str.replace(motif,    '\\MOT',    '[^\s]*')
+      motif0 = str.replace(motif0,    '\\SPC',    '\s*')
+
+      # col can be    Nothing,         one figure,     or    a list of figures
+      type_matching = "Columns"
+      if col == None:
+          type_matching = "Grep"
+      if type(col) == type(2):
+          col = [col] 
+      if type(col) == type("chaine"):
+          type_matching = "Regexp"
+          masque0 = str.replace(col,    '\\MOT',    '[^\s]*')
+          masque0 = str.replace(masque0,    '\\SPC',    '\s*')
+
+      file_name_full_path = MY_MACHINE_FULL_NAME+":"+os.getcwd()
+
+      if os.path.isfile(file_name)==False:
+          if col == None:
+              self.log_debug("file '%s' read \n\t from path '%s' \
+                                                  \n\t searched for motif '%s' does not exist!!!!"\
+                             %(file_name, file_name_full_path, motif))
+          else:
+              self.log_debug("file '%s' read \n\t from path '%s' \
+                                                  \n\t searched for motif '%s' to get column # [%s] \
+                                                  \n\t  file does not exist!!!"\
+                           %(file_name, file_name_full_path, motif, ",".join(col)))
+          if return_all:
+              return (None,ERROR_FILE_DOES_NOT_EXISTS)
+          else:
+              return None
+      else:
+          file_scanned = open(file_name, "r")
+          for ligne in file_scanned.readlines():
+              if False:
+                  print ligne,motif0
+              if (len(ligne) >= 1):
+                  if (re.search(motif0, ligne)):
+                      trouve = 1
+                      if type_matching == "Columns":
+                          file_scanned.close()
+                          colonnes = str.split(ligne)
+                          col_out = []
+                          for i in col:
+                              col_out.append(colonnes[i])
+                          if len(col_out) == 1:
+                              rep.append(col_out[0])
+                              continue
+                          else:
+                              rep.append(col_out)
+                              continue
+                          break
+                      elif type_matching == "Grep":
+                          file_scanned.close()
+                          rep.append(ligne[:-1])
+                          continue
+                      elif type_matching == "Regexp":
+                          matched = re.search(masque0, ligne, re.VERBOSE)
+                          if matched:
+                              file_scanned.close()
+                              rep.append(matched.groups())
+                              continue
+          file_scanned.close()
+
+          if (trouve == -1):
+              if return_all:
+                  return (None,ERROR_PATTERN_NOT_FOUND)
+              else:
+                  return None
+
+      if return_all:
+          return (rep,0)
+      else:
+          return rep
+
+
+
 if __name__ == "__main__":
   D = application("my_app")
