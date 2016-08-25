@@ -131,6 +131,8 @@ class decimate(engine):
     
     self.relaunching = False
 
+    # initialization of some parameters appearing in traces
+
     if self.args.check_previous_step:
       try:
         args = self.args.check_previous_step.split(",")
@@ -157,16 +159,25 @@ class decimate(engine):
 
     self.set_log_prefix("%s-%s-%s" % (self.args.step,self.TASK_ID,self.args.attempt))
 
+    # initialization of mail feature
+
     if self.args.mail:
       self.init_mail()
         
 
+    # in case of testing mode, reads the scenario file that will simulate a use case
+    # to run
+    
     if self.args.test:
       self.read_scenario_file()
     else:
       self.SCENARIO = ""
 
 
+    #
+    # Main loop of possible actions
+    #
+      
     if self.args.workflow_status:
       print '!!!!!!!!!!!!! print_workflow infinite loop'
       print self.print_workflow()
@@ -185,30 +196,7 @@ class decimate(engine):
       sys.exit(0)
       
     if self.args.launch:
-      self.log_info('=============== New workflow starting ==============')
-      self.log_info('ZZZ cleaning workspace before launching ...',2)
-      self.log_info('=============== New workflow starting ==============',2)
-
-      os.system('\\rm -rf *.err *.out *.pickle *.pickle.old .%s/SAVE/*.pcy* .%s/SAVE/Done* .%s/SAVE/*job+_*' % \
-                 (self.APPLICATION_NAME,self.APPLICATION_NAME,self.APPLICATION_NAME))
-
-      for f in glob.glob("*.py"):
-        self.log_debug("copying file %s into SAVE directory " % f,1)
-        os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
-
-      self.clean_workspace()
-
-      epoch_time = int(time.time())
-      st = "%s+%s+%s" % (self.APPLICATION_NAME,os.getcwd(),epoch_time)
-      self.args.workflowid =  "%s at %s %s " % (self.APPLICATION_NAME,epoch_time, reduce(lambda x,y:x+y, map(ord, st)))
-      self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
-
-      
       self.launch_jobs()
-
-      if self.args.mail:
-        self.send_mail('Workflow has just been submitted')
-
       sys.exit(0)
 
 
@@ -227,11 +215,16 @@ class decimate(engine):
 
     self.load_workspace()
 
-    if not(self.JOBS[str(self.args.jobid)]['comes_before']) and not(self.relaunching):
-      self.log_info('Normal end of this batch',2)
-      self.log_info('=============== workflow is finishing ==============')
-      if self.args.mail:
-        self.send_mail('Workflow has just completed successfully')
+    try:
+      if not(self.JOBS[str(self.args.jobid)]['comes_before']) and not(self.relaunching):
+        self.log_info('Normal end of this batch',2)
+        self.log_info('=============== workflow is finishing ==============')
+        if self.args.mail:
+          self.send_mail('Workflow has just completed successfully')
+    except:
+        self.error("ZZZZZZZZ problem in decimate main loop ",exit=False,exception=True)
+        pass
+          
       
   #########################################################################
   # clean_workspace
@@ -763,8 +756,32 @@ class decimate(engine):
   # submitting all the first jobs
   #########################################################################
 
-  def launch_jobs(self):
+  def launch_jobs(self,*optional_parameters):
+      self.log_info('=============== New workflow starting ==============')
+      self.log_info('ZZZ cleaning workspace before launching ...',2)
+      self.log_info('=============== New workflow starting ==============',2)
 
+      os.system('\\rm -rf *.err *.out *.pickle *.pickle.old .%s/SAVE/*.pcy* .%s/SAVE/Done* .%s/SAVE/*job+_*' % \
+                 (self.APPLICATION_NAME,self.APPLICATION_NAME,self.APPLICATION_NAME))
+
+      for f in glob.glob("*.py"):
+        self.log_debug("copying file %s into SAVE directory " % f,1)
+        os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
+
+      self.clean_workspace()
+
+      epoch_time = int(time.time())
+      st = "%s+%s+%s" % (self.APPLICATION_NAME,os.getcwd(),epoch_time)
+      self.args.workflowid =  "%s at %s %s " % (self.APPLICATION_NAME,epoch_time, reduce(lambda x,y:x+y, map(ord, st)))
+      self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
+
+      
+      self.user_launch_jobs(*optional_parameters)
+
+      if self.args.mail:
+        self.send_mail('Workflow has just been submitted')
+
+  def user_launch_jobs(self):
     self.error_report("launch_jobs needs to be valued",exit=True)
 
     

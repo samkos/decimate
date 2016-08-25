@@ -14,6 +14,7 @@ import fcntl
 import getpass
 import pickle
 import argparse
+import pprint
 from ClusterShell.NodeSet import *
 
 JOB_POSSIBLE_STATES = ('PENDING','RUNNING','SUSPENDED','COMPLETED',\
@@ -863,7 +864,7 @@ class engine:
   # look for a pattern in a set of files
   #########################################################################
 
-  def check_for_pattern(self,pattern,file_mask=None,files=None,return_all=False,position=None):
+  def check_for_pattern(self,pattern,file_mask=None,files=None,return_all=False,col=None):
 
       error = 0
       
@@ -885,10 +886,10 @@ class engine:
       self.log_debug('files : [%s] ' % ",".join(files),2)
 
       if len(files)==0:
-          error = -1
+          error = ERROR_FILE_DOES_NOT_EXISTS
       
       for f in files:
-          (p, return_code) = self.greps(pattern,f,position,return_all=True)
+          (p, return_code) = self.greps(pattern,f,col,return_all=True)
           if p:
               pattern_found[f] = [p,len(p)]
               filter_success = filter_success+len(p)
@@ -899,7 +900,7 @@ class engine:
           filter_success = error
           
       if return_all:
-           return (filter_success,files,pattern_found)
+           return (filter_success,files,pattern_found,error)
       else:
            return filter_success
 
@@ -952,7 +953,7 @@ class engine:
               self.log_debug("file '%s' read \n\t from path '%s' \
                                                   \n\t searched for motif '%s' to get column # [%s] \
                                                   \n\t  file does not exist!!!"\
-                           %(file_name, file_name_full_path, motif, ",".join(col)))
+                           %(file_name, file_name_full_path, motif, ",".join(map(str,col))))
           if return_all:
               return (None,ERROR_FILE_DOES_NOT_EXISTS)
           else:
@@ -996,6 +997,10 @@ class engine:
               else:
                   return None
 
+
+      self.log_debug("rep=%s " % pprint.pformat(rep),4)
+      self.log_debug("%s matching results " % len(rep),3)
+      
       if return_all:
           return (rep,0)
       else:

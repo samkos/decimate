@@ -76,7 +76,7 @@ def get_machine():
     else:
         machine = "localhost"
         tmp_directory = "/tmp"
-    print 'Mail command:' + MAIL_COMMAND
+    #print 'Mail command:' + MAIL_COMMAND
     return machine, tmp_directory
 
 
