@@ -402,7 +402,7 @@ class decimate(engine):
         time.sleep(10)
         
       if os.path.exists(filename_all_ok):
-          self.log_info('ok everything fine!',2)
+          self.log_info('ok everything fine!')
           return 0
 
       s = 'something went wrong when checking last level...giving it up!'
@@ -756,7 +756,7 @@ class decimate(engine):
   # submitting all the first jobs
   #########################################################################
 
-  def launch_jobs(self,*optional_parameters):
+  def launch_jobs(self,**optional_parameters):
       self.log_info('=============== New workflow starting ==============')
       self.log_info('ZZZ cleaning workspace before launching ...',2)
       self.log_info('=============== New workflow starting ==============',2)
@@ -776,7 +776,7 @@ class decimate(engine):
       self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
 
       
-      self.user_launch_jobs(*optional_parameters)
+      self.user_launch_jobs(**optional_parameters)
 
       if self.args.mail:
         self.send_mail('Workflow has just been submitted')
