@@ -328,7 +328,7 @@ class decimate(engine):
       filename = '%s/Done-%s-%s' % (self.SAVE_DIR,self.args.step,self.TASK_ID)
       open(filename,'w')
 
-      self.send_mail('%s-%s Done' % (self.args.step,self.TASK_ID))
+      self.send_mail('%s-%s Done' % (self.args.step,self.TASK_ID),2)
       
       self.log_info('Done! -> creating stub file %s' % filename,3)
 
@@ -392,6 +392,12 @@ class decimate(engine):
         self.heal_workflow(what,not_complete)
       else:
         open(filename_all_ok,"w")
+        print what,self.args.step
+        s = 'ok everything went fine for the step %s!\nStep %s is starting...' % (what,self.args.step)
+        self.log_info(s)
+        self.send_mail(s)
+        return 0
+
     else:
       self.log_info("waiting for the checking of previous job : %s [%s-%s] " % \
                           (what,1,self.CHECK_LAST_TASK_ID),3)
@@ -402,7 +408,7 @@ class decimate(engine):
         time.sleep(10)
         
       if os.path.exists(filename_all_ok):
-          self.log_info('ok everything fine!')
+          self.log_info('ok everything fine!',1)
           return 0
 
       s = 'something went wrong when checking last level...giving it up!'
@@ -774,6 +780,7 @@ class decimate(engine):
       st = "%s+%s+%s" % (self.APPLICATION_NAME,os.getcwd(),epoch_time)
       self.args.workflowid =  "%s at %s %s " % (self.APPLICATION_NAME,epoch_time, reduce(lambda x,y:x+y, map(ord, st)))
       self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
+      self.send_mail('=============== New workflow starting ==============')
 
       
       self.user_launch_jobs(**optional_parameters)

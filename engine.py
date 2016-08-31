@@ -168,7 +168,10 @@ class engine:
         self.log_info("cleaning environment...")
         self.clean()
 
-                                    
+
+    if self.args.mail_verbosity>0 and not(self.args.mail):
+        self.args.mail = getpass.getuser()
+        
     if self.args.kill:
         self.kill_jobs()
         sys.exit(0)
