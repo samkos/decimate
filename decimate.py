@@ -43,7 +43,7 @@ class decimate(engine):
     self.check_python_version()
     self.check_decimate_version(decimate_version_required)
 
-    engine.__init__(self,engine_version_required='0.19',app_name=app_name, app_version=app_version)
+    engine.__init__(self,engine_version_required='0.20',app_name=app_name, app_version=app_version)
 
 
   #########################################################################
@@ -106,7 +106,7 @@ class decimate(engine):
     self.parser.add_argument("--workflow-status", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--test", type=str, help=argparse.SUPPRESS)
 
-    self.parser.add_argument("--continue", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("--spawned", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--check-previous-step", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--step", default='launch',type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--taskid", type=str , help=argparse.SUPPRESS)
@@ -686,7 +686,7 @@ class decimate(engine):
       
     l = "".join(open(job['script'],'r').readlines())
 
-    l0 = "sleep 1\n python %s/run_test.py --step %s --attempt __ATTEMPT__ --log-dir %s  %s %s %s--continue " % \
+    l0 = "sleep 1\n python %s/run_test.py --step %s --attempt __ATTEMPT__ --log-dir %s  %s %s %s--spawned " % \
          (self.SAVE_DIR,job['name'],self.LOG_DIR,"-d "*self.args.debug,"-i "*self.args.info,"-m "*self.args.mail_verbosity)
     l0 = l0 + "--taskid ${SLURM_ARRAY_TASK_ID},%s --jobid ${SLURM_ARRAY_JOB_ID}" % job['last_task_id']
     l0 = l0 + " --max-retry=%s" % self.args.max_retry

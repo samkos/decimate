@@ -32,7 +32,7 @@ LOCK_EX = fcntl.LOCK_EX
 LOCK_SH = fcntl.LOCK_SH
 LOCK_NB = fcntl.LOCK_NB
 
-ENGINE_VERSION = '0.19'
+ENGINE_VERSION = '0.20'
 
 ERROR_FILE_DOES_NOT_EXISTS = -33
 ERROR_PATTERN_NOT_FOUND = -34
@@ -1010,6 +1010,25 @@ class engine:
           return rep
 
 
+  #########################################################################
+  # look for a pattern in a set of files
+  #########################################################################
 
+  def ask(self,msg,default='n',answers = '(y/n)', yes='y', no='n'):
+
+    if self.args.yes:
+        self.log_info('%s --> %s (automated user answer)' % (msg,yes))
+        return
+
+    answers = answers.replace(default,'[%s]' % default)
+    input_var = raw_input(msg + answers)
+    print '/%s/' % input_var,input_var,len(input_var),default,no
+    if input_var == no or (len(input_var)==0 and default==no):
+        self.log_info("ABORTING: No clear confirmation... giving up!")
+        sys.exit(1)
+
+
+
+      
 if __name__ == "__main__":
   D = application("my_app")
