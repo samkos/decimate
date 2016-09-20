@@ -295,6 +295,9 @@ class engine:
         self.log_debug("copying file %s into SAVE directory " % f,1)
         os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
 
+
+      if not(hasattr(self,'FILES_TO_COPY')):
+        self.FILES_TO_COPY = []
       for f in self.FILES_TO_COPY:
         os.system("cp %s %s/" % (f,self.SAVE_DIR))
 
@@ -823,7 +826,7 @@ class engine:
   # tail log file
   #########################################################################
 
-  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True):
+  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True,no_timestamp=False):
 
     try:
       if filename==None:
@@ -842,7 +845,10 @@ class engine:
           
       fic = open(filename, "r")
       lines = fic.readlines()
-      print "\n","".join(lines[-nb_lines_tailed:])
+      for line in lines[-nb_lines_tailed:]:
+          if no_timestamp:
+              line = re.sub('^.*\[','[',line[:-1])
+          print line
       #if str.find(lines[-1], "goodbye") >=0:
       #    good_bye_reached = True
       while True:
@@ -852,6 +858,8 @@ class engine:
               time.sleep(10)
               fic.seek(where)
           else:
+              if no_timestamp:
+                  line = re.sub('^.*\[','[',line)
               print line, # already has newline
               sys.stdout.flush()
           if not(keep_probing):
@@ -1021,8 +1029,8 @@ class engine:
         return
 
     answers = answers.replace(default,'[%s]' % default)
-    input_var = raw_input(msg + answers)
-    print '/%s/' % input_var,input_var,len(input_var),default,no
+    input_var = raw_input(msg + answers + " ")
+
     if input_var == no or (len(input_var)==0 and default==no):
         self.log_info("ABORTING: No clear confirmation... giving up!")
         sys.exit(1)

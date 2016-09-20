@@ -35,8 +35,9 @@ class decimate(engine):
 
     self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
 
-    self.FILES_TO_COPY = []
-    for f in ['decimate.py','engine.py','env.py']:
+    if not(hasattr(self,'FILES_TO_COPY')):
+        self.FILES_TO_COPY = []
+    for f in ['decimate.py','engine.py','env.py','decimate.pyc','engine.pyc','env.pyc',]:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR,f) ]
     
     # checking
@@ -381,8 +382,8 @@ class decimate(engine):
         if not(user_check):
           self.log_info('task %s_%s rejected by user check' %  (what,i))
 
-        self.log.info('all_complete=%s' % all_complete,1)
-        self.log.info('not_complete=%s' %  pprint.pformat(not_complete),1)
+        #self.log.info('all_complete=%s' % all_complete,1)
+        #self.log.info('not_complete=%s' %  pprint.pformat(not_complete),1)
           
       if not(all_complete):
         s = '!!!!!!!! oooops pb : job missing or uncomplete at last step %s : (%s)' % (what,",".join(not_complete))
@@ -393,9 +394,9 @@ class decimate(engine):
       else:
         open(filename_all_ok,"w")
         print what,self.args.step
-        s = 'ok everything went fine for the step %s!\nStep %s is starting...' % (what,self.args.step)
+        s = 'ok everything went fine for the step %s! --> Step %s is starting...' % (what,self.args.step)
         self.log_info(s)
-        self.send_mail(s)
+        self.send_mail(s.replace('--> ','\n'))
         return 0
 
     else:
@@ -404,11 +405,11 @@ class decimate(engine):
       for i in range(10):
         if os.path.exists(filename_all_ok) or os.path.exists(filename_all_nok):
           break
-        self.log_info('waiting,,,',3)
+        self.log_info('waiting...',3)
         time.sleep(10)
         
       if os.path.exists(filename_all_ok):
-          self.log_info('ok everything fine!',1)
+          self.log_info('ok done!',1)
           return 0
 
       s = 'something went wrong when checking last level...giving it up!'
@@ -442,18 +443,19 @@ class decimate(engine):
           output_file =output_file_candidates[0]
       else:
           self.log_info('ZZZZZZ weird... no output file produced of pattern %s' % output_file_pattern)
+          output_file = 'No_output_file_found'
           
       error_file_candidates = glob.glob(error_file_pattern)
       if len(error_file_candidates):
           error_file = glob.glob(error_file_pattern)[0]
       else:
           self.log_info('ZZZZZZ weird... no error file produced of pattern %s' % error_file_pattern)
-    
+          error_file = 'No_error_file_found'
+              
     s = "CHECKING step : %s-%s " % (what,task_id) 
     
     self.log_info(s,2)
-    print >> sys.stderr, s
-    if self.args.debug > 2:
+    if self.args.debug > 3:
         print >> sys.stderr, pprint.pformat(self.JOBS)
     user_check = self.check_job(what,task_id,running_dir,output_file,error_file,is_done)
 
@@ -472,8 +474,8 @@ class decimate(engine):
   #########################################################################
 
   def heal_workflow(self,what,not_present):
-    s = "restarting the wrong part previous job : %s (%s) and fixing dependency (Attempt %s of %s)" % \
-                    (what,",".join(not_present),self.args.attempt,self.args.max_retry)
+    s = "restarting the wrong part previous job : %s (%s) and fixing dependency (Attempt %s of %s)  current_dir=->%s<-" % \
+                    (what,",".join(not_present),self.args.attempt,self.args.max_retry,os.getcwd())
     self.log_info(s)
     self.append_mail(s)
 
@@ -557,9 +559,9 @@ class decimate(engine):
     self.log_info('committing suicide in 5 seconds....')
 
     self.flush_mail('Job has been fixed and is restarting')
-    
+
     time.sleep(5)
-    sys.exit(0)
+    sys.exit(1)
 
   #########################################################################
   # fake computation in order to test
@@ -653,8 +655,8 @@ class decimate(engine):
             job_id = l.split(" ")[-1]
       self.log_debug("job submitted : %s depends on %s" % (job_id,job['depends_on']),1)
     else: 
-      self.log_debug("should submit job %s" % job['name'])
-      self.log_debug(" with cmd = %s " % " ".join(cmd))
+      self.log_info("should submit job %s" % job['name'],2)
+      self.log_info(" with cmd = %s " % " ".join(cmd),2)
       job_id = "%s" % job['name']
 
     job['job_id'] = job_id
@@ -686,8 +688,19 @@ class decimate(engine):
       
     l = "".join(open(job['script'],'r').readlines())
 
-    l0 = "sleep 1\n python %s/run_test.py --step %s --attempt __ATTEMPT__ --log-dir %s  %s %s %s--spawned " % \
-         (self.SAVE_DIR,job['name'],self.LOG_DIR,"-d "*self.args.debug,"-i "*self.args.info,"-m "*self.args.mail_verbosity)
+    l0 = ""
+    for env_var in ['PATH','LD_LIBRARY_PATH','DECIMATE_PATH']:
+        l0 = l0+ "export %s=%s \n" % (env_var,os.getenv(env_var))
+    for env_var in ['PYTHONPATH']:
+        l0 = l0+ "export %s=/tmp:%s:%s \n" % (env_var,self.SAVE_DIR,os.getenv(env_var))
+
+    l0 = l0+ "cp %s/*py* /tmp \n" % (self.SAVE_DIR)
+    
+    #(self.SAVE_DIR,
+    l0 = l0+ "sleep 1\n python %s/%s --step %s --attempt __ATTEMPT__ --log-dir %s  %s %s %s--spawned " % \
+         ("/tmp",
+          os.path.basename(sys.argv[0]),\
+                                         job['name'],self.LOG_DIR,"-d "*self.args.debug,"-i "*self.args.info,"-m "*self.args.mail_verbosity)
     l0 = l0 + "--taskid ${SLURM_ARRAY_TASK_ID},%s --jobid ${SLURM_ARRAY_JOB_ID}" % job['last_task_id']
     l0 = l0 + " --max-retry=%s" % self.args.max_retry
     l0 = l0 + " --workflowid='%s'" % self.args.workflowid
@@ -733,12 +746,19 @@ class decimate(engine):
           if [ $? -ne 0 ] ; then
               echo "[ERROR] FAILED in current step : exiting immediately..."
               exit 1
-          else """ + '\n\n ################# finalizing job ####################\n' + l0 + ' --finalize \n'
+          else """ + '\n\n ################# finalizing job ####################\n'
+    if self.args.fake:
+        l = l + l0 + ' --finalize \n'
+    else:
+        l = l + '      touch %s/Done-%s-${SLURM_ARRAY_TASK_ID}\n' % (self.SAVE_DIR,job['name'])
+
     l = l + "              fi       # closing if of successfull job \n"
 
     if job['step_before']:
       l = l + "\n           fi       # closing if of successfull previous job check"
 
+    l = l+ 'rm /tmp/*py'
+    
     return l
     
   #########################################################################
