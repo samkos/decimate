@@ -32,7 +32,7 @@ LOCK_EX = fcntl.LOCK_EX
 LOCK_SH = fcntl.LOCK_SH
 LOCK_NB = fcntl.LOCK_NB
 
-ENGINE_VERSION = '0.20'
+ENGINE_VERSION = '0.21'
 
 ERROR_FILE_DOES_NOT_EXISTS = -33
 ERROR_PATTERN_NOT_FOUND = -34
@@ -85,7 +85,7 @@ class engine:
     self.check_engine_version(engine_version_required)
 
     # parse command line to eventually overload some default values
-    self.parser = argparse.ArgumentParser()
+    self.parser = argparse.ArgumentParser(conflict_handler='resolve')
     self.initialize_parser()
     self.args = self.parser.parse_args()
     
@@ -826,7 +826,7 @@ class engine:
   # tail log file
   #########################################################################
 
-  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True,no_timestamp=False):
+  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True,no_timestamp=False,stop_tailing=False):
 
     try:
       if filename==None:
@@ -841,7 +841,7 @@ class engine:
           print('Currently Tailing ... \n %s' % filename)
           print('\t\tHit CTRL-C to exit...' * 2)
           print('='*80)
-
+          print('...')
           
       fic = open(filename, "r")
       lines = fic.readlines()
@@ -862,15 +862,24 @@ class engine:
                   line = re.sub('^.*\[','[',line)
               print line, # already has newline
               sys.stdout.flush()
+              if type(stop_tailing)==type("chaine"):
+                  if line.find(stop_tailing)>-1:
+                      keep_probing = False
+                      return True
+              if type(stop_tailing)==type(["string1","string2"]):
+                  for pattern in stop_tailing:
+                      if line.find(pattern)>-1:
+                          keep_probing = False
+                          return True
           if not(keep_probing):
               break
     except KeyboardInterrupt:
         print "\n bye bye come back anytime!   To resume this monitoring type :"
-        print   ("\t\tpython %s --status" % sys.argv[0])
+        print   ("\t\tpython %s --log" % sys.argv[0])
         print 
-        sys.exit(0)
         keep_probing = False
-
+        return False
+    
   #########################################################################
   # look for a pattern in a set of files
   #########################################################################
@@ -920,7 +929,7 @@ class engine:
   # look for a pattern in a file
   #########################################################################
 
-  def greps(self,motif, file_name, col = None, nb_lines = -1, return_all=False):
+  def greps(self,motif, file_name, col = None, nb_lines = -1, return_all=False, exclude_patterns=[]):
       """
        Fonction qui retourne toute ligne contenant un motif dans un fichier
        et renvoie le contenu d'une colonne de cette ligne
@@ -970,11 +979,19 @@ class engine:
           else:
               return None
       else:
+          if len(exclude_patterns):
+            if type(exclude_patterns)==type('string'):
+                exclude_patterns = [exclude_patterns]
+             
+          
           file_scanned = open(file_name, "r")
           for ligne in file_scanned.readlines():
               if False:
                   print ligne,motif0
               if (len(ligne) >= 1):
+                  for pattern in exclude_patterns:
+                      if ligne.find(pattern)>-1:
+                          continue
                   if (re.search(motif0, ligne)):
                       trouve = 1
                       if type_matching == "Columns":
@@ -1031,11 +1048,53 @@ class engine:
     answers = answers.replace(default,'[%s]' % default)
     input_var = raw_input(msg + answers + " ")
 
-    if input_var == no or (len(input_var)==0 and default==no):
+    self.log_debug('received answer=>%s< default=>%s< no=>%s<' % (input_var,default,no),3)
+
+    if (str(input_var) == str(yes)) or (len(input_var)==0 and default==yes):
+        return
+    else:
         self.log_info("ABORTING: No clear confirmation... giving up!")
         sys.exit(1)
 
 
+    
+  #########################################################################
+  # apply_tags
+  #########################################################################
+
+  def apply_tags(self, file=False, input=False):
+
+    lines = open(file,'r').readlines()
+    input = "ZZ%ZZ".join(lines)
+    output = input
+    for t in self.tag_value.keys():
+      input = input.replace("__%s__" % t,"%s" % self.tag_value[t])
+    output = ""
+    for l in input.split("ZZ%ZZ"):
+      fields = l.split('___IF___')
+      if len(fields)==2:
+        try:
+          cond = fields[1]
+          if not(eval(cond)):
+            continue
+          l = fields[0]
+          while ((len(l)>0) and (l[-1]=='#' or l[-1]==' ')):
+            l = l[:-1]
+        
+          l = l +'\n'
+        except:
+          self.error('ERROR: could not evaluate %s for template file %s' % (cond,file),
+                     exit=True)
+      fields = l.split('___INCLUDE___')
+      if len(fields)==2:
+        included_file = fields[1][:-1]
+        if not(included_file[0]=='/'):
+          included_file = '%s/%s' % (os.path.dirname(file),included_file)
+        output = output + self.apply_tags(included_file)
+        continue
+      output = output + l
+    return output
+      
 
       
 if __name__ == "__main__":

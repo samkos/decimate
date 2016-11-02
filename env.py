@@ -58,7 +58,7 @@ def get_machine():
     elif (machine[:4]=="cdl5" or machine[:4]=="cdl6"):    
         machine = "osprey"
         tmp_directory = "/scratch/tmp/"
-        MAIL_COMMAND = """ssh gateway1 "ssh cdl1 'mail -s \\"%s\\" %s < %s'" """
+        MAIL_COMMAND = """ssh gateway1 "ssh cdl3 'mail -s \\"%s\\" %s < %s'" """
         SUBMIT_COMMAND = 'sbatch'
     elif (machine[:3]=="nid" or  machine[:3]=="cdl" or machine[:7]=="gateway"):
         machine = "shaheen"

@@ -11,7 +11,7 @@ import pprint
 
 from contextlib import contextmanager
 
-DECIMATE_VERSION = '0.1'
+DECIMATE_VERSION = '0.2'
 
 @contextmanager
 def working_directory(directory):
@@ -29,6 +29,8 @@ class decimate(engine):
   def __init__(self,app_name='decimate', app_version='???', decimate_version_required=DECIMATE_VERSION):
 
     self.DECIMATE_VERSION = DECIMATE_VERSION 
+    self.APPLICATION_NAME=app_name
+    self.APPLICATION_VERSION=app_version
 
     self.JOBS = {}
     self.JOBS_DEPENDS_ON = {}
@@ -44,7 +46,7 @@ class decimate(engine):
     self.check_python_version()
     self.check_decimate_version(decimate_version_required)
 
-    engine.__init__(self,engine_version_required='0.20',app_name=app_name, app_version=app_version)
+    engine.__init__(self,engine_version_required='0.21',app_name=app_name, app_version=app_version)
 
 
   #########################################################################
@@ -101,7 +103,7 @@ class decimate(engine):
     
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
-    self.parser.add_argument("--max-retry", type=int, default=3, help='Number of time a step can fail successively')
+    self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--workflow-status", action="store_true", help=argparse.SUPPRESS)
@@ -116,7 +118,8 @@ class decimate(engine):
     self.parser.add_argument("--array-first", type=int , help=argparse.SUPPRESS)
     self.parser.add_argument("--workflowid", type=str , default="0", help=argparse.SUPPRESS)
 
-    self.parser.add_argument("--yes",  action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("-y","--yes",  action="store_true", help=argparse.SUPPRESS)
+
 
     self.user_initialize_parser()
 
@@ -282,11 +285,13 @@ class decimate(engine):
   def print_workflow(self,job_id=False,up=True,down=True):
 
     self.log_info('called with j=%s' % job_id,2)
-    
-    keys = self.JOBS.keys()
+
+
     if up and down:
       self.load_workspace()
-      print keys
+    keys = self.JOBS.keys()
+    
+    if up and down:
       job_id = keys[0]
     else:
       l='%s' % job_id
@@ -295,6 +300,7 @@ class decimate(engine):
     job_id = '%s' % job_id
     
     if not(job_id in keys):
+      self.log_info('no job %s known yet...' % job_id)
       return l
 
     
@@ -440,14 +446,18 @@ class decimate(engine):
     with working_directory(running_dir):
       output_file_candidates = glob.glob(output_file_pattern)
       if len(output_file_candidates):
-          output_file =output_file_candidates[0]
+          output_file_candidates.sort()
+          output_file =output_file_candidates[-1]
+          self.log_info('output_file to be scanned : >%s< chosen from [%s]' % (output_file,",".join(output_file_candidates)),2)
       else:
           self.log_info('ZZZZZZ weird... no output file produced of pattern %s' % output_file_pattern)
           output_file = 'No_output_file_found'
           
       error_file_candidates = glob.glob(error_file_pattern)
       if len(error_file_candidates):
-          error_file = glob.glob(error_file_pattern)[0]
+          error_file_candidates.sort()
+          error_file = error_file_candidates[-1]
+          self.log_info('error_file to be scanned : >%s< chosen from [%s]' % (error_file,",".join(error_file_candidates)),2)
       else:
           self.log_info('ZZZZZZ weird... no error file produced of pattern %s' % error_file_pattern)
           error_file = 'No_error_file_found'
@@ -605,36 +615,46 @@ class decimate(engine):
   def submit_job(self,job):
 
     cmd = [self.SCHED_SUB]
-
+    prolog = []
+    
     if (job['depends_on']) :
-      cmd = cmd + [self.SCHED_DEP+":%s"%job['depends_on'] ]
+      prolog = prolog + [self.SCHED_DEP+":%s"%job['depends_on'] ]
 
     if self.args.exclude_nodes:
-      cmd = cmd + ["-x",self.args.exclude_nodes]
+      prolog = prolog + ["-x",self.args.exclude_nodes]
 
     if self.args.partition:
-      cmd = cmd + ["--partition=%s" % self.args.partition]
+      prolog = prolog + ["--partition=%s" % self.args.partition]
 
     if self.args.reservation:
-      cmd = cmd + ["--reservation=%s" % self.args.reservation]
+      prolog = prolog + ["--reservation=%s" % self.args.reservation]
 
     if job['array_item']:
-      cmd = cmd + [self.SCHED_ARR,job['array_item']]
+      prolog = prolog + [self.SCHED_ARR+" "+job['array_item']]
     else:
-      cmd = cmd + [self.SCHED_ARR,'1-1']
+      prolog = prolog + [self.SCHED_ARR+' 1-1']
       
     if job['account'] and not(self.MY_MACHINE=="sam"):  
-      cmd = cmd +  ['--account=%s'        % job['account'] ]
+      prolog = prolog +  ['--account=%s'        % job['account'] ]
       
-    cmd = cmd + \
+    prolog = prolog + \
           ['--time=%s'            % job['time'],
            '--job-name=%s'     % (job['name']),
            '--error=%s.task_%%a-attempt_%s'   % (job['error_name'],self.args.attempt)                       ,
            '--output=%s.task_%%a-attempt_%s'  % (job['output_name'],self.args.attempt)                       ,
-           '--ntasks=%s'          % job['ntasks'],
-           '%s_%s'                % (job['script_file'], self.args.attempt) ]
+           '--ntasks=%s'          % job['ntasks']]
+    cmd = cmd +[ '%s_%s'                % (job['script_file'], self.args.attempt) ]
 
-    job_content_template = "".join(open(job['script_file'],"r").readlines())
+
+    job_content_template = "#!/bin/bash\n"
+    if self.args.pbs:
+        scheduler_flag = "#PBS"
+    else:
+        scheduler_flag = "#SBATCH"
+    for p in prolog:
+        job_content_template = job_content_template + "%s %s " % (scheduler_flag,p)+"\n"
+
+    job_content_template = job_content_template + "".join(open(job['script_file'],"r").readlines())
     job_content_updated  = job_content_template.replace('__ATTEMPT__',"%s" % self.args.attempt)
     job_script_updated  = open('%s_%s' % (job['script_file'], self.args.attempt), "w")
     job_script_updated.write(job_content_updated)
@@ -757,7 +777,7 @@ class decimate(engine):
     if job['step_before']:
       l = l + "\n           fi       # closing if of successfull previous job check"
 
-    l = l+ 'rm /tmp/*py'
+    l = l+ '\rm /tmp/*py'
     
     return l
     
