@@ -11,7 +11,7 @@ import pprint
 
 from contextlib import contextmanager
 
-DECIMATE_VERSION = '0.2'
+DECIMATE_VERSION = '0.3'
 
 @contextmanager
 def working_directory(directory):
@@ -101,14 +101,17 @@ class decimate(engine):
   def initialize_parser(self):
     engine.initialize_parser(self)
     
+    self.parser.add_argument("-l", "--log", action="store_true", help='display and tail current log')
+    self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
+
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
     self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--workflow-status", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--test", type=str, help=argparse.SUPPRESS)
 
+    self.parser.add_argument("-j", "--job_status", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--spawned", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--check-previous-step", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--step", default='launch',type=str , help=argparse.SUPPRESS)
@@ -182,7 +185,11 @@ class decimate(engine):
     # Main loop of possible actions
     #
       
-    if self.args.workflow_status:
+    if self.args.log:
+      self.tail_log_file(keep_probing=True,no_timestamp=True,stop_tailing=['workflow is finishing','workflow is aborting'])
+      sys.exit(0)
+
+    if self.args.status:
       print '!!!!!!!!!!!!! print_workflow infinite loop'
       print self.print_workflow()
       sys.exit(0)
@@ -204,7 +211,7 @@ class decimate(engine):
       sys.exit(0)
 
 
-    if self.args.workflow_status:
+    if self.args.job_status:
       self.get_current_jobs_status()
       sys.exit(0)
 
@@ -217,8 +224,13 @@ class decimate(engine):
     if self.args.fake and self.args.step:
       self.fake_actual_job()
 
-    self.load_workspace()
+    self.load()
 
+    if not(self.args.spawned):
+      print self.launch_jobs()
+      sys.exit(0)
+
+    
     try:
       if not(self.JOBS[str(self.args.jobid)]['comes_before']) and not(self.relaunching):
         self.log_info('Normal end of this batch',2)
@@ -237,46 +249,8 @@ class decimate(engine):
   def clean_workspace(self):
       
      self.JOBS = {}
-     self.save_workspace()
+     self.save()
       
-  #########################################################################
-  # save_workspace
-  #########################################################################
-
-  def save_workspace(self):
-      
-      workspace_file = self.WORKSPACE_FILE
-      self.log_debug("saving variables to file "+workspace_file)
-      f_workspace = open(workspace_file+".new", "wb" )
-      # Save your data here
-      pickle.dump(self.JOBS    ,f_workspace)
-      f_workspace.close()
-      if os.path.exists(workspace_file):
-        os.rename(workspace_file,workspace_file+".old")
-      os.rename(workspace_file+".new",workspace_file)
-      
-
-  #########################################################################
-  # load_workspace
-  #########################################################################
-
-  def load_workspace(self):
-      self.log_debug('loading workspace')
-    
-      workspace_file = self.WORKSPACE_FILE
-      if os.path.exists(self.WORKSPACE_FILE):
-          f_workspace = open( self.WORKSPACE_FILE, "rb" )
-          # retrieve data here
-          self.JOBS    = pickle.load(f_workspace)
-          f_workspace.close()
-      else:
-          self.log_debug('workspace backup file does not exist yet')
-          
-      # for job_dir in self.JOBS.keys():
-      #   job_id  = self.JOBS[job_dir]
-      #   self.JOB_DIR[job_id] = job_dir
-
-
 
   #########################################################################
   # print workflow 
@@ -288,28 +262,62 @@ class decimate(engine):
 
 
     if up and down:
-      self.load_workspace()
-    keys = self.JOBS.keys()
+      self.load()
+      self.job_current_status = {}
     
+
+          
+      self.get_current_jobs_status()
+    
+      print self.JOB_STATUS,'-JS-'
+      
+      for j in self.JOB_STATUS.keys():
+          if j.find('.batch')==-1:
+              continue
+          j = j.replace('.batch','')
+          try:
+              (job_id,task_id) = j.split('_')
+          except:
+              print 'pb to analyse ',j
+              continue
+          job_id = int(job_id)
+          task_id = int(task_id)
+          status = self.JOB_STATUS[j]
+          if not(job_id  in self.job_current_status.keys()):
+              self.job_current_status[job_id] = {}
+          if not(status  in self.job_current_status[job_id].keys()):
+              self.job_current_status[job_id][status] = '%s' % task_id
+          else:
+              self.job_current_status[job_id][status] += ',%s' % task_id
+      print self.job_current_status
+   
+            
+    keys = self.job_current_status.keys()
+    print keys,'--keys--'
     if up and down:
       job_id = keys[0]
     else:
       l='%s' % job_id
 
-
-    job_id = '%s' % job_id
+    print job_id
+      
     
-    if not(job_id in keys):
-      self.log_info('no job %s known yet...' % job_id)
-      return l
+    # if not(job_id in keys):
+    #   self.log_info('no job %s known yet...' % job_id)
+    #   return l
 
-    
-    job = self.JOBS[job_id]
+    print self.JOBS.keys(),'%s' % job_id
+    job = self.JOBS['%s' % job_id]
     job_depends_on_id = job['depends_on']
     job_make_depends_id = job['make_depend']
     self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id),2)
 
-    l = '%s (%s)' % (job['name'],job['job_id'])
+    s = ''
+    o = self.job_current_status[int(job_id)]
+    for k in o.keys():
+        s = s + '%s:%s' % (k,RangeSet(o[k]))
+        
+    l = '%s (%s) %s %s' % (job['name'],job['job_id'],self.JOB_STATUS[job['job_id']],s)
 
     if up and down:
       l = l + '< -------- ME '
@@ -428,7 +436,7 @@ class decimate(engine):
   #########################################################################
 
   def prepare_user_defined_check_job(self,what,task_id,attempt,is_done):
-    self.load_workspace()
+    self.load()
     pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[what]['output_name'],task_id,attempt)
     output_file_pattern = pattern.replace('%a',str(task_id)).replace('%j','*')
 
@@ -489,7 +497,7 @@ class decimate(engine):
     self.log_info(s)
     self.append_mail(s)
 
-    self.load_workspace()
+    self.load()
     #print self.JOBS.keys()
 
        
@@ -561,7 +569,7 @@ class decimate(engine):
         
       self.JOBS[job_previous_id_new] = self.JOBS[previous_job['name']] = previous_job
 
-      self.save_workspace()
+      self.save()
     else:
       self.log_info('strange... for job %s no dependency recorded???' % self.args.jobid)
       
@@ -689,12 +697,13 @@ class decimate(engine):
       self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
 
     self.JOBS[job_id] = self.JOBS[job['name']] = job
+    self.JOB_STATUS[job_id]  = 'SUBMITTED'
     
       
     self.log_info('submitting job %s (for %s) --> Job # %s <-depends-on %s' % (job['name'],job['array_item'],job_id,job['depends_on']))
 
     self.log_debug("Saving Job Ids...",1)
-    self.save_workspace()
+    self.save()
 
     return (job_id,cmd)
 
@@ -777,7 +786,7 @@ class decimate(engine):
     if job['step_before']:
       l = l + "\n           fi       # closing if of successfull previous job check"
 
-    l = l+ '\rm /tmp/*py'
+    l = l+ '\\rm -rf /tmp/*py'
     
     return l
     
@@ -787,7 +796,8 @@ class decimate(engine):
 
   def init_jobs(self):
 
-    self.error_report("init_jobs needs to be valued",exit=True)
+    pass
+    #self.error_report("init_jobs needs to be valued",exit=True)
 
   #########################################################################
   # generation of the jobs to be submitted

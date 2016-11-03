@@ -96,7 +96,7 @@ class engine:
     self.initialize_scheduler()
 
     # initialize job tracking arrays
-    self.JOB = {}
+    self.JOBS = {}
     self.JOB_ID = {}
     self.JOB_WORKDIR = {}
     self.JOB_STATUS = {}
@@ -369,10 +369,10 @@ class engine:
     if 'step_before' in jk:
       step_before = job['step_before']
       if step_before:
-        self.JOB[step_before]['comes_before'] = self.JOB[self.JOB[step_before]['job_id']]['comes_before'] =  job_id
-        self.JOB[step_before]['make_depend'] = self.JOB[self.JOB[step_before]['job_id']]['make_depend'] =  job_id
+        self.JOBS[step_before]['comes_before'] = self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
+        self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
 
-    # self.JOB[job_id] = self.JOB[job['name']] = job
+    # self.JOBS[job_id] = self.JOBS[job['name']] = job
     # self.JOB_WORKDIR[job_id]  =   os.getcwd()
     # self.JOB_STATUS[job_id] = 'SPAWNED'
 
@@ -411,7 +411,7 @@ class engine:
     pickle.dump(self.JOB_ID    ,f)
     pickle.dump(self.JOB_STATUS,f)
     pickle.dump(self.JOB_WORKDIR,f)
-    pickle.dump(self.JOB,f)
+    pickle.dump(self.JOBS,f)
     pickle.dump(self.timing_results,f)
     f.close()
     if os.path.exists(workspace_file):
@@ -453,7 +453,7 @@ class engine:
           self.JOB_ID    = pickle.load(f)
           self.JOB_STATUS = pickle.load(f)
           self.JOB_WORKDIR = pickle.load(f)
-          self.JOB = pickle.load(f)
+          self.JOBS = pickle.load(f)
           self.timing_results = pickle.load(f)
           f.close()
           if self.args.save:
@@ -488,11 +488,20 @@ class engine:
     self.JOB_STATS = {}
     for status in JOB_POSSIBLE_STATES:
         self.JOB_STATS[status] = []
-    
-    self.log_debug('%s jobs to scan' % (len(self.JOB_STATUS)))
+
+    keys = self.JOBS.keys()
+    for k in self.JOB_STATUS.keys():
+        if not k in keys:
+            keys = keys + [k]
+
+    self.log_debug('%s jobs to scan' % len(keys))
     jobs_to_check = list()
-    for job_id in self.JOB_STATUS.keys():
-      status = self.JOB_STATUS[job_id]
+    for job_id in keys:
+      if job_id in self.JOB_STATUS.keys():
+        status = self.JOB_STATUS[job_id]
+      else:
+          status = self.JOB_STATUS[job_id] = 'UNKNOWN'
+          
       self.log_debug('status : /%s/ for job %s ) ' % (status,job_id))
       if status in ("CANCELLED","COMPLETED","FAILED","TIMEOUT"):
         self.log_debug ('--> not updating status')

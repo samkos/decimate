@@ -15,7 +15,7 @@ class decimate_test(decimate):
 
     self.DART_MITGCM_DIR = os.getenv('DART_MITGCM_PATH')
     self.FILES_TO_COPY = ['%s/dart_mitgcm.py' % (self.DART_MITGCM_DIR),'%s/dart_mitgcm_init.py' % (self.DART_MITGCM_DIR) ]    
-    decimate.__init__(self,app_name='dart_mitgcm', decimate_version_required='0.2',app_version='0.3')
+    decimate.__init__(self,app_name='dart_mitgcm', decimate_version_required='0.3',app_version='0.3')
 
 
     
@@ -24,8 +24,6 @@ class decimate_test(decimate):
 
 
   def user_initialize_parser(self):
-    self.parser.add_argument("-l", "--log", action="store_true", help='display and tail current log')
-    self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
     self.parser.add_argument("--launch", action="store_true", help='start/continue a simulation')
     self.parser.add_argument("-b", "--begins", type=int, help='run simulation up to this step',default=1)
     self.parser.add_argument("-e", "--ends", type=int, help='run simulation up to this step',default=10)
@@ -45,39 +43,6 @@ class decimate_test(decimate):
     self.parser.add_argument("-p","--partition", type=str , help=argparse.SUPPRESS)
     
   #########################################################################
-  # inititalizing values needed to interact with model
-  #########################################################################
-
-  def init_jobs(self):
-
-    #self.args.max_retry = 1
-
-    self.log_debug('in init_jobs',2)
-
-    self.user_run()
-
-  #########################################################################
-  # main loop
-  #########################################################################
-
-  def user_run(self):
-
-    if self.args.log:
-      self.tail_log_file(keep_probing=True,no_timestamp=True,stop_tailing=['workflow is finishing','workflow is aborting'])
-      sys.exit(0)
-    elif self.args.status:
-      print self.print_workflow()
-      sys.exit(0)
-
-    elif (self.args.launch):
-      self.launch_jobs()
-
-    if not(self.args.spawned):
-      print self.launch_jobs()
-      sys.exit(0)
-
-
-  #########################################################################
   # create job files
   #########################################################################
   
@@ -86,7 +51,7 @@ class decimate_test(decimate):
 
       self.log_debug('from step=%s to %s ' % (self.args.begins,self.args.ends))
 
-      for step in range(self.args.begins,self.args.ends):
+      for step in range(self.args.begins,self.args.ends+1):
 
         self.log_info('creating job files for step %d' % step)
 
@@ -111,21 +76,6 @@ sleep 10
 
   
   #########################################################################
-  # checking initial state of the workflow
-  #########################################################################
-
-  def start_workflow_from_scratch(self,files_to_move_or_remove):
-
-    self.ask("Do you want to start the whole process from scratch now?", default='y' )
-
-    self.log_info('cleaning directory')
-    for f in files_to_move_or_remove:
-      os.system('rm -rf %s' % f)
-
-    self.log_info('launching jobs')
-    self.launch_jobs()
-
-  #########################################################################
   # submitting all the first jobs
   #########################################################################
 
@@ -133,7 +83,7 @@ sleep 10
 
 
     #self.log_info('ZZZZZZZZZZZZZ setting max_retry to 1 ZZZZZZZZZZZZ')
-    self.load_workspace()
+    self.load()
 
     # claning SAVE directory
     self.system('rm %s/Done*'% self.SAVE_DIR)
@@ -147,7 +97,7 @@ sleep 10
 
     dep = step_before = job_before = last_task_id_before =  None
                      
-    for step in range(self.args.begins,self.args.ends):
+    for step in range(self.args.begins,self.args.ends+1):
 
         last_task_id = 1
         array_item = None
@@ -205,7 +155,7 @@ sleep 10
 
 
     self.log_debug("Saving Job Ids...",1)
-    self.save_workspace()
+    self.save()
 
     self.tail_log_file(keep_probing=True, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
     sys.exit(0)
