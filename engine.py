@@ -98,6 +98,7 @@ class engine:
     # initialize job tracking arrays
     self.JOBS = {}
     self.JOB_ID = {}
+    self.JOB_BY_NAME = {}
     self.JOB_WORKDIR = {}
     self.JOB_STATUS = {}
     self.timing_results = {}
@@ -409,6 +410,7 @@ class engine:
     workspace_file = self.WORKSPACE_FILE
     f = open(workspace_file+".new", "wb" )
     pickle.dump(self.JOB_ID    ,f)
+    pickle.dump(self.JOB_BY_NAME ,f)
     pickle.dump(self.JOB_STATUS,f)
     pickle.dump(self.JOB_WORKDIR,f)
     pickle.dump(self.JOBS,f)
@@ -451,6 +453,7 @@ class engine:
       if os.path.exists(self.WORKSPACE_FILE):
           f = open( self.WORKSPACE_FILE, "rb" )
           self.JOB_ID    = pickle.load(f)
+          self.JOB_BY_NAME = pickle.load(f)
           self.JOB_STATUS = pickle.load(f)
           self.JOB_WORKDIR = pickle.load(f)
           self.JOBS = pickle.load(f)
@@ -517,7 +520,7 @@ class engine:
     
     cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)+'.batch']
     cmd = " ".join(cmd)
-    self.log_debug('cmd so get new status : %s' % " ".join(cmd))
+    self.log_info('cmd so get new status : %s' % " ".join(cmd))
     try:
       output = self.system(cmd)
       sacct_worked = True

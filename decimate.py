@@ -273,7 +273,7 @@ class decimate(engine):
       
       for j in self.JOB_STATUS.keys():
           if j.find('.batch')==-1:
-              continue
+            pass
           j = j.replace('.batch','')
           try:
               (job_id,task_id) = j.split('_')
@@ -696,7 +696,8 @@ class decimate(engine):
       self.JOBS[step_before]['comes_before'] = self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
       self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
 
-    self.JOBS[job_id] = self.JOBS[job['name']] = job
+    self.JOBS[job_id] = self.JOB_BY_NAME[job['name']] = job
+    self.JOB_ID[job['name']] = job_id
     self.JOB_STATUS[job_id]  = 'SUBMITTED'
     
       
