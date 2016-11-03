@@ -103,6 +103,7 @@ class engine:
     self.JOB_BY_NAME = {}
     self.JOB_WORKDIR = {}
     self.JOB_STATUS = {}
+    self.TASK_STATUS = {}
     self.timing_results = {}
     self.SYSTEM_OUTPUTS = {}
     
@@ -372,8 +373,8 @@ class engine:
     if 'step_before' in jk:
       step_before = job['step_before']
       if step_before:
-        self.JOBS[step_before]['comes_before'] = self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
-        self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
+        self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
+        self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
 
     # self.JOBS[job_id] = self.JOBS[job['name']] = job
     # self.JOB_WORKDIR[job_id]  =   os.getcwd()
@@ -494,7 +495,8 @@ class engine:
     for status in JOB_POSSIBLE_STATES:
         self.JOB_STATS[status] = []
 
-    keys = self.JOBS.keys()
+    keys = self.JOB_STATUS.keys()
+    print keys,'---keys---'
     for k in self.JOB_STATUS.keys():
         if not k in keys:
             keys = keys + [k]
@@ -549,7 +551,7 @@ class engine:
                 self.log_debug('status=%s task=%s' % (status,task),1)
                 if status[-1]=='+':
                   status  = status[:-1]
-                self.JOB_STATUS[task] = status
+                self.TASK_STATUS[task] = status
                 self.JOB_STATS[status].append(task)
                 task_id = task.split('_')[1].split('.')[0]
                 if task_id in self.TASK_STATUS.keys():

@@ -269,7 +269,7 @@ class decimate(engine):
           
       self.get_current_jobs_status()
     
-      print self.JOB_STATUS,'-JS-'
+      print self.JOB_STATUS,'-JS- in decimate'
       
       for j in self.JOB_STATUS.keys():
           if j.find('.batch')==-1:
