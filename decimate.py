@@ -314,13 +314,16 @@ class decimate(engine):
 
     s = ''
     o = self.job_current_status[int(job_id)]
+    nb_tasks_done = 0
     for k in o.keys():
-        s = s + '%s:%s' % (k,RangeSet(o[k]))
+        s = s + ' %s:%s' % (k,RangeSet(o[k]))
+        if k in JOB_DONE_STATES:
+            nb_tasks_done += len(o[k].split(','))
         
-    l = '%s (%s) %s %s' % (job['name'],job['job_id'],self.JOB_STATUS[job['job_id']],s)
+    l = '%s (%s) %s completed at %s %%' % (job['name'],job['job_id'],s,nb_tasks_done)
 
     if up and down:
-      l = l + '< -------- ME '
+      l = l + '< -------- WE are HERE '
     
     if up:
       if job_depends_on_id:
@@ -639,9 +642,11 @@ class decimate(engine):
 
     if job['array_item']:
       prolog = prolog + [self.SCHED_ARR+" "+job['array_item']]
+      array_range = job['array_item']
     else:
       prolog = prolog + [self.SCHED_ARR+' 1-1']
-      
+      array_length = '1-1'
+            
     if job['account'] and not(self.MY_MACHINE=="sam"):  
       prolog = prolog +  ['--account=%s'        % job['account'] ]
       
@@ -698,7 +703,9 @@ class decimate(engine):
 
     self.JOBS[job_id] = self.JOB_BY_NAME[job['name']] = job
     self.JOB_ID[job['name']] = job_id
-    self.JOB_STATUS[job_id]  = 'SUBMITTED'
+
+    for i in RangeSet(array_range):
+        self.JOB_STATUS['%s_%s' % (job_id,i)]  = 'SUBMITTED'
     
       
     self.log_info('submitting job %s (for %s) --> Job # %s <-depends-on %s' % (job['name'],job['array_item'],job_id,job['depends_on']))

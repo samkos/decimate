@@ -2,8 +2,6 @@
 from decimate import *
 import datetime,time
 
-from dart_mitgcm_init import *
-
   
 import glob
 import traceback
