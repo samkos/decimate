@@ -524,7 +524,7 @@ class engine:
     
     cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)+'.batch']
     cmd = " ".join(cmd)
-    self.log_info('cmd so get new status : %s' % " ".join(cmd))
+    self.log_info('cmd so get new status : %s' % "".join(cmd))
     try:
       output = self.system(cmd)
       sacct_worked = True
@@ -551,7 +551,8 @@ class engine:
                 self.log_debug('status=%s task=%s' % (status,task),1)
                 if status[-1]=='+':
                   status  = status[:-1]
-                self.TASK_STATUS[task] = status
+                  task = task.replace('.batch','')
+                self.JOB_STATUS[task] = status
                 self.JOB_STATS[status].append(task)
                 task_id = task.split('_')[1].split('.')[0]
                 if task_id in self.TASK_STATUS.keys():

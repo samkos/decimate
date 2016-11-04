@@ -107,6 +107,7 @@ class decimate(engine):
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
     self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
+    self.parser.add_argument("--no_pending", action="store_true", help=argparse.SUPPRESS, default=False)
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--test", type=str, help=argparse.SUPPRESS)
@@ -283,6 +284,7 @@ class decimate(engine):
           job_id = int(job_id)
           task_id = int(task_id)
           status = self.JOB_STATUS[j]
+          self.log_info('status of %s : %s' % (j,status))
           if not(job_id  in self.job_current_status.keys()):
               self.job_current_status[job_id] = {}
           if not(status  in self.job_current_status[job_id].keys()):

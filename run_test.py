@@ -11,8 +11,6 @@ class decimate_test(decimate):
 
   def __init__(self):
 
-    self.DART_MITGCM_DIR = os.getenv('DART_MITGCM_PATH')
-    self.FILES_TO_COPY = ['%s/dart_mitgcm.py' % (self.DART_MITGCM_DIR),'%s/dart_mitgcm_init.py' % (self.DART_MITGCM_DIR) ]    
     decimate.__init__(self,app_name='dart_mitgcm', decimate_version_required='0.3',app_version='0.3')
 
 
@@ -28,7 +26,8 @@ class decimate_test(decimate):
     self.parser.add_argument("-a", "--array", type=int, help='size of the array submitted at each step',default=3)
     self.parser.add_argument("-n", "--ntasks", type=int, help='number of tasks for the jobs',default=1)
     self.parser.add_argument("-t", "--time", type=str, help='ellapse time',default='00:05:00')
-    self.parser.add_argument("--nogen",  action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("--nopending", action="store_true", help='do not keep pending the log', default=False)
+
 
     # showing some hidden engine options
     self.parser.add_argument("-m", action="count", default=0, \
@@ -155,7 +154,7 @@ sleep 10
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
-    self.tail_log_file(keep_probing=True, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
+    self.tail_log_file(keep_probing=self.args.no_pending, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
     sys.exit(0)
 
 
