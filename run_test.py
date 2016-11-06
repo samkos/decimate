@@ -60,7 +60,7 @@ class decimate_test(decimate):
 # Print this sub-job's task ID
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
-sleep 10
+#sleep 10
 """
         
         
@@ -140,11 +140,11 @@ sleep 10
         new_job['submit_cmd'] = cmd
         
         
-        if step_before:
-          self.JOBS[step_before]['comes_before'] = self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
-          self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
+        if dep:
+          self.JOBS[dep]['comes_before']  = job_id
+          self.JOBS[dep]['make_depend'] = job_id
 
-        self.JOBS[job_id] = self.JOBS[job_name] = new_job
+        self.JOBS[job_id] = new_job
         
         dep = job_id
         step_before = job_name

@@ -274,7 +274,7 @@ class decimate(engine):
       
       for j in self.JOB_STATUS.keys():
           if j.find('.batch')==-1:
-            pass
+            continue
           j = j.replace('.batch','')
           try:
               (job_id,task_id) = j.split('_')
@@ -291,49 +291,52 @@ class decimate(engine):
               self.job_current_status[job_id][status] = '%s' % task_id
           else:
               self.job_current_status[job_id][status] += ',%s' % task_id
-      print self.job_current_status
+      print self.job_current_status,'job_current_status'
    
             
     keys = self.job_current_status.keys()
-    print keys,'--keys--'
+    print keys,'-- job_current_status keys--'
     if up and down:
       job_id = keys[0]
     else:
       l='%s' % job_id
 
-    print job_id
       
     
     # if not(job_id in keys):
     #   self.log_info('no job %s known yet...' % job_id)
     #   return l
 
-    print self.JOBS.keys(),'%s' % job_id
-    job = self.JOBS['%s' % job_id]
+    print self.JOBS.keys(),'=JOBS keys    searching for %s' % job_id
+    print self.JOB_STATUS,'=JOB_STATUS keys  searching for %s' % job_id
+    job = self.JOBS[int(job_id)]
     job_depends_on_id = job['depends_on']
     job_make_depends_id = job['make_depend']
-    self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id),2)
+    self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id))
 
     s = ''
-    o = self.job_current_status[int(job_id)]
+    o = self.job_current_status[job_id]
     nb_tasks_done = 0
+    print o,' - o -'
     for k in o.keys():
         s = s + ' %s:%s' % (k,RangeSet(o[k]))
         if k in JOB_DONE_STATES:
             nb_tasks_done += len(o[k].split(','))
-        
-    l = '%s (%s) %s completed at %s %%' % (job['name'],job['job_id'],s,nb_tasks_done)
 
-    if up and down:
-      l = l + '< -------- WE are HERE '
+    percent = 100.*nb_tasks_done/float(len(RangeSet(job['array_item'])))
+    l = '%s (%s) %s completed at %s %%  (%s/%s)' % (job['name'],job['job_id'],s,percent,nb_tasks_done,job['array_item'])
+
     
     if up:
       if job_depends_on_id:
-        l = "%s\n%s" % (self.print_workflow(job_depends_on_id ,up=True, down=False),l)
+          l = "%s\n%s" % (self.print_workflow(job_depends_on_id ,up=True, down=False),l)
     if down:
       if job_make_depends_id:
-        l = "%s\n%s" % (l,self.print_workflow(job_make_depends_id, down=True, up=False))
+          l = "%s\n%s" % (l,self.print_workflow(job_make_depends_id, down=True, up=False))
 
+          if percent == 100:
+             l = l.replace('< -------- WE are HERE ','< -------- Done ')
+             l = l + '< -------- WE are HERE '
     return l
 
   #########################################################################
@@ -560,7 +563,7 @@ class decimate(engine):
       (job_id_new,cmd_new) = self.submit_job(job)
       job['job_id'] = job_id_new
       job['submit_cmd'] = cmd_new
-      self.JOBS[job_id_new] = self.JOBS[job['name']] = job
+      self.JOBS[job_id_new] = job
 
       previous_job['comes_before'] = previous_job['make_depends'] = job_id_new
       if next_job_id:
@@ -572,7 +575,7 @@ class decimate(engine):
 
         self.relaunching = True
         
-      self.JOBS[job_previous_id_new] = self.JOBS[previous_job['name']] = previous_job
+      self.JOBS[job_previous_id_new] = previous_job
 
       self.save()
     else:
@@ -626,6 +629,8 @@ class decimate(engine):
   #########################################################################
 
   def submit_job(self,job):
+
+    print 'in submit JOBS start:',self.JOBS.keys()
 
     cmd = [self.SCHED_SUB]
     prolog = []
@@ -681,13 +686,14 @@ class decimate(engine):
       if self.args.pbs:
         #print output.split("\n")
         job_id = output.split("\n")[0].split(".")[0]
+        job_id = int(job_id)
         #print job_id
       else:
         for l in output.split("\n"):
           self.log_debug(l,1)
           #print l.split(" ")
           if "Submitted batch job" in l:
-            job_id = l.split(" ")[-1]
+            job_id = int(l.split(" ")[-1])
       self.log_debug("job submitted : %s depends on %s" % (job_id,job['depends_on']),1)
     else: 
       self.log_info("should submit job %s" % job['name'],2)
@@ -698,13 +704,13 @@ class decimate(engine):
     job['submit_cmd'] = cmd
         
 
-    step_before = job['step_before']
-    if step_before:
-      self.JOBS[step_before]['comes_before'] = self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
-      self.JOBS[step_before]['make_depend'] = self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
+    job_before = job['comes_after']
+    if job_before:
+      self.JOBS[job_before]['comes_before'] =  job_id
+      self.JOBS[job_before]['make_depend']  =  job_id
 
-    self.JOBS[job_id] = self.JOB_BY_NAME[job['name']] = job
-    self.JOB_ID[job['name']] = job_id
+    self.JOBS[job_id] = job
+    #self.JOB_ID[job['name']] = job_id
 
     for i in RangeSet(array_range):
         self.JOB_STATUS['%s_%s' % (job_id,i)]  = 'SUBMITTED'
@@ -714,6 +720,8 @@ class decimate(engine):
 
     self.log_debug("Saving Job Ids...",1)
     self.save()
+
+    print 'in submit JOBS:',self.JOBS.keys()
 
     return (job_id,cmd)
 

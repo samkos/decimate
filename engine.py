@@ -869,6 +869,8 @@ class engine:
       #if str.find(lines[-1], "goodbye") >=0:
       #    good_bye_reached = True
       while True:
+          if not(keep_probing):
+              break
           where = fic.tell()
           line = fic.readline()
           if not line:
@@ -888,8 +890,6 @@ class engine:
                       if line.find(pattern)>-1:
                           keep_probing = False
                           return True
-          if not(keep_probing):
-              break
     except KeyboardInterrupt:
         print "\n bye bye come back anytime!   To resume this monitoring type :"
         print   ("\t\tpython %s --log" % sys.argv[0])
