@@ -416,9 +416,9 @@ class engine:
     #     self.JOB_STATS[status] = []
 
     jobs_to_check = list()
-    self.log_info("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS))
-    self.log_info("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
-    self.log_info("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS))
+    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS))
+    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
+    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS))
 
     for step in self.STEPS.keys():
       if self.STEPS[step]['completion']<1000.:
@@ -500,9 +500,11 @@ class engine:
     
     self.save()
 
+    self.log_info("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS))
     self.log_info("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS))
     self.log_info("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
     self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS))
+
 
 
     

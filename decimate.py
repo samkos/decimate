@@ -444,13 +444,15 @@ class decimate(engine):
 
   def prepare_user_defined_check_job(self,what,task_id,attempt,is_done):
     self.load()
-    pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[what]['output_name'],task_id,attempt)
+
+    job_id = self.STEPS[what]['arrays'][0]
+    pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[job_id]['output_name'],task_id,attempt)
     output_file_pattern = pattern.replace('%a',str(task_id)).replace('%j','*')
 
-    pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[what]['error_name'],task_id,attempt)
+    pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[job_id]['error_name'],task_id,attempt)
     error_file_pattern = pattern.replace('%a',str(task_id)).replace('%j','*')
 
-    running_dir = self.JOBS[what]['submit_dir']
+    running_dir = self.JOBS[job_id]['submit_dir']
 
     s = "CHECKING step: %s   Task: %s Attempt: %s" % (what,task_id,attempt) + "\n" + \
         "Output file pattern : %s" % (output_file_pattern) + "\n" +\
