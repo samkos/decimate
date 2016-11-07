@@ -431,7 +431,8 @@ class engine:
                           self.log_debug ('--> not updating status')
                           #self.JOB_STATS[status].append(job_id)
                       else:
-                          jobs_to_check.append('%s_%s' % (array,task))
+                          jobs_to_check.append('%s' % (array))
+                          continue
 
     self.log_info('%d jobs to check:  %s' % (len(jobs_to_check),",".join(jobs_to_check)))
 
@@ -465,6 +466,7 @@ class engine:
             tasks=NodeSet(sacct_fields[0])
             status=sacct_fields[5].split(' ')[0]
             if status in JOB_POSSIBLE_STATES:
+              self.log_debug('tasks=%s' % (tasks),1)
               for task in tasks:
                 self.log_debug('status=%s task=%s' % (status,task),1)
                 if status[-1]=='+':
