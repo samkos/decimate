@@ -311,120 +311,6 @@ class engine:
     self.log_info('environment initialized successfully',4)
 
 
-  #########################################################################
-  # submitting one job   the definitive one
-  #########################################################################
-
-  def submit(self,job):
-
-    cmd = [self.SCHED_SUB]
-
-    if (job['depends_on']) :
-      cmd = cmd + [self.SCHED_DEP+":%s"%job['depends_on'] ]
-
-    if self.args.exclude_nodes:
-      cmd = cmd + ["-x",self.args.exclude_nodes]
-
-    if not(job['array']):
-      job['array'] = '1-1'
-      
-    if self.MY_MACHINE=="sam":
-      job['account'] = None
-
-    jk = job.keys()
-    for param in ['partition','reservation','time','job-name',
-                  'error','output','ntasks','array','account']:
-      if param in jk:
-        if job[param]:
-          cmd = cmd + ['--%s=%s' % (param,job[param])]
-        
-    if self.args.attempt:
-      cmd = cmd + \
-            ['%s_%s'                % (job['command'], self.args.attempt) ]
-      job_content_template = "".join(open(job['command'],"r").readlines())
-      job_content_updated  = job_content_template.replace('__ATTEMPT__',"%s" % self.args.attempt)
-      job_script_updated  = open('%s_%s' % (job['command'], self.args.attempt), "w")
-      job_script_updated.write(job_content_updated)
-      job_script_updated.close()
-    else:
-      cmd = cmd + \
-            ['%s'                % (job['command']) ]
-
-    if not self.args.dry:
-      self.log_debug("submitting : "+" ".join(cmd))
-      output = subprocess.check_output(cmd)
-      if self.args.pbs:
-        #print output.split("\n")
-        job_id = output.split("\n")[0].split(".")[0]
-        #print job_id
-      else:
-        for l in output.split("\n"):
-          self.log_debug(l,1)
-          #print l.split(" ")
-          if "Submitted batch job" in l:
-            job_id = l.split(" ")[-1]
-      self.log_debug("job submitted : %s depends on %s" % (job_id,job['depends_on']),1)
-      print 'ici'
-    else: 
-      self.log_debug("should submit job %s" % job['name'])
-      self.log_debug(" with cmd = %s " % " ".join(cmd))
-      job_id = "%s" % job['name']
-
-    job['job_id'] = job_id
-    job['submit_cmd'] = cmd
-
-    step =  job['step']
-
-    self.STEPS[step] = {}
-    self.STEPS[step]['arrays'] = job_id
-    self.STEPS[step]['status'] = 'SUBMITTED'
-    self.STEPS[step]['completion'] = 0
-
-    self.ARRAYS[job_id]['step'] = step
-    self.ARRAYS[job_id]['range'] = job['array']
-    self.ARRAYS[job_id]['range_all'] = job['array']
-    self.ARRAYS[job_id]['status'] = 'SUBMITTED'
-    self.ARRAYS[job_id]['completion'] = 0
-
-
-    self.TASKS[step] = {}
-    for task in RangeSet(job['array']):
-        self.TASKS[step][task] = 'SUBMITTED'
-
-    
-    step_before = job['step_before']
-    if step_before:
-        self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
-        self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
-
-    # self.JOBS[job_id] = self.JOBS[job['name']] = job
-    # self.JOB_WORKDIR[job_id]  =   os.getcwd()
-    # self.JOB_STATUS[job_id] = 'SPAWNED'
-
-    
-    for ja in RangeSet(job['array']):
-      ka = "%s_%s" % (job_id,ja)
-      self.log_debug('adding job %s to statistics' % ka)
-      self.JOB_WORKDIR[ka]  =   os.getcwd()
-      self.JOB_STATUS[ka] = 'SPAWNED'
-      
-    self.log_info('submitting job %s --> Job # %s ' % (job['name'],job_id))
-
-    self.log_debug("Saving Job Ids...",1)
-
-    self.log_info("engine:submit STEPS=%s " % pprint.pformat(self.STEPS))
-    self.log_info("engine:submit ARRAYS=%s " % pprint.pformat(self.ARRAYS))
-    self.log_info("engine:submit TASKS=%s " % pprint.pformat(self.TASKS))
-
-
-    self.log_debug("Saving Jxxxxxxxob Ids.....",1)
-    self.save()
-
-    return (job_id,cmd)
-
-
-
-
 
   #########################################################################
   # save_workspace
@@ -536,11 +422,11 @@ class engine:
 
     for step in self.STEPS.keys():
       if self.STEPS[step]['completion']<100:
-          for array in self.ARRAYS[step]['arrays']:
+          for array in self.STEPS[step]['arrays']:
               if self.ARRAYS[array]['completion']<100:
                   for task in RangeSet(self.ARRAYS[array]['range']):
                       status = self.TASKS[step][task]
-                      self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,job_id))
+                      self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array))
                       if status in ("CANCELLED","COMPLETED","FAILED","TIMEOUT"):
                           self.log_debug ('--> not updating status')
                           #self.JOB_STATS[status].append(job_id)

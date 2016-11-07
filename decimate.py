@@ -717,6 +717,28 @@ class decimate(engine):
       
     self.log_info('submitting job %s (for %s) --> Job # %s <-depends-on %s' % (job['name'],job['array_item'],job_id,job['depends_on']))
 
+
+    step =  job['name']
+
+    self.STEPS[step] = {}
+    self.STEPS[step]['arrays'] = [job_id]
+    self.STEPS[step]['status'] = 'SUBMITTED'
+    self.STEPS[step]['completion'] = 0
+
+    self.ARRAYS[job_id] = {}
+    self.ARRAYS[job_id]['step'] = step
+    self.ARRAYS[job_id]['range'] = array_range
+    self.ARRAYS[job_id]['range_all'] = array_range
+    self.ARRAYS[job_id]['status'] = 'SUBMITTED'
+    self.ARRAYS[job_id]['completion'] = 0
+
+
+    self.TASKS[step] = {}
+    for task in RangeSet(array_range):
+        self.TASKS[step][task] = 'SUBMITTED'
+
+        
+
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
