@@ -364,6 +364,7 @@ class engine:
           if "Submitted batch job" in l:
             job_id = l.split(" ")[-1]
       self.log_debug("job submitted : %s depends on %s" % (job_id,job['depends_on']),1)
+      print 'ici'
     else: 
       self.log_debug("should submit job %s" % job['name'])
       self.log_debug(" with cmd = %s " % " ".join(cmd))
@@ -374,10 +375,10 @@ class engine:
 
     step =  job['step']
 
-    self.STEP[step] = {}
-    self.STEP[step]['arrays'] = job_id
-    self.STEP[step]['status'] = 'SUBMITTED'
-    self.STEP[step]['completion'] = 0
+    self.STEPS[step] = {}
+    self.STEPS[step]['arrays'] = job_id
+    self.STEPS[step]['status'] = 'SUBMITTED'
+    self.STEPS[step]['completion'] = 0
 
     self.ARRAYS[job_id]['step'] = step
     self.ARRAYS[job_id]['range'] = job['array']
@@ -385,16 +386,14 @@ class engine:
     self.ARRAYS[job_id]['status'] = 'SUBMITTED'
     self.ARRAYS[job_id]['completion'] = 0
 
-    self.TASKS = {}
-    for task in 
 
-    if not (step in self.STEPS.keys):
-        
+    self.TASKS[step] = {}
+    for task in RangeSet(job['array']):
+        self.TASKS[step][task] = 'SUBMITTED'
 
     
-    if 'step_before' in jk:
-      step_before = job['step_before']
-      if step_before:
+    step_before = job['step_before']
+    if step_before:
         self.JOBS[self.JOBS[step_before]['job_id']]['comes_before'] =  job_id
         self.JOBS[self.JOBS[step_before]['job_id']]['make_depend'] =  job_id
 
@@ -412,6 +411,13 @@ class engine:
     self.log_info('submitting job %s --> Job # %s ' % (job['name'],job_id))
 
     self.log_debug("Saving Job Ids...",1)
+
+    self.log_info("engine:submit STEPS=%s " % pprint.pformat(self.STEPS))
+    self.log_info("engine:submit ARRAYS=%s " % pprint.pformat(self.ARRAYS))
+    self.log_info("engine:submit TASKS=%s " % pprint.pformat(self.TASKS))
+
+
+    self.log_debug("Saving Jxxxxxxxob Ids.....",1)
     self.save()
 
     return (job_id,cmd)
@@ -520,35 +526,28 @@ class engine:
 
     status_error = False
     self.JOB_STATS = {}
-    for status in JOB_POSSIBLE_STATES:
-        self.JOB_STATS[status] = []
+    # for status in JOB_POSSIBLE_STATES:
+    #     self.JOB_STATS[status] = []
 
-    keys = self.JOB_STATUS.keys()
-    print keys,'---keys---'
-    for k in self.JOB_STATUS.keys():
-        if not k in keys:
-            keys = keys + [k]
-
-    self.log_debug('%s jobs to scan' % len(keys))
     jobs_to_check = list()
-    for job_id in keys:
-      if job_id in self.JOB_STATUS.keys():
-        status = self.JOB_STATUS[job_id]
-      else:
-          status = self.JOB_STATUS[job_id] = 'UNKNOWN'
-          
-      self.log_debug('status : /%s/ for job %s ) ' % (status,job_id))
-      if status in ("CANCELLED","COMPLETED","FAILED","TIMEOUT"):
-        self.log_debug ('--> not updating status')
-        self.JOB_STATS[status].append(job_id)
-      else:
-        job_array_id = job_id.split('_')[0]
-        if not(job_array_id in jobs_to_check):
-            jobs_to_check.append(job_array_id)
+    self.log_info("STEPS=%s " % pprint.pformat(self.STEPS))
+    self.log_info("ARRAYS=%s " % pprint.pformat(self.ARRAYS))
+    self.log_info("TASKS=%s " % pprint.pformat(self.TASKS))
 
-    if len(jobs_to_check)==0:
-      self.log_debug('%s' % self.JOB_STATS)
-      return
+    for step in self.STEPS.keys():
+      if self.STEPS[step]['completion']<100:
+          for array in self.ARRAYS[step]['arrays']:
+              if self.ARRAYS[array]['completion']<100:
+                  for task in RangeSet(self.ARRAYS[array]['range']):
+                      status = self.TASKS[step][task]
+                      self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,job_id))
+                      if status in ("CANCELLED","COMPLETED","FAILED","TIMEOUT"):
+                          self.log_debug ('--> not updating status')
+                          #self.JOB_STATS[status].append(job_id)
+                      else:
+                          jobs_to_check.append('%s_%s' % (array,task))
+
+    self.log_info('jobs to check:  %s',",".join(jobs_to_check))
     
     cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
     cmd = " ".join(cmd)
@@ -566,6 +565,7 @@ class engine:
       output=""
       sacct_worked = False
       self.log_info('[get_current_job_status] sacct could not be used')
+
     if sacct_worked:
       for l in output[:-1].split("\n"):
           task = 'Not yet'

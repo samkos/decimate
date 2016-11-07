@@ -269,74 +269,74 @@ class decimate(engine):
           
       self.get_current_jobs_status()
     
-      print self.JOB_STATUS,'-JS- in decimate'
+    #   print self.JOB_STATUS,'-JS- in decimate'
       
-      for j in self.JOB_STATUS.keys():
-          if j.find('.batch')==-1:
-            continue
-          j = j.replace('.batch','')
-          try:
-              (job_id,task_id) = j.split('_')
-          except:
-              print 'pb to analyse ',j
-              continue
-          job_id = int(job_id)
-          task_id = int(task_id)
-          status = self.JOB_STATUS[j]
-          self.log_info('status of %s : %s' % (j,status))
-          if not(job_id  in self.job_current_status.keys()):
-              self.job_current_status[job_id] = {}
-          if not(status  in self.job_current_status[job_id].keys()):
-              self.job_current_status[job_id][status] = '%s' % task_id
-          else:
-              self.job_current_status[job_id][status] += ',%s' % task_id
-      print self.job_current_status,'job_current_status'
+    #   for j in self.JOB_STATUS.keys():
+    #       if j.find('.batch')==-1:
+    #         continue
+    #       j = j.replace('.batch','')
+    #       try:
+    #           (job_id,task_id) = j.split('_')
+    #       except:
+    #           print 'pb to analyse ',j
+    #           continue
+    #       job_id = int(job_id)
+    #       task_id = int(task_id)
+    #       status = self.JOB_STATUS[j]
+    #       self.log_info('status of %s : %s' % (j,status))
+    #       if not(job_id  in self.job_current_status.keys()):
+    #           self.job_current_status[job_id] = {}
+    #       if not(status  in self.job_current_status[job_id].keys()):
+    #           self.job_current_status[job_id][status] = '%s' % task_id
+    #       else:
+    #           self.job_current_status[job_id][status] += ',%s' % task_id
+    #   print self.job_current_status,'job_current_status'
    
             
-    keys = self.job_current_status.keys()
-    print keys,'-- job_current_status keys--'
-    if up and down:
-      job_id = keys[0]
-    else:
-      l='%s' % job_id
+    # keys = self.job_current_status.keys()
+    # print keys,'-- job_current_status keys--'
+    # if up and down:
+    #   job_id = keys[0]
+    # else:
+    #   l='%s' % job_id
 
       
     
-    # if not(job_id in keys):
-    #   self.log_info('no job %s known yet...' % job_id)
-    #   return l
+    # # if not(job_id in keys):
+    # #   self.log_info('no job %s known yet...' % job_id)
+    # #   return l
 
-    print self.JOBS.keys(),'=JOBS keys    searching for %s' % job_id
-    print self.JOB_STATUS,'=JOB_STATUS keys  searching for %s' % job_id
-    job = self.JOBS[int(job_id)]
-    job_depends_on_id = job['depends_on']
-    job_make_depends_id = job['make_depend']
-    self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id))
+    # print self.JOBS.keys(),'=JOBS keys    searching for %s' % job_id
+    # print self.JOB_STATUS,'=JOB_STATUS keys  searching for %s' % job_id
+    # job = self.JOBS[int(job_id)]
+    # job_depends_on_id = job['depends_on']
+    # job_make_depends_id = job['make_depend']
+    # self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id))
 
-    s = ''
-    o = self.job_current_status[job_id]
-    nb_tasks_done = 0
-    print o,' - o -'
-    for k in o.keys():
-        s = s + ' %s:%s' % (k,RangeSet(o[k]))
-        if k in JOB_DONE_STATES:
-            nb_tasks_done += len(o[k].split(','))
+    # s = ''
+    # o = self.job_current_status[job_id]
+    # nb_tasks_done = 0
+    # print o,' - o -'
+    # for k in o.keys():
+    #     s = s + ' %s:%s' % (k,RangeSet(o[k]))
+    #     if k in JOB_DONE_STATES:
+    #         nb_tasks_done += len(o[k].split(','))
 
-    percent = 100.*nb_tasks_done/float(len(RangeSet(job['array_item'])))
-    l = '%s (%s) %s completed at %s %%  (%s/%s)' % (job['name'],job['job_id'],s,percent,nb_tasks_done,job['array_item'])
+    # percent = 100.*nb_tasks_done/float(len(RangeSet(job['array_item'])))
+    # l = '%s (%s) %s completed at %s %%  (%s/%s)' % (job['name'],job['job_id'],s,percent,nb_tasks_done,job['array_item'])
 
     
-    if up:
-      if job_depends_on_id:
-          l = "%s\n%s" % (self.print_workflow(job_depends_on_id ,up=True, down=False),l)
-    if down:
-      if job_make_depends_id:
-          l = "%s\n%s" % (l,self.print_workflow(job_make_depends_id, down=True, up=False))
+    # if up:
+    #   if job_depends_on_id:
+    #       l = "%s\n%s" % (self.print_workflow(job_depends_on_id ,up=True, down=False),l)
+    # if down:
+    #   if job_make_depends_id:
+    #       l = "%s\n%s" % (l,self.print_workflow(job_make_depends_id, down=True, up=False))
 
-          if percent == 100:
-             l = l.replace('< -------- WE are HERE ','< -------- Done ')
-             l = l + '< -------- WE are HERE '
-    return l
+    #       if percent == 100:
+    #          l = l.replace('< -------- WE are HERE ','< -------- Done ')
+    #          l = l + '< -------- WE are HERE '
+    # return l
 
   #########################################################################
   # finalize the job, putting a stamp somewhere
