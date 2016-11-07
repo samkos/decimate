@@ -28,12 +28,14 @@
 | step     | self.STEPS                         | step name  (unique)         | arrays: list of arrays connected                     |
 |          |                                    |                             | status:SUBMITTED,PENDING,RUNNING,DONE,               |
 |          |                                    |                             | completion: x %                                      |
+|          |                                    |                             | items: nb of elementary jobs expected in this steps  |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | - arrays | self.ARRAYS                        | joo_id                      | step                                                 |
 |          |                                    |                             | range                                                |
 |          |                                    |                             | range_all                                            |
 |          |                                    |                             | status:WAITING,SUBMITTED,PENDING,RUNNING,DONE,       |
 |          |                                    |                             | completion: x %                                      |
+|          |                                    |                             | items:nb of elementary jobs expected in this steps   |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | -- tasks | self.TASKS                         | [step][array_task] (unique) | status : WAITING,SUBMITTED, or  --STATE FROM SACCT-- |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|

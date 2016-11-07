@@ -416,27 +416,31 @@ class engine:
     #     self.JOB_STATS[status] = []
 
     jobs_to_check = list()
-    self.log_info("STEPS=%s " % pprint.pformat(self.STEPS))
-    self.log_info("ARRAYS=%s " % pprint.pformat(self.ARRAYS))
-    self.log_info("TASKS=%s " % pprint.pformat(self.TASKS))
+    self.log_info("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS))
+    self.log_info("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
+    self.log_info("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS))
 
     for step in self.STEPS.keys():
-      if self.STEPS[step]['completion']<100:
+      if self.STEPS[step]['completion']<1000.:
           for array in self.STEPS[step]['arrays']:
-              if self.ARRAYS[array]['completion']<100:
+              if self.ARRAYS[array]['completion']<100000.:
                   for task in RangeSet(self.ARRAYS[array]['range']):
                       status = self.TASKS[step][task]
                       self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array))
-                      if status in ("CANCELLED","COMPLETED","FAILED","TIMEOUT"):
+                      if status in JOB_DONE_STATES:
                           self.log_debug ('--> not updating status')
                           #self.JOB_STATS[status].append(job_id)
                       else:
                           jobs_to_check.append('%s_%s' % (array,task))
 
-    self.log_info('jobs to check:  %s',",".join(jobs_to_check))
-    
-    cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
-    cmd = " ".join(cmd)
+    self.log_info('%d jobs to check:  %s' % (len(jobs_to_check),",".join(jobs_to_check)))
+
+    if len(jobs_to_check)==0:
+        return
+
+    cmd = ";".join(map(lambda x:  'sacct -n -p -j %s' % x, jobs_to_check))
+    #cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
+    #cmd = " ".join(cmd)
     self.log_info('cmd so get new status : %s' % "".join(cmd))
     try:
       output = self.system(cmd)
@@ -465,21 +469,23 @@ class engine:
                 self.log_debug('status=%s task=%s' % (status,task),1)
                 if status[-1]=='+':
                   status  = status[:-1]
-                  if task.find('.batch')>-1:
-                      continue
-                  #task = task.replace('.batch','')
-                self.JOB_STATUS[task] = status
-                self.JOB_STATS[status].append(task)
-                task_id = task.split('_')[1].split('.')[0]
-                if task_id in self.TASK_STATUS.keys():
-                    if self.TASK_STATUS[task_id] in ['OK','NOK']:
-                        continue
-                self.TASK_STATUS[task_id] = status
+                task = task.replace('.batch','')
+                
+                array_id  =   int(task.split('_')[0])
+                step = self.ARRAYS[array_id]['step']
+                task_id = int(task.split('_')[1].split('.')[0])
+
+                self.log_debug('step=%s job=%s task=%s status=%s   l=>>%s<<' % (step,array_id,task_id,status,task),1)
+                self.TASKS[step][task_id]['status'] = status
+                if status in JOB_DONE_STATES:
+                    self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
+                    self.STEPS[step]['completion'] += 100./self.STEPS[step]['items'] 
+                    
             else:
                 log_info('unknown status got for tasks %s' % ','.join(tasks))
           except:
             if self.args.debug:
-              self.dump_exception('[get_current_job_status] parse job_status with task=%s' % task +"\n job status : "+l)
+              self.dump_exception('[get_current_job_status] parse job_status with task=%s \n job status : l=%s' % (task,l))
             else:
               status_error = True
             pass
@@ -492,6 +498,12 @@ class engine:
     
     self.save()
 
+    self.log_info("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS))
+    self.log_info("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
+    self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS))
+
+
+    
     if status_error:
       self.log_info('!WARNING! Error encountered scanning job status, run with --debug to know more')
       

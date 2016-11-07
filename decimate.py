@@ -724,6 +724,7 @@ class decimate(engine):
     self.STEPS[step]['arrays'] = [job_id]
     self.STEPS[step]['status'] = 'SUBMITTED'
     self.STEPS[step]['completion'] = 0
+    self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
 
     self.ARRAYS[job_id] = {}
     self.ARRAYS[job_id]['step'] = step
@@ -731,11 +732,13 @@ class decimate(engine):
     self.ARRAYS[job_id]['range_all'] = array_range
     self.ARRAYS[job_id]['status'] = 'SUBMITTED'
     self.ARRAYS[job_id]['completion'] = 0
+    self.ARRAYS[job_id]['items'] = float(len(RangeSet(array_range)))
 
 
     self.TASKS[step] = {}
     for task in RangeSet(array_range):
-        self.TASKS[step][task] = 'SUBMITTED'
+        self.TASKS[step][task] = {}
+        self.TASKS[step][task]['status'] = 'SUBMITTED'
 
         
 
