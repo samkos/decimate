@@ -191,7 +191,6 @@ class decimate(engine):
       sys.exit(0)
 
     if self.args.status:
-      print '!!!!!!!!!!!!! print_workflow infinite loop'
       print self.print_workflow()
       sys.exit(0)
       

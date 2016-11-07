@@ -98,6 +98,9 @@ class engine:
     self.initialize_scheduler()
 
     # initialize job tracking arrays
+    self.STEPS = {}
+    self.ARRAYS = {}
+    self.TASKS = {}
     self.JOBS = {}
     self.JOB_ID = {}
     self.JOB_BY_NAME = {}
@@ -368,8 +371,27 @@ class engine:
 
     job['job_id'] = job_id
     job['submit_cmd'] = cmd
+
+    step =  job['step']
+
+    self.STEP[step] = {}
+    self.STEP[step]['arrays'] = job_id
+    self.STEP[step]['status'] = 'SUBMITTED'
+    self.STEP[step]['completion'] = 0
+
+    self.ARRAYS[job_id]['step'] = step
+    self.ARRAYS[job_id]['range'] = job['array']
+    self.ARRAYS[job_id]['range_all'] = job['array']
+    self.ARRAYS[job_id]['status'] = 'SUBMITTED'
+    self.ARRAYS[job_id]['completion'] = 0
+
+    self.TASKS = {}
+    for task in 
+
+    if not (step in self.STEPS.keys):
         
 
+    
     if 'step_before' in jk:
       step_before = job['step_before']
       if step_before:
@@ -417,6 +439,9 @@ class engine:
     pickle.dump(self.JOB_STATUS,f)
     pickle.dump(self.JOB_WORKDIR,f)
     pickle.dump(self.JOBS,f)
+    pickle.dump(self.STEPS,f)
+    pickle.dump(self.ARRAYS,f)
+    pickle.dump(self.TASKS,f)
     pickle.dump(self.timing_results,f)
     f.close()
     if os.path.exists(workspace_file):
@@ -460,6 +485,9 @@ class engine:
           self.JOB_STATUS = pickle.load(f)
           self.JOB_WORKDIR = pickle.load(f)
           self.JOBS = pickle.load(f)
+          self.STEPS = pickle.load(f)
+          self.ARRAYS = pickle.load(f)
+          self.TASKS = pickle.load(f)
           self.timing_results = pickle.load(f)
           f.close()
           if self.args.save:
@@ -515,14 +543,14 @@ class engine:
         self.JOB_STATS[status].append(job_id)
       else:
         job_array_id = job_id.split('_')[0]
-        if not(job_id in jobs_to_check):
+        if not(job_array_id in jobs_to_check):
             jobs_to_check.append(job_array_id)
 
     if len(jobs_to_check)==0:
       self.log_debug('%s' % self.JOB_STATS)
       return
     
-    cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)+'.batch']
+    cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
     cmd = " ".join(cmd)
     self.log_info('cmd so get new status : %s' % "".join(cmd))
     try:
@@ -551,7 +579,9 @@ class engine:
                 self.log_debug('status=%s task=%s' % (status,task),1)
                 if status[-1]=='+':
                   status  = status[:-1]
-                  task = task.replace('.batch','')
+                  if task.find('.batch')>-1:
+                      continue
+                  #task = task.replace('.batch','')
                 self.JOB_STATUS[task] = status
                 self.JOB_STATS[status].append(task)
                 task_id = task.split('_')[1].split('.')[0]
