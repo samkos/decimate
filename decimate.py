@@ -117,7 +117,7 @@ class decimate(engine):
     self.parser.add_argument("--check-previous-step", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--step", default='launch',type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("--taskid", type=str , help=argparse.SUPPRESS)
-    self.parser.add_argument("--jobid", type=str , help=argparse.SUPPRESS)
+    self.parser.add_argument("--jobid", type=int , help=argparse.SUPPRESS)
     self.parser.add_argument("--attempt", type=int , default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("--array-first", type=int , help=argparse.SUPPRESS)
     self.parser.add_argument("--workflowid", type=str , default="0", help=argparse.SUPPRESS)
@@ -232,8 +232,6 @@ class decimate(engine):
 
     
     try:
-      #self.log_info("main loop:end -> JOBS=\n%s " % pprint.pformat(self.JOBS))
-
       if not(self.JOBS[int(self.args.jobid)]['comes_before']) and not(self.relaunching):
         self.log_info('Normal end of this batch',2)
         self.log_info('=============== workflow is finishing ==============')
@@ -447,7 +445,7 @@ class decimate(engine):
   def prepare_user_defined_check_job(self,what,task_id,attempt,is_done):
     self.load()
 
-    job_id = self.STEPS[what]['arrays'][0]
+    job_id = self.STEPS['%s-%s' % (what,attempt)]['arrays'][0]
     pattern =  "%s.task_%s-attempt_%s" % (self.JOBS[job_id]['output_name'],task_id,attempt)
     output_file_pattern = pattern.replace('%a',str(task_id)).replace('%j','*')
 
@@ -583,6 +581,7 @@ class decimate(engine):
       self.save()
     else:
       self.log_info('strange... for job %s no dependency recorded???' % self.args.jobid)
+      self.log_info("heal workflow end -> JOBS=\n%s " % pprint.pformat(self.JOBS))
       
     self.log_info('end of heal_workflow',2)
     self.log_info('committing suicide in 5 seconds....')
@@ -722,7 +721,7 @@ class decimate(engine):
     self.log_info('submitting job %s (for %s) --> Job # %s <-depends-on %s' % (job['name'],job['array_item'],job_id,job['depends_on']))
 
 
-    step =  job['name']
+    step =  '%s-%s' % (job['name'],self.args.attempt)
 
     self.STEPS[step] = {}
     self.STEPS[step]['arrays'] = [job_id]

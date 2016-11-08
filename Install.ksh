@@ -6,6 +6,8 @@ dss
 
 d -y -b 1 -e 3 --nopending --fake
 
+d -y -b 1 -e 3 --nopending --fake
+
 
 export SLURM_ARRAY_TASK_ID=1
 export SLURM_ARRAY_JOB_ID=99

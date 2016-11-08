@@ -416,9 +416,9 @@ class engine:
     #     self.JOB_STATS[status] = []
 
     jobs_to_check = list()
-    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS))
-    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
-    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS))
+    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
+    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),2)
+    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
 
     for step in self.STEPS.keys():
       if self.STEPS[step]['completion']<1000.:
@@ -426,83 +426,77 @@ class engine:
               if self.ARRAYS[array]['completion']<100000.:
                   for task in RangeSet(self.ARRAYS[array]['range']):
                       status = self.TASKS[step][task]
-                      self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array))
+                      self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array),2)
                       if status in JOB_DONE_STATES:
-                          self.log_debug ('--> not updating status')
+                          self.log_debug ('--> not updating status',2)
                           #self.JOB_STATS[status].append(job_id)
                       else:
                           jobs_to_check.append('%s' % (array))
                           continue
 
-    self.log_info('%d jobs to check:  %s' % (len(jobs_to_check),",".join(jobs_to_check)))
+    self.log_debug('%d jobs to check:  %s' % (len(jobs_to_check),",".join(jobs_to_check)))
 
-    if len(jobs_to_check)==0:
-        return
+    if len(jobs_to_check)>0:
+      cmd = ";".join(map(lambda x:  'sacct -n -p -j %s' % x, jobs_to_check))
+      #cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
+      #cmd = " ".join(cmd)
+      self.log_debug('cmd to get new status : %s' % "".join(cmd))
+      try:
+        output = self.system(cmd)
+        sacct_worked = True
+        self.log_debug('sacct results>>\n%s<<' % output,2)
+        #",".join(map(str,NodeSet('81567_[5-6,45-59]')))
+      except:
+        if self.args.debug:
+          self.error('WARNING [get_current_job_status] subprocess with ' + " ".join(cmd),exception=self.args.debug)
+        else:
+          status_error = True
+        output=""
+        sacct_worked = False
+        self.log_info('[get_current_job_status] sacct could not be used')
 
-    cmd = ";".join(map(lambda x:  'sacct -n -p -j %s' % x, jobs_to_check))
-    #cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
-    #cmd = " ".join(cmd)
-    self.log_info('cmd so get new status : %s' % "".join(cmd))
-    try:
-      output = self.system(cmd)
-      sacct_worked = True
-      self.log_debug('sacct results>>\n%s<<' % output)
-      #",".join(map(str,NodeSet('81567_[5-6,45-59]')))
-    except:
-      if self.args.debug:
-        self.error('WARNING [get_current_job_status] subprocess with ' + " ".join(cmd),exception=self.args.debug)
-      else:
-        status_error = True
-      output=""
-      sacct_worked = False
-      self.log_info('[get_current_job_status] sacct could not be used')
+      if sacct_worked:
+        for l in output[:-1].split("\n"):
+            task = 'Not yet'
+            try:
+              self.log_debug('l=%s'%l,2)
+              sacct_fields = l.split("|")
+              tasks=NodeSet(sacct_fields[0])
+              status=sacct_fields[5].split(' ')[0]
+              if status in JOB_POSSIBLE_STATES:
+                self.log_debug('tasks=%s' % (tasks),2)
+                for task in tasks:
+                  self.log_debug('status=%s task=%s' % (status,task),2)
+                  if status[-1]=='+':
+                    status  = status[:-1]
+                  task = task.replace('.batch','')
+                  
+                  array_id  =   int(task.split('_')[0])
+                  step = self.ARRAYS[array_id]['step']
+                  task_id = int(task.split('_')[1].split('.')[0])
 
-    if sacct_worked:
-      for l in output[:-1].split("\n"):
-          task = 'Not yet'
-          try:
-            self.log_debug('l=%s'%l,2)
-            sacct_fields = l.split("|")
-            tasks=NodeSet(sacct_fields[0])
-            status=sacct_fields[5].split(' ')[0]
-            if status in JOB_POSSIBLE_STATES:
-              self.log_debug('tasks=%s' % (tasks),1)
-              for task in tasks:
-                self.log_debug('status=%s task=%s' % (status,task),1)
-                if status[-1]=='+':
-                  status  = status[:-1]
-                task = task.replace('.batch','')
-                
-                array_id  =   int(task.split('_')[0])
-                step = self.ARRAYS[array_id]['step']
-                task_id = int(task.split('_')[1].split('.')[0])
-
-                self.log_debug('step=%s job=%s task=%s status=%s   l=>>%s<<' % (step,array_id,task_id,status,task),1)
-                self.TASKS[step][task_id]['status'] = status
-                if status in JOB_DONE_STATES:
-                    self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
-                    self.STEPS[step]['completion'] += 100./self.STEPS[step]['items'] 
-                    
-            else:
-                log_info('unknown status got for tasks %s' % ','.join(tasks))
-          except:
-            if self.args.debug:
-              self.dump_exception('[get_current_job_status] parse job_status with task=%s \n job status : l=%s' % (task,l))
-            else:
-              status_error = True
-            pass
+                  self.log_debug('step=%s job=%s task=%s status=%s   l=>>%s<<' % (step,array_id,task_id,status,task),2)
+                  self.TASKS[step][task_id]['status'] = status
+                  if status in JOB_DONE_STATES:
+                      self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
+                      self.STEPS[step]['completion'] += 100./self.STEPS[step]['items'] 
+                      
+              else:
+                  log_info('unknown status got for tasks %s' % ','.join(tasks))
+            except:
+              if self.args.debug:
+                self.dump_exception('[get_current_job_status] parse job_status with task=%s \n job status : l=%s' % (task,l))
+              else:
+                status_error = True
+              pass
 
 
-    # checking status from Stub files
-    
+      # checking status from Stub files
+      self.save()
 
-    self.log_debug('%s' % self.JOB_STATS)
-    
-    self.save()
-
-    self.log_info("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS))
-    self.log_info("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS))
-    self.log_info("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS))
+    self.log_debug("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS),1)
+    self.log_debug("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
+    self.log_debug("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
     self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS))
 
 

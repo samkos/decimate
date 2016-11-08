@@ -1,4 +1,4 @@
-* 
+* Data structures
 
 
 
@@ -42,3 +42,17 @@
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 
 
+
+
+
+* in order to test
+
+
+decimate  --test=tests/pbx2.txt
+
+with pbx2.txt lists the step to fail. for example
+
+5-mitgcm-1-0
+5-mitgcm-1-1  <- attempt
+^^^^^^^^ ^
+step     task   
