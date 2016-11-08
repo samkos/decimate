@@ -232,7 +232,9 @@ class decimate(engine):
 
     
     try:
-      if not(self.JOBS[str(self.args.jobid)]['comes_before']) and not(self.relaunching):
+      #self.log_info("main loop:end -> JOBS=\n%s " % pprint.pformat(self.JOBS))
+
+      if not(self.JOBS[int(self.args.jobid)]['comes_before']) and not(self.relaunching):
         self.log_info('Normal end of this batch',2)
         self.log_info('=============== workflow is finishing ==============')
         if self.args.mail:

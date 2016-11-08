@@ -6,7 +6,7 @@
 | what     |                                    | key                         | content                                              |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | jobs     | self.JOBS                          | job_id unique               | name                                                 |
-|          | used to manage dependency and jobs |                             | comes_before                                         |
+|          | used to manage dependency and jobs | int                         | comes_before                                         |
 |          |                                    |                             | come_after                                           |
 |          |                                    |                             | make_depend                                          |
 |          |                                    |                             | depends_on                                           |
@@ -26,19 +26,19 @@
 |          |                                    |                             | submit_cmd                                           |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | step     | self.STEPS                         | step name  (unique)         | arrays: list of arrays connected                     |
-|          |                                    |                             | status:SUBMITTED,PENDING,RUNNING,DONE,               |
+|          |                                    | str                         | status:SUBMITTED,PENDING,RUNNING,DONE,               |
 |          |                                    |                             | completion: x %                                      |
 |          |                                    |                             | items: nb of elementary jobs expected in this steps  |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
-| - arrays | self.ARRAYS                        | joo_id                      | step                                                 |
-|          |                                    |                             | range                                                |
+| - arrays | self.ARRAYS                        | job_id                      | step                                                 |
+|          |                                    | str                         | range                                                |
 |          |                                    |                             | range_all                                            |
 |          |                                    |                             | status:WAITING,SUBMITTED,PENDING,RUNNING,DONE,       |
 |          |                                    |                             | completion: x %                                      |
 |          |                                    |                             | items:nb of elementary jobs expected in this steps   |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | -- tasks | self.TASKS                         | [step][array_task] (unique) | status : WAITING,SUBMITTED, or  --STATE FROM SACCT-- |
+|          |                                    |   str                       |                                                      |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 
 
-- self
