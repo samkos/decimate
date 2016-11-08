@@ -28,6 +28,7 @@
 | step     | self.STEPS                         | step name  (unique)         | arrays: list of arrays connected                     |
 |          |                                    | str                         | status:SUBMITTED,PENDING,RUNNING,DONE,               |
 |          |                                    |                             | completion: x %                                      |
+|          |                                    |                             | success:: x %                                        |
 |          |                                    |                             | items: nb of elementary jobs expected in this steps  |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | - arrays | self.ARRAYS                        | job_id                      | step                                                 |
@@ -35,10 +36,12 @@
 |          |                                    |                             | range_all                                            |
 |          |                                    |                             | status:WAITING,SUBMITTED,PENDING,RUNNING,DONE,       |
 |          |                                    |                             | completion: x %                                      |
+|          |                                    |                             | success: x %                                         |
 |          |                                    |                             | items:nb of elementary jobs expected in this steps   |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 | -- tasks | self.TASKS                         | [step][array_task] (unique) | status : WAITING,SUBMITTED, or  --STATE FROM SACCT-- |
-|          |                                    |   str                       |                                                      |
+|          |                                    | str                         | counted : true if already taken into account in      |
+|          |                                    |                             | the completion                                       |
 |----------+------------------------------------+-----------------------------+------------------------------------------------------|
 
 

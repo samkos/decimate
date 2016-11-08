@@ -11,7 +11,7 @@ class decimate_test(decimate):
 
   def __init__(self):
 
-    decimate.__init__(self,app_name='dart_mitgcm', decimate_version_required='0.3',app_version='0.3')
+    decimate.__init__(self,app_name='decimatest', decimate_version_required='0.3',app_version='0.1')
 
 
     

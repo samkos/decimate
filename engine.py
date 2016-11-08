@@ -421,9 +421,9 @@ class engine:
     self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
 
     for step in self.STEPS.keys():
-      if self.STEPS[step]['completion']<1000.:
+      if self.STEPS[step]['completion']<100.:
           for array in self.STEPS[step]['arrays']:
-              if self.ARRAYS[array]['completion']<100000.:
+              if self.ARRAYS[array]['completion']<100.:
                   for task in RangeSet(self.ARRAYS[array]['range']):
                       status = self.TASKS[step][task]
                       self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array),2)
@@ -477,9 +477,13 @@ class engine:
 
                   self.log_debug('step=%s job=%s task=%s status=%s   l=>>%s<<' % (step,array_id,task_id,status,task),2)
                   self.TASKS[step][task_id]['status'] = status
-                  if status in JOB_DONE_STATES:
+                  if status in JOB_DONE_STATES and not(self.TASKS[step][task_id]['counted']):
                       self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
-                      self.STEPS[step]['completion'] += 100./self.STEPS[step]['items'] 
+                      self.STEPS[step]['completion'] += 100./self.STEPS[step]['items']
+                      if status=='COMPLETED':
+                          self.ARRAYS[array_id]['success'] += 100./self.ARRAYS[array_id]['items']
+                          self.STEPS[step]['success'] += 100./self.STEPS[step]['items']
+                      self.TASKS[step][task_id]['counted'] = True
                       
               else:
                   log_info('unknown status got for tasks %s' % ','.join(tasks))

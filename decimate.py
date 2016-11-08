@@ -702,6 +702,13 @@ class decimate(engine):
       self.log_info(" with cmd = %s " % " ".join(cmd),2)
       job_id = "%s" % job['name']
 
+
+    job_script_updated  = open('%s_%s_%s' % (job['script_file'], self.args.attempt,job_id), "w")
+    print job_content_updated
+    job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}','%s'%job_id))
+    job_script_updated.close()
+  
+
     job['job_id'] = job_id
     job['submit_cmd'] = cmd
         
@@ -727,6 +734,7 @@ class decimate(engine):
     self.STEPS[step]['arrays'] = [job_id]
     self.STEPS[step]['status'] = 'SUBMITTED'
     self.STEPS[step]['completion'] = 0
+    self.STEPS[step]['success'] = 0
     self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
 
     self.ARRAYS[job_id] = {}
@@ -735,6 +743,7 @@ class decimate(engine):
     self.ARRAYS[job_id]['range_all'] = array_range
     self.ARRAYS[job_id]['status'] = 'SUBMITTED'
     self.ARRAYS[job_id]['completion'] = 0
+    self.ARRAYS[job_id]['success'] = 0
     self.ARRAYS[job_id]['items'] = float(len(RangeSet(array_range)))
 
 
@@ -742,7 +751,7 @@ class decimate(engine):
     for task in RangeSet(array_range):
         self.TASKS[step][task] = {}
         self.TASKS[step][task]['status'] = 'SUBMITTED'
-
+        self.TASKS[step][task]['counted'] = False
         
 
     self.log_debug("Saving Job Ids...",1)
