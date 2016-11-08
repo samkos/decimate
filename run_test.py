@@ -157,6 +157,13 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
     self.tail_log_file(keep_probing=self.args.no_pending, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
     sys.exit(0)
 
+  #########################################################################
+  # checking job correct completion
+  #########################################################################
+
+  def fake_job(self,step,task,attempt):
+
+    self.log_info('faking step %s task %s attempt %s' % (step,task,attempt))
 
 
   #########################################################################

@@ -605,7 +605,7 @@ class decimate(engine):
       sys.exit(1)
     else:
       self.log_info("faking the step : %s-%s " % (self.args.step,self.TASK_ID),4)
-      self.fake_job()
+      self.fake_job(self.args.step,self.TASK_ID,self.args.attempt)
     
   #########################################################################
   # read the scenario file in order to fake a behavior
