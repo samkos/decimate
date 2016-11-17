@@ -256,18 +256,15 @@ class decimate(engine):
   # print workflow 
   #########################################################################
 
-  def print_workflow(self,job_id=False,up=True,down=True):
+  def print_workflow(self):
 
-    self.log_info('called with j=%s' % job_id,2)
+    self.load()
+    self.get_current_jobs_status()
 
-
-    if up and down:
-      self.load()
-      self.job_current_status = {}
     
-
-          
-      self.get_current_jobs_status()
+    for s in self.STEPS.keys():
+        status = self.STEPS[s]['status']
+        self.log_info('step %s : %s ' % (s,status))
     
     #   print self.JOB_STATUS,'-JS- in decimate'
       
@@ -570,7 +567,7 @@ class decimate(engine):
       if next_job_id:
         job['comes_before'] = job['make_depends'] = next_job_id
         next_job['comes_after'] = job['depends_on'] = job_id_new
-        cmd = 'scontrol update jobid=%s dependency=afterany:%s_*' % (next_job_id,job_id_new)
+        cmd = 'scontrol update jobid=%s dependency=afterany:%s' % (next_job_id,job_id_new)
         self.log_info('update cmd >%s< ' % cmd,3)
         os.system(cmd)
 
@@ -704,7 +701,6 @@ class decimate(engine):
 
 
     job_script_updated  = open('%s_%s_%s' % (job['script_file'], self.args.attempt,job_id), "w")
-    print job_content_updated
     job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}','%s'%job_id))
     job_script_updated.close()
   

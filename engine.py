@@ -415,7 +415,7 @@ class engine:
     # for status in JOB_POSSIBLE_STATES:
     #     self.JOB_STATS[status] = []
 
-    jobs_to_check = list()
+    jobs_to_check = {}
     self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
     self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),2)
     self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
@@ -431,13 +431,13 @@ class engine:
                           self.log_debug ('--> not updating status',2)
                           #self.JOB_STATS[status].append(job_id)
                       else:
-                          jobs_to_check.append('%s' % (array))
+                          jobs_to_check[array] = True
                           continue
 
-    self.log_debug('%d jobs to check:  %s' % (len(jobs_to_check),",".join(jobs_to_check)))
+    self.log_debug('%d jobs to check:  %s' % (len(jobs_to_check),",".join(map(str,jobs_to_check.keys()))))
 
     if len(jobs_to_check)>0:
-      cmd = ";".join(map(lambda x:  'sacct -n -p -j %s' % x, jobs_to_check))
+      cmd = ";".join(map(lambda x:  'sacct -n -p -j %s' % x, jobs_to_check.keys()))
       #cmd = ["sacct","-n","-p","-j",",".join(jobs_to_check)]
       #cmd = " ".join(cmd)
       self.log_debug('cmd to get new status : %s' % "".join(cmd))
@@ -483,7 +483,24 @@ class engine:
                       if status=='COMPLETED':
                           self.ARRAYS[array_id]['success'] += 100./self.ARRAYS[array_id]['items']
                           self.STEPS[step]['success'] += 100./self.STEPS[step]['items']
+
+                      if self.ARRAYS[array_id]['completion'] == 100.:
+                          self.ARRAYS[array_id]['status'] = 'DONE'
+                      else:
+                          self.ARRAYS[array_id]['status'] = 'RUNNING'
+
+                      if  self.STEPS[step]['completion'] == 100.:
+                           self.STEPS[step]['status'] = 'DONE'
+                      else:
+                           self.STEPS[step]['status'] = 'RUNNING'
                       self.TASKS[step][task_id]['counted'] = True
+                  elif status in JOB_RUNNING_STATES:
+                      self.STEPS[step]['status'] = 'RUNNING'
+                      self.ARRAYS[array_id]['status'] = 'RUNNING'
+                  else:
+                      self.STEPS[step]['status'] = 'PENDING'
+                      self.ARRAYS[array_id]['status'] = 'PENDING'
+                                            
                       
               else:
                   log_info('unknown status got for tasks %s' % ','.join(tasks))
