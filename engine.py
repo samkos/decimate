@@ -477,29 +477,30 @@ class engine:
 
                   self.log_debug('step=%s job=%s task=%s status=%s   l=>>%s<<' % (step,array_id,task_id,status,task),2)
                   self.TASKS[step][task_id]['status'] = status
-                  if status in JOB_DONE_STATES and not(self.TASKS[step][task_id]['counted']):
-                      self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
-                      self.STEPS[step]['completion'] += 100./self.STEPS[step]['items']
-                      if status=='COMPLETED':
-                          self.ARRAYS[array_id]['success'] += 100./self.ARRAYS[array_id]['items']
-                          self.STEPS[step]['success'] += 100./self.STEPS[step]['items']
+                  if not(self.TASKS[step][task_id]['counted']):
+                    if status in JOB_DONE_STATES:
+                        self.ARRAYS[array_id]['completion'] += 100./self.ARRAYS[array_id]['items']
+                        self.STEPS[step]['completion'] += 100./self.STEPS[step]['items']
+                        if status=='COMPLETED':
+                            self.ARRAYS[array_id]['success'] += 100./self.ARRAYS[array_id]['items']
+                            self.STEPS[step]['success'] += 100./self.STEPS[step]['items']
 
-                      if self.ARRAYS[array_id]['completion'] == 100.:
-                          self.ARRAYS[array_id]['status'] = 'DONE'
-                      else:
-                          self.ARRAYS[array_id]['status'] = 'RUNNING'
+                        if self.ARRAYS[array_id]['completion'] == 100.:
+                            self.ARRAYS[array_id]['status'] = 'DONE'
+                        else:
+                            self.ARRAYS[array_id]['status'] = 'RUNNING'
 
-                      if  self.STEPS[step]['completion'] == 100.:
-                           self.STEPS[step]['status'] = 'DONE'
-                      else:
-                           self.STEPS[step]['status'] = 'RUNNING'
-                      self.TASKS[step][task_id]['counted'] = True
-                  elif status in JOB_RUNNING_STATES:
-                      self.STEPS[step]['status'] = 'RUNNING'
-                      self.ARRAYS[array_id]['status'] = 'RUNNING'
-                  else:
-                      self.STEPS[step]['status'] = 'PENDING'
-                      self.ARRAYS[array_id]['status'] = 'PENDING'
+                        if  self.STEPS[step]['completion'] == 100.:
+                             self.STEPS[step]['status'] = 'DONE'
+                        else:
+                             self.STEPS[step]['status'] = 'RUNNING'
+                        self.TASKS[step][task_id]['counted'] = True
+                    elif status in JOB_RUNNING_STATES:
+                        self.STEPS[step]['status'] = 'RUNNING'
+                        self.ARRAYS[array_id]['status'] = 'RUNNING'
+                    else:
+                        self.STEPS[step]['status'] = 'PENDING'
+                        self.ARRAYS[array_id]['status'] = 'PENDING'
                                             
                       
               else:
@@ -518,7 +519,7 @@ class engine:
     self.log_debug("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS),1)
     self.log_debug("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
     self.log_debug("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
-    self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS))
+    self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS),1)
 
 
 

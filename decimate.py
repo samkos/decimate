@@ -191,7 +191,7 @@ class decimate(engine):
       sys.exit(0)
 
     if self.args.status:
-      print self.print_workflow()
+      self.print_workflow()
       sys.exit(0)
       
     if self.args.finalize:
@@ -261,10 +261,19 @@ class decimate(engine):
     self.load()
     self.get_current_jobs_status()
 
-    
+    job_id = {}
     for s in self.STEPS.keys():
+        jid = self.STEPS[s]['arrays'][0]
+        job_id[jid] = s
+    jk = job_id.keys()
+    jk.sort()
+
+    for j in jk:
+        s = job_id[j]
         status = self.STEPS[s]['status']
         self.log_info('step %s : %s ' % (s,status))
+
+
     
     #   print self.JOB_STATUS,'-JS- in decimate'
       
