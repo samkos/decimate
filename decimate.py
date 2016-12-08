@@ -145,6 +145,7 @@ class decimate(engine):
     self.parser.add_argument("--workflowid", type=str , default="0", help=argparse.SUPPRESS)
 
     self.parser.add_argument("-y","--yes",  action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("-n","--no",  action="store_true", help=argparse.SUPPRESS)
 
     self.parser.add_argument("--cmd", type=str , help=argparse.SUPPRESS)
     
@@ -689,7 +690,7 @@ class decimate(engine):
 
   def submit_job(self,job):
 
-    print 'in submit JOBS start:',self.JOBS.keys()
+    self.log_debug('in submit JOBS start: %s',','.join(map(str,self.JOBS.keys())))
 
     cmd = [self.SCHED_SUB]
     prolog = []
@@ -717,7 +718,6 @@ class decimate(engine):
     if job['ntasks']:
       prolog = prolog + [self.SCHED_ARR+" "+job['ntasks']]
 
-      
     if job['account'] and not(self.MY_MACHINE=="sam"):  
       prolog = prolog +  ['--account=%s'        % job['account'] ]
       
@@ -819,7 +819,7 @@ class decimate(engine):
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
-    print 'in submit JOBS:',self.JOBS.keys()
+    self.log_debug('in submit JOBS end: %s',','.join(map(str,self.JOBS.keys())))
 
     return (job_id,cmd)
 

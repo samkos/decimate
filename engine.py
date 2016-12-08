@@ -62,7 +62,7 @@ class engine:
     self.LOG_PREFIX=""
     self.LOG_DIR = app_dir_log
    
-    self.WORKSPACE_FILE = "./.%s/SAVE/%s.pickle" % (app_name,'workspace')
+    self.WORKSPACE_FILE = "./.%s/LOGS/%s.pickle" % (app_name,'workspace')
     self.JOB_DIR = os.path.abspath("./.%s/RESULTS" % app_name)
     self.SAVE_DIR = os.path.abspath("./.%s/SAVE" % app_name)
     self.LOG_DIR = os.path.abspath("./.%s/LOGS" % app_name)
@@ -327,17 +327,18 @@ class engine:
     
     #print "saving variables to file "+workspace_file
     workspace_file = self.WORKSPACE_FILE
-    f = open(workspace_file+".new", "wb" )
-    pickle.dump(self.JOB_ID    ,f)
-    pickle.dump(self.JOB_BY_NAME ,f)
-    pickle.dump(self.JOB_STATUS,f)
-    pickle.dump(self.JOB_WORKDIR,f)
-    pickle.dump(self.JOBS,f)
-    pickle.dump(self.STEPS,f)
-    pickle.dump(self.ARRAYS,f)
-    pickle.dump(self.TASKS,f)
-    pickle.dump(self.timing_results,f)
-    f.close()
+    self.pickle_file = open(workspace_file+".new", "wb" )
+    pickle.dump(self.JOB_ID    ,self.pickle_file)
+    pickle.dump(self.JOB_BY_NAME ,self.pickle_file)
+    pickle.dump(self.JOB_STATUS,self.pickle_file)
+    pickle.dump(self.JOB_WORKDIR,self.pickle_file)
+    pickle.dump(self.JOBS,self.pickle_file)
+    pickle.dump(self.STEPS,self.pickle_file)
+    pickle.dump(self.ARRAYS,self.pickle_file)
+    pickle.dump(self.TASKS,self.pickle_file)
+    pickle.dump(self.timing_results,self.pickle_file)
+    self.user_save()
+    self.pickle_file.close()
     if os.path.exists(workspace_file):
       os.rename(workspace_file,workspace_file+".old")
     os.rename(workspace_file+".new",workspace_file)
@@ -373,17 +374,18 @@ class engine:
 
       #print "loading variables from file "+workspace_file
       if os.path.exists(self.WORKSPACE_FILE):
-          f = open( self.WORKSPACE_FILE, "rb" )
-          self.JOB_ID    = pickle.load(f)
-          self.JOB_BY_NAME = pickle.load(f)
-          self.JOB_STATUS = pickle.load(f)
-          self.JOB_WORKDIR = pickle.load(f)
-          self.JOBS = pickle.load(f)
-          self.STEPS = pickle.load(f)
-          self.ARRAYS = pickle.load(f)
-          self.TASKS = pickle.load(f)
-          self.timing_results = pickle.load(f)
-          f.close()
+          self.pickle_file = open( self.WORKSPACE_FILE, "rb" )
+          self.JOB_ID    = pickle.load(self.pickle_file)
+          self.JOB_BY_NAME = pickle.load(self.pickle_file)
+          self.JOB_STATUS = pickle.load(self.pickle_file)
+          self.JOB_WORKDIR = pickle.load(self.pickle_file)
+          self.JOBS = pickle.load(self.pickle_file)
+          self.STEPS = pickle.load(self.pickle_file)
+          self.ARRAYS = pickle.load(self.pickle_file)
+          self.TASKS = pickle.load(self.pickle_file)
+          self.timing_results = pickle.load(self.pickle_file)
+          self.user_load()
+          self.pickle_file.close()
           if self.args.save:
             self.SYSTEM_OUTPUTS[self.args.save] = []
             if not(self.args.go_on) and not(self.already_saved):
@@ -407,6 +409,34 @@ class engine:
         self.error('[load]  problem encountered while loading current workspace\n---->  rerun with -d to have more information',
                           exit=True, exception=True)  #self.args.debug)
 
+  #########################################################################
+  # load_workspace user defined function
+  #########################################################################
+
+  def load_value(self):
+      return pickle.load(self.pickle_file)
+
+  #########################################################################
+  # save_workspace user defined function
+  #########################################################################
+
+  def save_value(self,value):
+      pickle.dump(value,self.pickle_file)
+  
+  #########################################################################
+  # load_workspace user defined function
+  #########################################################################
+
+  def user_load(self):
+      return
+
+  #########################################################################
+  # save_workspace user defined function
+  #########################################################################
+
+  def user_save(self):
+      return
+  
   #########################################################################
   # get status of all jobs ever launched
   #########################################################################
@@ -858,19 +888,20 @@ class engine:
       if not(file_mask) and not(files):
           self.error("in check_for_pattern('%s') on must add at least file_mask or files parameter" %\
                      pattern)
-      
+      self.log_debug('current directory %s ' % (os.getcwd()),2)
       filter_success = 0
       pattern_found = {}
       if file_mask:
           files = glob.glob(file_mask)
+          self.log_debug('filtered from mask %s --> files : [%s] ' % (file_mask,",".join(files)),2)
       else:
           files_to_scan = files
           files = []
           for f in files_to_scan:
               if os.path.isfile(f):
                   files = files + [f]
-                  
-      self.log_debug('files : [%s] ' % ",".join(files),2)
+          self.log_debug('filtered from candidate files [%s] --> files : [%s] ' % (",".join(files_to_scan),",".join(files)),2)
+        
 
       if len(files)==0:
           error = ERROR_FILE_DOES_NOT_EXISTS
@@ -1012,8 +1043,13 @@ class engine:
         self.log_info('%s --> %s (automated user answer)' % (msg,yes))
         return
 
+    if self.args.no:
+        self.log_info('%s --> %s (automated user answer)' % (msg,no))
+        self.log_info("ABORTING: No clear confirmation... giving up!")
+        sys.exit(1)
+
     answers = answers.replace(default,'[%s]' % default)
-    input_var = raw_input(msg + answers + " ")
+    input_var = raw_input('[QUESTION] >>>> '+msg + answers + " ")
 
     self.log_debug('received answer=>%s< default=>%s< no=>%s<' % (input_var,default,no),3)
 
