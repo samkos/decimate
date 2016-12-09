@@ -23,10 +23,10 @@ class decimate_test(decimate):
     self.parser.add_argument("--launch", action="store_true", help='start/continue a simulation')
     self.parser.add_argument("-b", "--begins", type=int, help='run simulation up to this step',default=1)
     self.parser.add_argument("-e", "--ends", type=int, help='run simulation up to this step',default=10)
-    self.parser.add_argument("-a", "--array", type=int, help='size of the array submitted at each step',default=3)
+    self.parser.add_argument("-a", "--array", type=str, help='size of the array submitted at each step',default='1-3')
     self.parser.add_argument("-n", "--ntasks", type=int, help='number of tasks for the jobs',default=1)
     self.parser.add_argument("-t", "--time", type=str, help='ellapse time',default='00:05:00')
-    self.parser.add_argument("--nopending", action="store_true", help='do not keep pending the log', default=False)
+    self.parser.add_argument("-np", "--nopending", action="store_true", help='do not keep pending the log', default=False)
 
 
     # showing some hidden engine options
@@ -102,7 +102,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
         job_name = '%s'  % (step)
         job_script = '%s/%s.job' % (self.SAVE_DIR,job_name)
         
-        array_item = "1-%s" % self.args.array
+        array_item = "%s" % self.args.array
 
         new_job = { 'name' : job_name,
                     'comes_before': None,

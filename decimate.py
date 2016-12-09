@@ -103,6 +103,7 @@ class decimate(engine):
     
     self.parser.add_argument("-l", "--log", action="store_true", help='display and tail current log')
     self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
+    self.parser.add_argument("-k", "--kill", action="store_true", help='kills job of this study')
 
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
@@ -187,6 +188,10 @@ class decimate(engine):
     # Main loop of possible actions
     #
       
+    if self.args.kill:
+      self.kill_jobs()
+      sys.exit(0)
+
     if self.args.log:
       self.tail_log_file(keep_probing=True,no_timestamp=True,stop_tailing=['workflow is finishing','workflow is aborting'])
       sys.exit(0)
@@ -253,6 +258,22 @@ class decimate(engine):
      self.save()
       
 
+     
+  #########################################################################
+  # get job id
+  #########################################################################
+
+  def get_jobids(self):
+
+    job_id = {}
+    for s in self.STEPS.keys():
+        for jid in self.STEPS[s]['arrays']:
+            job_id[jid] = s
+    job_id_keys = job_id.keys()
+    job_id_keys.sort()
+    return (job_id_keys,job_id)
+
+     
   #########################################################################
   # print workflow 
   #########################################################################
@@ -262,17 +283,16 @@ class decimate(engine):
     self.load()
     self.get_current_jobs_status()
 
-    job_id = {}
-    for s in self.STEPS.keys():
-        jid = self.STEPS[s]['arrays'][0]
-        job_id[jid] = s
-    jk = job_id.keys()
-    jk.sort()
+    (jk,job_id) = self.get_jobids()
 
     for j in jk:
         s = job_id[j]
         status = self.STEPS[s]['status']
-        self.log_info('step %s : %s ' % (s,status))
+        comment =""
+        if status in ['DONE','RUNNING']:
+            comment = " COMPLETED: %3d%%  SUCCESS: %3d%%" % \
+                      (self.STEPS[s]['completion'],self.STEPS[s]['success'])
+        self.log_info('step %s: %-8s  %s' % (s,status,comment))
 
 
     
@@ -344,6 +364,45 @@ class decimate(engine):
     #          l = l.replace('< -------- WE are HERE ','< -------- Done ')
     #          l = l + '< -------- WE are HERE '
     # return l
+
+  #########################################################################
+  # kill job
+  #########################################################################
+
+  def kill_jobs(self):
+
+    self.ask("Do you want to kill all jobs related to this current workflow now? ", default='n' )
+    s = 'killing all the dependent jobs...'
+    self.log_info(s)
+    self.send_mail(s)
+
+    self.load()
+    self.get_current_jobs_status()
+
+
+    (jk,job_id) = self.get_jobids()
+
+    jobs_to_kill = []
+    for jid in jk:
+        if self.ARRAYS[jid]['completion']<100.:
+            jobs_to_kill = jobs_to_kill + [jid]
+            
+    self.log_info('%s jobs to kill...' % (len(jobs_to_kill)))
+    for job_id in jobs_to_kill:
+      step = self.ARRAYS[job_id]['step']
+      cmd = ' scancel %s ' % job_id
+      self.ARRAYS[job_id]['status'] = 'ABORTED'
+      self.ARRAYS[job_id]['completed'] = 100.
+      os.system(cmd)
+      self.log_info('killing the job %s (step %s)...' % (job_id,step))
+
+    # self.log_info('Abnormal end of this batch... waiting 15 s for remaining job to be killed')
+    # time.sleep(15)
+    s = '=============== workflow is aborting =============='
+    self.log_info(s)
+    self.send_mail(s)
+    sys.exit(1)
+
 
   #########################################################################
   # finalize the job, putting a stamp somewhere
