@@ -89,8 +89,7 @@ class engine:
     # parse command line to eventually overload some default values
     self.parser = argparse.ArgumentParser(conflict_handler='resolve')
     self.initialize_parser()
-    self.args,self.other_args = self.parser.parse_args(),False
-    #self.args,self.other_args = self.parser.parse_known_args()
+    self.args = self.parser.parse_args()
     
     # initialize logs
     self.initialize_log_files()
@@ -156,8 +155,7 @@ class engine:
     self.parser.add_argument("-x","--exclude-nodes", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("-r","--reservation", type=str , help='SLURM reservation')
     self.parser.add_argument("-p","--partition", type=str , help='SLURM partition')
-
-
+        
 
   #########################################################################
   # main router

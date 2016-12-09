@@ -108,7 +108,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
                     'comes_before': None,
                     'comes_after': dep,
                     'make_depend' : None,
-                    'depends_on' : dep,
+                    'dependency' : dep,
                     'step_before' : step_before,
                     'script' : os.path.abspath("%s" % job_script),
                     'ntasks' : self.args.ntasks,
@@ -117,7 +117,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
                     'output_name' : '%s.out' % step,
                     'error_name' :  '%s.err' % step,
                     'submit_dir' : os.getcwd(),
-                    'array_item' : array_item,
+                    'array' : array_item,
                     'last_task_id' : last_task_id,
                     'last_task_id_before' : last_task_id_before,
                     'attempt' : 0
