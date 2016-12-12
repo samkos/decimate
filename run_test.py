@@ -26,8 +26,6 @@ class decimate_test(decimate):
     self.parser.add_argument("-a", "--array", type=str, help='size of the array submitted at each step',default='1-3')
     self.parser.add_argument("-n", "--ntasks", type=int, help='number of tasks for the jobs',default=1)
     self.parser.add_argument("-t", "--time", type=str, help='ellapse time',default='00:05:00')
-    self.parser.add_argument("-np", "--nopending", action="store_true", help='do not keep pending the log', default=False)
-
 
     # showing some hidden engine options
     self.parser.add_argument("-m", action="count", default=0, \
@@ -134,8 +132,10 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
         f.close()
 
         new_job['script_file'] = job_script+'+'
-        (job_id, cmd) = self.submit_job(new_job)
 
+
+        (job_id, cmd) = self.submit_job(new_job)
+        
         new_job['job_id'] = job_id
         new_job['submit_cmd'] = cmd
         
@@ -154,7 +154,8 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
-    self.tail_log_file(keep_probing=self.args.no_pending, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
+    self.tail_log_file(nb_lines_tailed=1, no_timestamp=True,
+                       stop_tailing=['workflow is finishing','workflow is aborting'])
     sys.exit(0)
 
   #########################################################################

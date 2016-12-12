@@ -97,6 +97,19 @@ class engine:
     # initialize scheduler
     self.initialize_scheduler()
 
+    self.clean()
+    
+    self.already_saved = False
+    self.already_loaded = False
+
+    self.env_init()
+
+  #########################################################################
+  # clean_workspace
+  #########################################################################
+
+  def clean(self):
+      
     # initialize job tracking arrays
     self.STEPS = {}
     self.ARRAYS = {}
@@ -109,14 +122,17 @@ class engine:
     self.TASK_STATUS = {}
     self.timing_results = {}
     self.SYSTEM_OUTPUTS = {}
+    self.steps_list = []
+    self.steps_submitted = []
+    self.steps_to_submit = []
+    self.last_step_submitted = -1
+
+    self.user_clean()
     
     self.LOCK_FILE = "%s/lock" % self.LOG_DIR
     self.STATS_ID_FILE = "%s/stats_ids.pickle" % self.LOG_DIR
 
-    self.already_saved = False
-    self.already_loaded = False
 
-    self.env_init()
     
   def start(self):
 
@@ -155,6 +171,8 @@ class engine:
     self.parser.add_argument("-x","--exclude-nodes", type=str , help=argparse.SUPPRESS)
     self.parser.add_argument("-r","--reservation", type=str , help='SLURM reservation')
     self.parser.add_argument("-p","--partition", type=str , help='SLURM partition')
+    self.parser.add_argument("-np", "--no-pending", action="store_true", help='do not keep pending the log', default=False)
+
         
 
   #########################################################################
@@ -168,12 +186,12 @@ class engine:
     if self.args.debug>0:
         self.log.setLevel(logging.DEBUG)
 
-    if self.args.scratch:
-        self.log_info("restart from scratch")
-        self.log_info("killing previous jobs...")
-        self.kill_workflow()
-        self.log_info("cleaning environment...")
-        self.clean()
+    # if self.args.scratch:
+    #     self.log_info("restart from scratch")
+    #     self.log_info("killing previous jobs...")
+    #     self.kill_workflow()
+    #     self.log_info("cleaning environment...")
+    #     self.clean()
 
 
     if self.args.mail_verbosity>0 and not(self.args.mail):
@@ -334,6 +352,10 @@ class engine:
     pickle.dump(self.STEPS,self.pickle_file)
     pickle.dump(self.ARRAYS,self.pickle_file)
     pickle.dump(self.TASKS,self.pickle_file)
+    pickle.dump(self.steps_list,self.pickle_file)
+    pickle.dump(self.steps_submitted,self.pickle_file)
+    pickle.dump(self.steps_to_submit,self.pickle_file)
+    pickle.dump(self.last_step_submitted,self.pickle_file)
     pickle.dump(self.timing_results,self.pickle_file)
     self.user_save()
     self.pickle_file.close()
@@ -381,6 +403,10 @@ class engine:
           self.STEPS = pickle.load(self.pickle_file)
           self.ARRAYS = pickle.load(self.pickle_file)
           self.TASKS = pickle.load(self.pickle_file)
+          self.steps_list = pickle.load(self.pickle_file)
+          self.steps_submitted = pickle.load(self.pickle_file)
+          self.steps_to_submit = pickle.load(self.pickle_file)
+          self.last_step_submitted = pickle.load(self.pickle_file)
           self.timing_results = pickle.load(self.pickle_file)
           self.user_load()
           self.pickle_file.close()
@@ -407,6 +433,7 @@ class engine:
         self.error('[load]  problem encountered while loading current workspace\n---->  rerun with -d to have more information',
                           exit=True, exception=True)  #self.args.debug)
 
+    
   #########################################################################
   # load_workspace user defined function
   #########################################################################
@@ -421,6 +448,13 @@ class engine:
   def save_value(self,value):
       pickle.dump(value,self.pickle_file)
   
+  #########################################################################
+  # clean_workspace user defined function
+  #########################################################################
+
+  def user_clean(self):
+      return
+
   #########################################################################
   # load_workspace user defined function
   #########################################################################
@@ -446,9 +480,9 @@ class engine:
     #     self.JOB_STATS[status] = []
 
     jobs_to_check = {}
-    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
-    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
-    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),1)
+    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
+    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),2)
+    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
 
     for step in self.STEPS.keys():
       if self.STEPS[step]['completion']<100. and not(self.STEPS[step]['status']=='ABORTED') :
@@ -821,7 +855,11 @@ class engine:
   # tail log file
   #########################################################################
 
-  def tail_log_file(self,filename=None,keep_probing=False,nb_lines_tailed=20,message=True,no_timestamp=False,stop_tailing=False):
+  def tail_log_file(self,filename=None,keep_probing=-999,
+                    nb_lines_tailed=20,message=True,no_timestamp=False,stop_tailing=False):
+
+    if keep_probing == -999:
+        keep_probing = not(self.args.no_pending)
 
     try:
       if filename==None:

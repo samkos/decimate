@@ -104,11 +104,16 @@ class decimate(engine):
     self.parser.add_argument("-l", "--log", action="store_true", help='display and tail current log')
     self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
     self.parser.add_argument("-k", "--kill", action="store_true", help='kills job of this study')
+    self.parser.add_argument("-c", "--cont", action="store_true",
+                             help='continue the already launched workflow in this directory', default=False)
+    self.parser.add_argument("--scratch", action="store_true",
+                             help='relaunch a neww workflow, erasing all trace from the previous one',default=False)
+
 
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
     self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
-    self.parser.add_argument("--no_pending", action="store_true", help=argparse.SUPPRESS, default=False)
+    self.parser.add_argument("-p","--max-jobs", type=int, default=3, help='Maximimum number of total jobs accepted in the queue')
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--test", type=str, help=argparse.SUPPRESS)
@@ -231,8 +236,38 @@ class decimate(engine):
       self.fake_actual_job()
 
     self.load()
-
+    
     if not(self.args.spawned):
+      if len(self.steps_list)>0 and self.args.cont:
+          self.ask("Adding jobs to the current workflow? ", default='y' )
+      if len(self.steps_list)>0 and self.args.scratch:
+          self.ask("Forgetting the previous workflow and starting from scratch? ", default='n' )
+          self.clean()
+          if os.path.exists(self.WORKSPACE_FILE):
+              os.unlink(self.WORKSPACE_FILE)
+
+      elif len(self.steps_list)>0:
+          print """
+                ----------> <      WARNING     > <--------------
+                Some workflow has already been launched from this
+                    directory and may be still running
+
+                   following options : 
+                   --kill     to kill the ongoing workflow 
+                              and keep previous results   
+                   --status   to obtain a detailed status on 
+                              ongoing workflow
+                   --continue to add jobs to the current  
+                              worklfow.
+                   --scratch  to kill an eventual ongoing 
+                              workflow and start a new one
+                              from scratch, deleting any 
+                              tracking information about the
+                              previous workflow
+                Please modify your command
+                ---------->  END OF COMMAND   <-------------
+                """ 
+          sys.exit(0)
       print self.launch_jobs()
       sys.exit(0)
 
@@ -247,18 +282,6 @@ class decimate(engine):
         self.error("ZZZZZZZZ problem in decimate main loop ",exit=False,exception=True)
         pass
           
-      
-  #########################################################################
-  # clean_workspace
-  #########################################################################
-
-  def clean_workspace(self):
-      
-     self.JOBS = {}
-     self.save()
-      
-
-     
   #########################################################################
   # get job id
   #########################################################################
@@ -266,11 +289,12 @@ class decimate(engine):
   def get_jobids(self):
 
     job_id = {}
-    for s in self.STEPS.keys():
+    job_id_keys = []
+    for s in self.steps_list:  #self.STEPS.keys():
         for jid in self.STEPS[s]['arrays']:
             job_id[jid] = s
-    job_id_keys = job_id.keys()
-    job_id_keys.sort()
+            job_id_keys.append(jid)
+    #job_id_keys.sort()
     return (job_id_keys,job_id)
 
      
@@ -802,6 +826,10 @@ class decimate(engine):
 
     step =  '%s-%s' % (job['name'],self.args.attempt)
 
+    self.steps_list = self.steps_list + [step]
+    self.steps_submitted = self.steps_submitted + [step]
+    self.last_step_submitted = step
+
     self.STEPS[step] = {}
     self.STEPS[step]['arrays'] = [job_id]
     self.STEPS[step]['status'] = 'SUBMITTED'
@@ -950,7 +978,7 @@ class decimate(engine):
         self.log_debug("copying file %s into SAVE directory " % f,1)
         os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
 
-      self.clean_workspace()
+      #self.clean_workspace()
 
       epoch_time = int(time.time())
       st = "%s+%s+%s" % (self.APPLICATION_NAME,os.getcwd(),epoch_time)
