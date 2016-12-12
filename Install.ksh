@@ -1,6 +1,11 @@
-ml decimate/sk
+#ml decimate/sk
+#gC
 d -y -b 1 -e 5 --nopending
+ds -d
 ds
+d --kill -y -d
+d -s -d
+
 dss
 
 

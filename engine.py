@@ -171,7 +171,7 @@ class engine:
     if self.args.scratch:
         self.log_info("restart from scratch")
         self.log_info("killing previous jobs...")
-        self.kill_jobs()
+        self.kill_workflow()
         self.log_info("cleaning environment...")
         self.clean()
 
@@ -180,7 +180,7 @@ class engine:
         self.args.mail = getpass.getuser()
         
     if self.args.kill:
-        self.kill_jobs()
+        self.kill_workflow()
         sys.exit(0)
 
     if self.args.create_template:
@@ -446,14 +446,14 @@ class engine:
     #     self.JOB_STATS[status] = []
 
     jobs_to_check = {}
-    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
-    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),2)
-    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
+    self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
+    self.log_debug("get_status:beg -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
+    self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),1)
 
     for step in self.STEPS.keys():
-      if self.STEPS[step]['completion']<100.:
+      if self.STEPS[step]['completion']<100. and not(self.STEPS[step]['status']=='ABORTED') :
           for array in self.STEPS[step]['arrays']:
-              if self.ARRAYS[array]['completion']<100.:
+              if self.ARRAYS[array]['completion']<100. and not(self.ARRAYS[array]['status']=='ABORTED') :
                   for task in RangeSet(self.ARRAYS[array]['range']):
                       status = self.TASKS[step][task]
                       self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array),2)
@@ -546,10 +546,10 @@ class engine:
       # checking status from Stub files
       self.save()
 
-    self.log_debug("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS),1)
-    self.log_debug("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
-    self.log_debug("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
-    self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS),1)
+    self.log_debug("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS),2)
+    self.log_debug("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
+    self.log_debug("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),2)
+    self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
 
 
 

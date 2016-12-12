@@ -189,7 +189,7 @@ class decimate(engine):
     #
       
     if self.args.kill:
-      self.kill_jobs()
+      self.kill_workflow()
       sys.exit(0)
 
     if self.args.log:
@@ -289,7 +289,7 @@ class decimate(engine):
         s = job_id[j]
         status = self.STEPS[s]['status']
         comment =""
-        if status in ['DONE','RUNNING']:
+        if status in ['DONE','RUNNING','ABORTED']:
             comment = " COMPLETED: %3d%%  SUCCESS: %3d%%" % \
                       (self.STEPS[s]['completion'],self.STEPS[s]['success'])
         self.log_info('step %s: %-8s  %s' % (s,status,comment))
@@ -369,7 +369,7 @@ class decimate(engine):
   # kill job
   #########################################################################
 
-  def kill_jobs(self):
+  def kill_workflow(self):
 
     self.ask("Do you want to kill all jobs related to this current workflow now? ", default='n' )
     s = 'killing all the dependent jobs...'
@@ -392,13 +392,20 @@ class decimate(engine):
       step = self.ARRAYS[job_id]['step']
       cmd = ' scancel %s ' % job_id
       self.ARRAYS[job_id]['status'] = 'ABORTED'
-      self.ARRAYS[job_id]['completed'] = 100.
+      self.STEPS[step]['status'] = 'ABORTED'
       os.system(cmd)
       self.log_info('killing the job %s (step %s)...' % (job_id,step))
 
     # self.log_info('Abnormal end of this batch... waiting 15 s for remaining job to be killed')
     # time.sleep(15)
     s = '=============== workflow is aborting =============='
+    self.save()
+
+#    self.log_debug("get_status:end -> JOBS=\n%s " % pprint.pformat(self.JOBS),2)
+    self.log_debug("get_status:end -> STEPS=\n%s " % pprint.pformat(self.STEPS),1)
+    self.log_debug("get_status:end -> ARRAYS=\n%s " % pprint.pformat(self.ARRAYS),1)
+ #   self.log_info("get_status:end -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
+    
     self.log_info(s)
     self.send_mail(s)
     sys.exit(1)
