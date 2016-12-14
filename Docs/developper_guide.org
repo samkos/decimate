@@ -9,7 +9,7 @@
 |          | used to manage dependency and jobs | int                              | comes_before                                         |
 |          |                                    |                                  | come_after                                           |
 |          |                                    |                                  | make_depend                                          |
-|          |                                    |                                  | depends_on                                           |
+|          |                                    |                                  | dependency                                           |
 |          |                                    |                                  | step_before                                          |
 |          |                                    |                                  | script                                               |
 |          |                                    |                                  | ntasks                                               |
