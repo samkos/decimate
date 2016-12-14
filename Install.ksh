@@ -16,3 +16,5 @@ d -y -b 1 -e 3 --nopending --fake
 
 
 d -y -b 1 -e 5  --test=tests/pbx2.txt
+
+d --feed

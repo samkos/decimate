@@ -48,6 +48,7 @@ class decimate(engine):
 
     engine.__init__(self,engine_version_required='0.21',app_name=app_name, app_version=app_version)
 
+    self.FEED_LOCK_FILE = "%s/feed_`lock" % self.LOG_DIR
 
   #########################################################################
   # welcome message
@@ -102,7 +103,7 @@ class decimate(engine):
     
     self.parser.add_argument("-l", "--log", action="store_true", help='display and tail current log')
     self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
-    self.parser.add_argument("-k", "--kill", action="store_true", help='kills job of this study')
+    self.parser.add_argument("-k", "--kill", action="store_true", help='kills job of this workflow')
     self.parser.add_argument("-c", "--cont", action="store_true",
                              help='continue the already launched workflow in this directory', default=True)
     self.parser.add_argument("-sc", "--scratch", action="store_true",
@@ -129,6 +130,7 @@ class decimate(engine):
 
     self.parser.add_argument("-y","--yes",  action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("-n","--no",  action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("--feed", action="store_true", help=argparse.SUPPRESS,default=False)
 
 
     if not(self.user_initialize_parser()=='default'):
@@ -154,11 +156,15 @@ class decimate(engine):
 
   def run(self):
 
-    self.init_jobs()
+    if hasattr(self,'init_jobs'):
+        self.error('recable init_jobs which is now obsolete',exit=True)
 
     self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
     
     self.currently_healing_workflow = False
+
+    if self.args.max_queued_steps<3:
+        self.error("maximumm number of steps in the queue should be at least of 3",exit=True)
 
     # initialization of some parameters appearing in traces
 
@@ -211,6 +217,10 @@ class decimate(engine):
       self.kill_workflow()
       sys.exit(0)
 
+    if self.args.feed:
+      self.feed_workflow()
+      sys.exit(0)
+
     if self.args.log:
       self.tail_log_file(keep_probing=True,no_timestamp=True,stop_tailing=['workflow is finishing','workflow is aborting'])
       sys.exit(0)
@@ -239,8 +249,8 @@ class decimate(engine):
 
     self.load()
 
-    if args.step:
-      self.feed_jobs()
+    if self.args.step:
+      self.feed_workflow()
       if self.args.fake and self.args.step:
           self.fake_actual_job()
 
@@ -654,7 +664,7 @@ class decimate(engine):
     self.log_debug('reading scenario files %s' % self.args.test,2)
 
     if self.args.test and not(os.path.exists(self.args.test)):
-      self.error_report('Scenario Test file %s does not exist!!!' % self.args.test)
+      self.error('Scenario Test file %s does not exist!!!' % self.args.test)
       
     if os.path.exists(self.args.test):
       l = open(self.args.test,"r").readlines()
@@ -757,6 +767,7 @@ class decimate(engine):
     self.STEPS[step]['completion'] = 0
     self.STEPS[step]['success'] = 0
     self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
+    self.STEPS[step]['job'] = job_id
 
     self.ARRAYS[job_id] = {}
     self.ARRAYS[job_id]['step'] = step
@@ -830,8 +841,10 @@ class decimate(engine):
       self.JOBS[job_before]['make_depend']  =  job_id
     job_after = job['make_depend']
     if job_after:
+      self.log_debug('job_after=%s' % pprint.pformat(job_after))
+      self.log_debug('self.JOBS[job_after]=%s' % pprint.pformat(self.JOBS[job_after]))
       self.JOBS[job_after]['comes_after'] =  job_id
-      self.JOBS[job_before]['dependency']  =  job_id
+      self.JOBS[job_after]['dependency']  =  job_id
 
     self.JOBS[job_id] = job
     del self.JOBS[waiting_job_id] 
@@ -848,7 +861,8 @@ class decimate(engine):
     self.STEPS[step]['completion'] = 0
     self.STEPS[step]['success'] = 0
     self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
-
+    self.STEPS[step]['job'] = job_id
+    
     self.ARRAYS[job_id] = {}
     self.ARRAYS[job_id]['step'] = step
     self.ARRAYS[job_id]['range'] = array_range
@@ -956,23 +970,6 @@ class decimate(engine):
     
     return l
     
-  #########################################################################
-  # generation of the jobs to be submitted
-  #########################################################################
-
-  def init_jobs(self):
-
-    pass
-    #self.error_report("init_jobs needs to be valued",exit=True)
-
-  #########################################################################
-  # generation of the jobs to be submitted
-  #########################################################################
-
-  def generate_jobs(self):
-
-    self.error_report("generate_jobs needs to be valued",exit=True)
-
 
   #########################################################################
   # submitting all the first jobs
@@ -1009,13 +1006,41 @@ class decimate(engine):
   # submitting on the fly additional jobs
   #########################################################################
 
-  def feed_add_jobs(self):
+  def feed_workflow(self):
+
+    #
+    lock_file = self.take_lock(self.FEED_LOCK_FILE)
 
     # add new steps
-    if self.TASK_ID==1:
-        self.activate_jobs()
+
+    if self.TASK_ID==1 or not(self.args.spawned):
+        self.log_info('trying to activate jobs')
+        # count how many steps are running
+        self.load()
+        self.get_current_jobs_status()
+
+        nb_steps_running_or_queued = 0
+        steps_waiting = []
+        for s in self.steps_list:
+            status = self.STEPS[s]['status']
+            if status=='WAITING':
+                steps_waiting = steps_waiting + [s]
+            elif not(status in ['DONE','WAITING']):
+                nb_steps_running_or_queued += 1
+
+        if len(steps_waiting)>0:
+            nb_steps_to_add = self.args.max_queued_steps-nb_steps_running_or_queued
+
+            # activate additional steps if under max_running_steps threshold
+            if nb_steps_to_add>0:
+                for i in range(nb_steps_to_add):
+                    step_to_add = steps_waiting.pop(0)
+                    job = self.JOBS[self.STEPS[step_to_add]['job']]
+                    self.log_info('activating step %s ' % step_to_add)
+                    self.activate_job(job)
 
     # add new tasks (> breakit)
+    self.release_lock(lock_file)
     
 if __name__ == "__main__":
     K=decimate()

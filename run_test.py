@@ -124,7 +124,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
 
         (job_id, cmd) = self.submit_job(new_job)
-        (job_id, cmd) = self.activate_job(new_job)
+        #(job_id, cmd) = self.activate_job(new_job)
         
         new_job['job_id'] = job_id
         new_job['submit_cmd'] = cmd
