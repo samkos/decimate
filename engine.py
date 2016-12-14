@@ -126,7 +126,8 @@ class engine:
     self.steps_submitted = []
     self.steps_to_submit = []
     self.last_step_submitted = -1
-
+    self.waiting_job_final_id = {}
+    
     self.user_clean()
     
     self.LOCK_FILE = "%s/lock" % self.LOG_DIR
@@ -359,6 +360,7 @@ class engine:
     pickle.dump(self.steps_to_submit,self.pickle_file)
     pickle.dump(self.last_step_submitted,self.pickle_file)
     pickle.dump(self.timing_results,self.pickle_file)
+    pickle.dump(self.waiting_job_final_id,self.pickle_file)
     self.user_save()
     self.pickle_file.close()
     if os.path.exists(workspace_file):
@@ -410,6 +412,7 @@ class engine:
           self.steps_to_submit = pickle.load(self.pickle_file)
           self.last_step_submitted = pickle.load(self.pickle_file)
           self.timing_results = pickle.load(self.pickle_file)
+          self.waiting_job_final_id = pickle.load(self.pickle_file)
           self.user_load()
           self.pickle_file.close()
           if self.args.save:

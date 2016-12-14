@@ -800,11 +800,25 @@ class decimate(engine):
 
   def activate_job(self,job):
 
+    self.log_debug('self.waiting_job_final_id=%s' % pprint.pformat(self.waiting_job_final_id))
+      
     cmd = job['cmd']
     array_range = job['array_range']
     step = job['step']
     
+    job_content_updated = job['content']
+    job_script_final  = open('%s_%s_final' % (job['script_file'], self.args.attempt), "w")
+    for jid in  self.waiting_job_final_id.keys():
+        new_job_id =  self.waiting_job_final_id[jid]
+        self.log_debug('replace %s by %s' % (jid,new_job_id))
+        job_content_updated = job_content_updated.replace('%s' % jid, '%s' % new_job_id)
+    job_script_final.write(job_content_updated)
+    job_script_final.close()
+
     if not self.args.dry:
+      cmd = 'xxx__xxxx_xxxx'.join(cmd).replace(
+          '%s_%s' % (job['script_file'], self.args.attempt),
+          '%s_%s_final' % (job['script_file'], self.args.attempt)).split('xxx__xxxx_xxxx')
       self.log_debug("submitting : "+" ".join(cmd))
       output = subprocess.check_output(cmd)
       if self.args.pbs:
@@ -824,13 +838,17 @@ class decimate(engine):
       self.log_info(" with cmd = %s " % " ".join(cmd),2)
       job_id = "%s" % job['name']
 
-
-    job_content_updated = job['content']
+    
     job_script_updated  = open('%s_%s_%s' % (job['script_file'], self.args.attempt,job_id), "w")
+    for jid in  self.waiting_job_final_id.keys():
+        new_job_id =  self.waiting_job_final_id[jid]
+        self.log_debug('replace %s by %s' % (jid,new_job_id))
+        job_content_updated = job_content_updated.replace('%s' % jid, '%s' % new_job_id)
     job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}','%s'%job_id))
     job_script_updated.close()
   
-    waiting_job_id = job['job_id']
+    waiting_job_id= job['job_id']
+    self.waiting_job_final_id[waiting_job_id] = job_id
     job['job_id'] = job_id
     job['submit_cmd'] = cmd
         
