@@ -588,27 +588,6 @@ class engine:
     if status_error:
       self.log_info('!WARNING! Error encountered scanning job status, run with --debug to know more')
       
-  #########################################################################
-  # get current job status
-  #########################################################################
-  def job_status(self,id_or_file):
-
-    self.log_debug("[job_status] job_status on %s " % id_or_file)
-    dirname="xxx"
-    if os.path.isfile(id_or_file):
-      dirname = os.path.abspath(os.path.dirname(id_or_file))
-    if os.path.isdir(id_or_file):
-      dirname = os.path.abspath(id_or_file)
-
-    for key in [id_or_file,dirname]:
-      if key in self.JOB_STATUS.keys():
-        status = self.JOB_STATUS[key]
-        self.log_debug("[job_status] job_status on %s --> %s" % (id_or_file,status))
-        return status
-    self.log_debug("[job_status] job_status on %s --> UNKNOWN" % id_or_file)
-    return "NOINFO"
-
-
 
 
       

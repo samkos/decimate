@@ -24,6 +24,8 @@
 |          |                                    |                                  | attempt                                              |
 |          |                                    |                                  | job_id                                               |
 |          |                                    |                                  | submit_cmd                                           |
+|          |                                    |                                  | step                                                 |
+|          |                                    |                                  | cmd                                                  |
 |----------+------------------------------------+----------------------------------+------------------------------------------------------|
 | step     | self.STEPS                         | step name  (unique=name-attempt) | arrays: list of arrays connected                     |
 |          |                                    | str                              | status:SUBMITTED,PENDING,RUNNING,DONE,               |
