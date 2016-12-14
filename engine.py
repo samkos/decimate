@@ -475,9 +475,6 @@ class engine:
   def get_current_jobs_status(self):
 
     status_error = False
-    self.JOB_STATS = {}
-    # for status in JOB_POSSIBLE_STATES:
-    #     self.JOB_STATS[status] = []
 
     jobs_to_check = {}
     self.log_debug("get_status:beg -> STEPS=\n%s " % pprint.pformat(self.STEPS),2)
@@ -485,7 +482,8 @@ class engine:
     self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),2)
 
     for step in self.STEPS.keys():
-      if self.STEPS[step]['completion']<100. and not(self.STEPS[step]['status']=='ABORTED') :
+      if not(self.STEPS[step]['status'] in ['ABORTED','WAITING']) :
+        if self.STEPS[step]['completion']<100.:
           for array in self.STEPS[step]['arrays']:
               if self.ARRAYS[array]['completion']<100. and not(self.ARRAYS[array]['status']=='ABORTED') :
                   for task in RangeSet(self.ARRAYS[array]['range']):
@@ -493,7 +491,6 @@ class engine:
                       self.log_debug('status : /%s/ for step %s  task %s job %s ) ' % (status,step,task,array),2)
                       if status in JOB_DONE_STATES:
                           self.log_debug ('--> not updating status',2)
-                          #self.JOB_STATS[status].append(job_id)
                       else:
                           jobs_to_check[array] = True
                           continue

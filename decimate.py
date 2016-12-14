@@ -113,6 +113,8 @@ class decimate(engine):
     self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
     self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
     self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
+
+    self.parser.add_argument("-q","--max-queued-steps", type=int, help='maximum number of steps to be queued',default=3)
     self.parser.add_argument("-p","--max-jobs", type=int, default=3, help='Maximimum number of total jobs accepted in the queue')
     
     self.parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
@@ -309,6 +311,9 @@ class decimate(engine):
 
     (jk,job_id) = self.get_jobids()
 
+    if len(jk)==0:
+        self.log_info('No workflow has been submitted yet')
+
     for j in jk:
         s = job_id[j]
         status = self.STEPS[s]['status']
@@ -318,76 +323,6 @@ class decimate(engine):
                       (self.STEPS[s]['completion'],self.STEPS[s]['success'])
         self.log_info('step %s: %-8s  %s' % (s,status,comment))
 
-
-    
-    #   print self.JOB_STATUS,'-JS- in decimate'
-      
-    #   for j in self.JOB_STATUS.keys():
-    #       if j.find('.batch')==-1:
-    #         continue
-    #       j = j.replace('.batch','')
-    #       try:
-    #           (job_id,task_id) = j.split('_')
-    #       except:
-    #           print 'pb to analyse ',j
-    #           continue
-    #       job_id = int(job_id)
-    #       task_id = int(task_id)
-    #       status = self.JOB_STATUS[j]
-    #       self.log_info('status of %s : %s' % (j,status))
-    #       if not(job_id  in self.job_current_status.keys()):
-    #           self.job_current_status[job_id] = {}
-    #       if not(status  in self.job_current_status[job_id].keys()):
-    #           self.job_current_status[job_id][status] = '%s' % task_id
-    #       else:
-    #           self.job_current_status[job_id][status] += ',%s' % task_id
-    #   print self.job_current_status,'job_current_status'
-   
-            
-    # keys = self.job_current_status.keys()
-    # print keys,'-- job_current_status keys--'
-    # if up and down:
-    #   job_id = keys[0]
-    # else:
-    #   l='%s' % job_id
-
-      
-    
-    # # if not(job_id in keys):
-    # #   self.log_info('no job %s known yet...' % job_id)
-    # #   return l
-
-    # print self.JOBS.keys(),'=JOBS keys    searching for %s' % job_id
-    # print self.JOB_STATUS,'=JOB_STATUS keys  searching for %s' % job_id
-    # job = self.JOBS[int(job_id)]
-    # job_depends_on_id = job['dependency']
-    # job_make_depends_id = job['make_depend']
-    # self.log_info('examining job %s :      %s > %s > %s ' % (job_id,job_depends_on_id,job_id,job_make_depends_id))
-
-    # s = ''
-    # o = self.job_current_status[job_id]
-    # nb_tasks_done = 0
-    # print o,' - o -'
-    # for k in o.keys():
-    #     s = s + ' %s:%s' % (k,RangeSet(o[k]))
-    #     if k in JOB_DONE_STATES:
-    #         nb_tasks_done += len(o[k].split(','))
-
-    # percent = 100.*nb_tasks_done/float(len(RangeSet(job['array'])))
-    # l = '%s (%s) %s completed at %s %%  (%s/%s)' % (job['name'],job['job_id'],s,percent,nb_tasks_done,job['array'])
-
-    
-    # if up:
-    #   if job_depends_on_id:
-    #       l = "%s\n%s" % (self.print_workflow(job_depends_on_id ,up=True, down=False),l)
-    # if down:
-    #   if job_make_depends_id:
-    #       l = "%s\n%s" % (l,self.print_workflow(job_make_depends_id, down=True, up=False))
-
-    #       if percent == 100:
-    #          l = l.replace('< -------- WE are HERE ','< -------- Done ')
-    #          l = l + '< -------- WE are HERE '
-    # return l
 
   #########################################################################
   # kill job
@@ -779,31 +714,112 @@ class decimate(engine):
     job_script_updated.write(job_content_updated)
     job_script_updated.close()
     
-    if not self.args.dry:
-      self.log_debug("submitting : "+" ".join(cmd))
-      output = subprocess.check_output(cmd)
-      if self.args.pbs:
-        #print output.split("\n")
-        job_id = output.split("\n")[0].split(".")[0]
-        job_id = int(job_id)
-        #print job_id
-      else:
-        for l in output.split("\n"):
-          self.log_debug(l,1)
-          #print l.split(" ")
-          if "Submitted batch job" in l:
-            job_id = int(l.split(" ")[-1])
-      self.log_debug("job submitted : %s depends on %s" % (job_id,job['dependency']),1)
-    else: 
-      self.log_info("should submit job %s" % job['name'],2)
-      self.log_info(" with cmd = %s " % " ".join(cmd),2)
-      job_id = "%s" % job['name']
+    step =  '%s-%s' % (job['name'],self.args.attempt)
+    job['step'] = step
+
+    self.log_debug("submitting cmd: "+" ".join(cmd))
+    job_id = '%s-%s' %  (step,time.strftime('%Y-%b-%d-%H:%M:%S'))
+    self.log_debug("job submitted : %s depends on %s" % (job_id,job['dependency']),1)
 
 
     job_script_updated  = open('%s_%s_%s' % (job['script_file'], self.args.attempt,job_id), "w")
     job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}','%s'%job_id))
     job_script_updated.close()
   
+
+    job['job_id'] = job_id
+    job['submit_cmd'] = cmd
+    job['content'] = job_content_updated
+    
+    job_before = job['comes_after']
+    if job_before:
+      self.JOBS[job_before]['comes_before'] =  job_id
+      self.JOBS[job_before]['make_depend']  =  job_id
+
+    self.JOBS[job_id] = job
+    #self.JOB_ID[job['name']] = job_id
+
+    for i in RangeSet(array_range):
+        self.JOB_STATUS['%s_%s' % (job_id,i)]  = 'WAITING'
+    
+      
+    self.steps_list = self.steps_list + [step]
+    self.steps_submitted = self.steps_submitted + [step]
+    self.last_step_submitted = step
+
+    self.STEPS[step] = {}
+    self.STEPS[step]['arrays'] = [job_id]
+    self.STEPS[step]['status'] = 'WAITING'
+    self.STEPS[step]['completion'] = 0
+    self.STEPS[step]['success'] = 0
+    self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
+
+    self.ARRAYS[job_id] = {}
+    self.ARRAYS[job_id]['step'] = step
+    self.ARRAYS[job_id]['range'] = array_range
+    self.ARRAYS[job_id]['range_all'] = array_range
+    self.ARRAYS[job_id]['status'] = 'WAITING'
+    self.ARRAYS[job_id]['completion'] = 0
+    self.ARRAYS[job_id]['success'] = 0
+    self.ARRAYS[job_id]['items'] = float(len(RangeSet(array_range)))
+
+
+    self.TASKS[step] = {}
+    for task in RangeSet(array_range):
+        self.TASKS[step][task] = {}
+        self.TASKS[step][task]['status'] = 'WAITING'
+        self.TASKS[step][task]['counted'] = False
+        
+
+    self.log_debug("Saving Job Ids...",1)
+    self.save()
+
+      
+    self.log_info('submitting job %s (for %s) --> Job # %s <-depends-on %s' % (job['name'],job['array'],job_id,job['dependency']))
+
+    return (job_id,cmd)
+
+  #########################################################################
+  # activate job taking constraints into account
+  #########################################################################
+
+  def activate_job(self,job):
+    step =  '%s-%s' % (job['name'],self.args.attempt)
+
+    self.steps_list = self.steps_list + [step]
+    self.steps_submitted = self.steps_submitted + [step]
+    self.last_step_submitted = step
+
+    self.STEPS[step] = {}
+    self.STEPS[step]['arrays'] = [job_id]
+    self.STEPS[step]['status'] = 'SUBMITTED'
+    self.STEPS[step]['completion'] = 0
+    self.STEPS[step]['success'] = 0
+    self.STEPS[step]['items'] = float(len(RangeSet(array_range)))
+
+    self.ARRAYS[job_id] = {}
+    self.ARRAYS[job_id]['step'] = step
+    self.ARRAYS[job_id]['range'] = array_range
+    self.ARRAYS[job_id]['range_all'] = array_range
+    self.ARRAYS[job_id]['status'] = 'SUBMITTED'
+    self.ARRAYS[job_id]['completion'] = 0
+    self.ARRAYS[job_id]['success'] = 0
+    self.ARRAYS[job_id]['items'] = float(len(RangeSet(array_range)))
+
+
+    self.TASKS[step] = {}
+    for task in RangeSet(array_range):
+        self.TASKS[step][task] = {}
+        self.TASKS[step][task]['status'] = 'SUBMITTED'
+        self.TASKS[step][task]['counted'] = False
+        
+
+    self.log_debug("Saving Job Ids...",1)
+    self.save()
+
+    self.log_debug('in submit JOBS end: %s',','.join(map(str,self.JOBS.keys())))
+
+    return (job_id,cmd)
 
     job['job_id'] = job_id
     job['submit_cmd'] = cmd
@@ -859,9 +875,8 @@ class decimate(engine):
 
     self.log_debug('in submit JOBS end: %s',','.join(map(str,self.JOBS.keys())))
 
-    return (job_id,cmd)
 
-
+    
   #########################################################################
   # wrapping job to put control over it
   #########################################################################
@@ -977,8 +992,6 @@ class decimate(engine):
       for f in glob.glob("*.py"):
         self.log_debug("copying file %s into SAVE directory " % f,1)
         os.system("cp ./%s  %s" % (f,self.SAVE_DIR))
-
-      #self.clean_workspace()
 
       epoch_time = int(time.time())
       st = "%s+%s+%s" % (self.APPLICATION_NAME,os.getcwd(),epoch_time)
