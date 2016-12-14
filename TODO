@@ -1,3 +1,10 @@
-add statistics gathering  automated -> time per step and task,   node where they ran
+
+get rid of self.CHECK_LAST_TASK_ID  should be able to deduct it from self.JOBS, self.STEPS and self.ARRAYS
+
+add dependency=last          depency to the last submitted job
+
+mieux detecter la fin du workflow pour relancer eventuellement
 
 plunge env.py in engine.py
+
+add statistics gathering  automated -> time per step and task,   node where they ran

@@ -20,23 +20,12 @@ class decimate_test(decimate):
 
 
   def user_initialize_parser(self):
-    self.parser.add_argument("--launch", action="store_true", help='start/continue a simulation')
     self.parser.add_argument("-b", "--begins", type=int, help='run simulation up to this step',default=1)
     self.parser.add_argument("-e", "--ends", type=int, help='run simulation up to this step',default=10)
     self.parser.add_argument("-a", "--array", type=str, help='size of the array submitted at each step',default='1-3')
     self.parser.add_argument("-n", "--ntasks", type=int, help='number of tasks for the jobs',default=1)
     self.parser.add_argument("-t", "--time", type=str, help='ellapse time',default='00:05:00')
 
-    # showing some hidden engine options
-    self.parser.add_argument("-m", action="count", default=0, \
-                             help='if activated sends a mail tracking the progression of the workflow')
-
-    # hidding some engine options
-    self.parser.add_argument("--create-template", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--generate", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("-r","--reservation", type=str , help=argparse.SUPPRESS)
-    self.parser.add_argument("-p","--partition", type=str , help=argparse.SUPPRESS)
-    
   #########################################################################
   # create job files
   #########################################################################
@@ -80,7 +69,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
     #self.log_info('ZZZZZZZZZZZZZ setting max_retry to 1 ZZZZZZZZZZZZ')
     self.load()
 
-    # claning SAVE directory
+    # cleaning SAVE directory
     self.system('rm %s/Done*'% self.SAVE_DIR)
     self.system('rm %s/Complete*'% self.SAVE_DIR)
     self.system('rm %s/*job*'% self.SAVE_DIR)

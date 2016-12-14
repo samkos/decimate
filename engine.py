@@ -148,7 +148,9 @@ class engine:
   def initialize_parser(self):
     self.parser.add_argument("-i","--info",  action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-d","--debug", action="count", default=0, help=argparse.SUPPRESS)
-    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0, help=argparse.SUPPRESS)
+    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
+                             help='if activated sends a mail tracking the progression of the workflow')
+    
 
     # self.parser.add_argument("--kill", action="store_true", help="Killing all processes")
     # self.parser.add_argument("--scratch", action="store_true", help="Restarting the whole process from scratch cleaning everything")

@@ -97,7 +97,6 @@ class decimate(engine):
   # check for tne option on the command line
   #########################################################################
 
-
   def initialize_parser(self):
     engine.initialize_parser(self)
     
@@ -105,13 +104,11 @@ class decimate(engine):
     self.parser.add_argument("-s", "--status", action="store_true", help='list status of jobs and of the whole workflow')
     self.parser.add_argument("-k", "--kill", action="store_true", help='kills job of this study')
     self.parser.add_argument("-c", "--cont", action="store_true",
-                             help='continue the already launched workflow in this directory', default=False)
-    self.parser.add_argument("--scratch", action="store_true",
+                             help='continue the already launched workflow in this directory', default=True)
+    self.parser.add_argument("-sc", "--scratch", action="store_true",
                              help='relaunch a neww workflow, erasing all trace from the previous one',default=False)
 
 
-    self.parser.add_argument("--generate", action="store_true", help='generate the workflow')
-    self.parser.add_argument("--launch", action="store_true", help='launch the workflow')
     self.parser.add_argument("-z","--max-retry", type=int, default=3, help='Number of time a step can fail successively')
 
     self.parser.add_argument("-q","--max-queued-steps", type=int, help='maximum number of steps to be queued',default=3)
@@ -134,19 +131,34 @@ class decimate(engine):
     self.parser.add_argument("-n","--no",  action="store_true", help=argparse.SUPPRESS)
 
 
-    self.user_initialize_parser()
+    if not(self.user_initialize_parser()=='default'):
+            # hidding some engine options
+        self.parser.add_argument("--create-template", action="store_true", help=argparse.SUPPRESS)
+        self.parser.add_argument("-r","--reservation", type=str , help=argparse.SUPPRESS)
+        self.parser.add_argument("-p","--partition", type=str , help=argparse.SUPPRESS)
+
 
     
+  #########################################################################
+  # check for tne option on the command line defined by the user
+  # (stub)
+  #########################################################################
+
   def user_initialize_parser(self):
-      pass
+      return 'default'
     
+  #########################################################################
+  # Main loop:
+  #   large switch leading to all possible action
+  #########################################################################
+
   def run(self):
 
     self.init_jobs()
 
     self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))    
     
-    self.relaunching = False
+    self.currently_healing_workflow = False
 
     # initialization of some parameters appearing in traces
 
@@ -211,19 +223,10 @@ class decimate(engine):
       self.finalize()
       sys.exit(0)
 
-    if self.args.check_previous_step:
-      self.check_current_state(self.CHECK)
-      sys.exit(0)
+    if self.args.check_previous_step: 
+     self.check_current_state(self.CHECK)
+     sys.exit(0)
       
-    if self.args.generate:
-      self.generate_jobs()
-      sys.exit(0)
-      
-    if self.args.launch:
-      self.launch_jobs()
-      sys.exit(0)
-
-
     if self.args.job_status:
       self.get_current_jobs_status()
       sys.exit(0)
@@ -234,10 +237,13 @@ class decimate(engine):
 
     self.send_mail('%s' % s,2)
 
-    if self.args.fake and self.args.step:
-      self.fake_actual_job()
-
     self.load()
+
+    if args.step:
+      self.feed_jobs()
+      if self.args.fake and self.args.step:
+          self.fake_actual_job()
+
     
     if not(self.args.spawned):
       if len(self.steps_list)>0 and self.args.cont:
@@ -272,10 +278,9 @@ class decimate(engine):
           sys.exit(0)
       print self.launch_jobs()
       sys.exit(0)
-
     
     try:
-      if not(self.JOBS[int(self.args.jobid)]['comes_before']) and not(self.relaunching):
+      if not(self.JOBS[int(self.args.jobid)]['comes_before']) and not(self.currently_healing_workflow):
         self.log_info('Normal end of this batch',2)
         self.log_info('=============== workflow is finishing ==============')
         if self.args.mail:
@@ -607,7 +612,7 @@ class decimate(engine):
         self.log_info('update cmd >%s< ' % cmd,3)
         os.system(cmd)
 
-        self.relaunching = True
+        self.currently_healing_workflow = True
         
       self.JOBS[job_previous_id_new] = previous_job
 
@@ -1000,6 +1005,17 @@ class decimate(engine):
   def user_launch_jobs(self):
     self.error_report("launch_jobs needs to be valued",exit=True)
 
+  #########################################################################
+  # submitting on the fly additional jobs
+  #########################################################################
+
+  def feed_add_jobs(self):
+
+    # add new steps
+    if self.TASK_ID==1:
+        self.activate_jobs()
+
+    # add new tasks (> breakit)
     
 if __name__ == "__main__":
     K=decimate()
