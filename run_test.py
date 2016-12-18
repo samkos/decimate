@@ -110,10 +110,6 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
                     'attempt' : 0
         }
 
-        # if self.DEBUG:
-        #   print 'new_job',step
-        #   print new_job
-
         new_job_script_content = self.wrap_job_script(new_job)
 
         f = open("%s+" % job_script,'w')
@@ -124,29 +120,13 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
 
         (job_id, cmd) = self.submit_job(new_job)
-        #(job_id, cmd) = self.activate_job(new_job)
-        
-        new_job['job_id'] = job_id
-        new_job['submit_cmd'] = cmd
-        
-        
-        if dep:
-          self.JOBS[dep]['comes_before']  = job_id
-          self.JOBS[dep]['make_depend'] = job_id
-
-        self.JOBS[job_id] = new_job
         
         dep = job_id
         step_before = job_name
         last_task_id_before = last_task_id
 
 
-    self.log_debug("Saving Job Ids...",1)
-    self.save()
 
-    self.tail_log_file(nb_lines_tailed=1, no_timestamp=True,
-                       stop_tailing=['workflow is finishing','workflow is aborting'])
-    sys.exit(0)
 
   #########################################################################
   # checking job correct completion

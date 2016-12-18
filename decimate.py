@@ -11,7 +11,7 @@ import pprint
 
 from contextlib import contextmanager
 
-DECIMATE_VERSION = '0.3'
+DECIMATE_VERSION = '0.4'
 
 @contextmanager
 def working_directory(directory):
@@ -234,8 +234,9 @@ class decimate(engine):
       sys.exit(0)
 
     if self.args.check_previous_step: 
-     self.check_current_state(self.CHECK)
-     sys.exit(0)
+      self.feed_workflow()
+      self.check_current_state(self.CHECK)
+      sys.exit(0)
       
     if self.args.job_status:
       self.get_current_jobs_status()
@@ -249,10 +250,8 @@ class decimate(engine):
 
     self.load()
 
-    if self.args.step:
-      self.feed_workflow()
-      if self.args.fake and self.args.step:
-          self.fake_actual_job()
+    if self.args.fake and self.args.step:
+        self.fake_actual_job()
 
     
     if not(self.args.spawned):
@@ -462,7 +461,7 @@ class decimate(engine):
         self.heal_workflow(what,not_complete)
       else:
         open(filename_all_ok,"w")
-        print what,self.args.step
+        self.debug('what=%s,step=%s' %  what,self.args.step)
         s = 'ok everything went fine for the step %s! --> Step %s is starting...' % (what,self.args.step)
         self.log_info(s)
         self.send_mail(s.replace('--> ','\n'))
@@ -603,13 +602,13 @@ class decimate(engine):
       self.log_info("previous job file is >>%s<< " % (previous_job_file),2)
 
       self.args.attempt = int(self.args.attempt)+1
-      (job_previous_id_new,cmd_previous_new) = self.submit_job(previous_job)
+      (job_previous_id_new,cmd_previous_new) = self.submit_and_activate_job(previous_job)
       
       job['comes_after'] = job['dependency'] = job_previous_id_new
 
       self.log_debug('new current job created by heal_workflow:'+pprint.pformat(job),3)
       
-      (job_id_new,cmd_new) = self.submit_job(job)
+      (job_id_new,cmd_new) = self.submit_and_activate_job(job)
       job['job_id'] = job_id_new
       job['submit_cmd'] = cmd_new
       self.JOBS[job_id_new] = job
@@ -675,10 +674,19 @@ class decimate(engine):
       
 
   #########################################################################
+  # submitting and activate one job
+  #########################################################################
+
+  def submit_and_activate_job(self,job):
+
+      self.submit_job(job,registration=False)
+      return self.activate_job(job,registration=False)
+
+  #########################################################################
   # submitting one job
   #########################################################################
 
-  def submit_job(self,job):
+  def submit_job(self,job,registration=True):
 
     self.log_debug('in submit JOBS start: %s',','.join(map(str,self.JOBS.keys())))
 
@@ -757,9 +765,10 @@ class decimate(engine):
     self.JOBS[job_id] = job
     #self.JOB_ID[job['name']] = job_id
 
-    self.steps_list = self.steps_list + [step]
-    self.steps_submitted = self.steps_submitted + [step]
-    self.last_step_submitted = step
+    if (registration):
+        self.steps_list = self.steps_list + [step]
+        self.steps_submitted = self.steps_submitted + [step]
+        self.last_step_submitted = step
 
     self.STEPS[step] = {}
     self.STEPS[step]['arrays'] = [job_id]
@@ -798,7 +807,7 @@ class decimate(engine):
   # activate job taking constraints into account
   #########################################################################
 
-  def activate_job(self,job):
+  def activate_job(self,job,registration=True):
 
     self.log_debug('self.waiting_job_final_id=%s' % pprint.pformat(self.waiting_job_final_id))
       
@@ -870,8 +879,9 @@ class decimate(engine):
 
     step =  '%s-%s' % (job['name'],self.args.attempt)
 
-    self.steps_submitted = self.steps_submitted + [step]
-    self.last_step_submitted = step
+    if (registration):
+        self.steps_submitted = self.steps_submitted + [step]
+        self.last_step_submitted = step
 
     self.STEPS[step] = {}
     self.STEPS[step]['arrays'] = [job_id]
@@ -1017,8 +1027,14 @@ class decimate(engine):
       if self.args.mail:
         self.send_mail('Workflow has just been submitted')
 
+      self.feed_workflow()
+
+      self.tail_log_file(nb_lines_tailed=1, no_timestamp=True,
+                       stop_tailing=['workflow is finishing','workflow is aborting'])
+      sys.exit(0)
+      
   def user_launch_jobs(self):
-    self.error_report("launch_jobs needs to be valued",exit=True)
+        self.error_report("launch_jobs needs to be valued",exit=True)
 
   #########################################################################
   # submitting on the fly additional jobs
@@ -1046,6 +1062,8 @@ class decimate(engine):
             elif not(status in ['DONE','WAITING']):
                 nb_steps_running_or_queued += 1
 
+        self.log_info('steps_waiting:%s' % steps_waiting)
+        
         if len(steps_waiting)>0:
             nb_steps_to_add = self.args.max_queued_steps-nb_steps_running_or_queued
 
