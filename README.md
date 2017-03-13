@@ -82,5 +82,8 @@ COPYRIGHT
        OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SEE ALSO
-       decimate non stable version home page: <https://bitbucket.org/kaust_KSL/decimate>
+
+       decimate non stable version home page:
+                <https://bitbucket.org/kaust_KSL/decimate>
+		
        KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>
