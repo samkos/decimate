@@ -1,0 +1,65 @@
+* Data structures
+
+
+
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+| what     |                                    | key                              | content                                               |
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+| jobs     | self.JOBS                          | job_id unique                    | name                                                  |
+|          | used to manage dependency and jobs | int                              | comes_before                                          |
+|          |                                    |                                  | come_after                                            |
+|          |                                    |                                  | make_depend                                           |
+|          |                                    |                                  | dependency                                            |
+|          |                                    |                                  | step_before                                           |
+|          |                                    |                                  | script                                                |
+|          |                                    |                                  | ntasks                                                |
+|          |                                    |                                  | time                                                  |
+|          |                                    |                                  | account                                               |
+|          |                                    |                                  | output_name                                           |
+|          |                                    |                                  | error_name                                            |
+|          |                                    |                                  | submit_dir                                            |
+|          |                                    |                                  | array_item                                            |
+|          |                                    |                                  | last_task_id                                          |
+|          |                                    |                                  | last_task_id_before                                   |
+|          |                                    |                                  | attempt                                               |
+|          |                                    |                                  | job_id                                                |
+|          |                                    |                                  | submit_cmd                                            |
+|          |                                    |                                  | step                                                  |
+|          |                                    |                                  | cmd                                                   |
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+| step     | self.STEPS                         | step name  (unique=name-attempt) | job                                                   |
+|          |                                    | str                              | arrays: list of arrays connected                      |
+|          |                                    |                                  | status:SUBMITTED,PENDING,RUNNING,DONE,ABORTED,WAITING |
+|          |                                    |                                  | completion: x %                                       |
+|          |                                    |                                  | success:: x %                                         |
+|          |                                    |                                  | items: nb of elementary jobs expected in this steps   |
+|          |                                    |                                  | tasks : list of tasks                                 |
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+| - arrays | self.ARRAYS                        | job_id                           | step                                                  |
+|          |                                    | str                              | range                                                 |
+|          |                                    |                                  | range_all                                             |
+|          |                                    |                                  | status:WAITING,SUBMITTED,PENDING,RUNNING,DONE,ABORTED |
+|          |                                    |                                  | completion: x %                                       |
+|          |                                    |                                  | success: x %                                          |
+|          |                                    |                                  | items:nb of elementary jobs expected in this steps    |
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+| -- tasks | self.TASKS                         | [step][array_task] (unique)      | status : WAITING,SUBMITTED, or  --STATE FROM SACCT--  |
+|          |                                    | str                              | counted : true if already taken into account in       |
+|          |                                    |                                  | the completion                                        |
+|----------+------------------------------------+----------------------------------+-------------------------------------------------------|
+
+
+
+
+
+* in order to test
+
+
+decimate  --test=tests/pbx2.txt
+
+with pbx2.txt lists the step to fail. for example
+
+5-mitgcm-1-0
+5-mitgcm-1-1  <- attempt
+^^^^^^^^ ^
+step     task   

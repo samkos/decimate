@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ -a ./run_test.py ]
+then
+   #echo python ./run_test.py $*
+   python ./run_test.py $*
+else
+   python $DECIMATE_PATH/run_test.py $*
+fi
