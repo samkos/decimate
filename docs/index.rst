@@ -27,3 +27,6 @@ Information about development is also available:
 
    install
 
+
+      Theme <https://sphinx-rtd-theme.readthedocs.io/en/latest/>
+
