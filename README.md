@@ -2,6 +2,7 @@ NAME
        decimate - a fault-tolerant SLURM scheduler extension
 
 SYNOPSIS
+
        dbatch [Slurm options] [ --check <user_script> ]
                               [ --max-retry=<number of restart> ]
                               script [args...]
@@ -11,6 +12,9 @@ DESCRIPTION
        Developped by the KAUST Supercomputing Laboratory (KSL),
        decimate is a SLURM extension written in python designed to handle
        dependent jobs more easely and efficiently.
+
+       Decimate transparently adds to SLURM commands to check the
+       correctness of jobs and automitically reshedules jobs found faulty.
 
        Using Decimate on Shaheen II, one can submit, run, monitor or
        terminate a workflow composed of dependent jobs. If asked,
@@ -42,10 +46,6 @@ DESCRIPTION
        executing.
 
 USE
-
-       Decimate transparently adds to SLURM commands to check the
-       correctness of jobs and automitically reshedules jobs found faulty.
-
        At this moment, jobs only need to be submitted through the
            dbatch
        command that accepts exactely the same parameters as the
