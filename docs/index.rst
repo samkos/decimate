@@ -9,7 +9,11 @@ Welcome to Decimate's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
+   What is Decimate?
+   Submitting a workflow
+   Monitoring
+   Canceling
+   Implementation
 
 
 Indices and tables

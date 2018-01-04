@@ -5,9 +5,10 @@ Decimate \- a fault-tolerant scheduler SLURM extension
 .
 .SH SYNOPSIS
 .IX Header "SYNOPSIS"
-dbatch  [ any SLURM options ] [ \fB\-\-check <user_script>\fR ]
-                                [ \fB\-\-max-retry=<number of restart>\fR ]
-                                script [args...]
+dbatch  [ any SLURM options ]
+        [ \fB\-\-check <user_script>\fR ]
+        [ \fB\-\-max-retry=<number of restart>\fR ]
+        script [args...]
 .
 .
 .SH DESCRIPTION
@@ -53,29 +54,27 @@ workflow is executing.
 .PP
 
 
-At this moment, jobs only need to be submitted through the
-    \fBdbatch\fR
-command that accepts exactely the same parameters as the
+At this moment, jobs only need to be submitted as
+.PP
+.BI "   dbatch [ SLURM options ]  \-\-check=\fISCRIPT_FILE\fR \-\-max-retry=\fIMAX_RETRY\fR"
+.PP
+\fBdbatch\fR accepts the same parameters as the
 original SLURM sbatch command plus the new parameters
-
-         --check=SCRIPT_FILE
-		               where SCRIPT_FILE  is a python
-		               or shell script
-			       to check if results are ok.
-
-          --max-retry=MAX_RETRY
-		               number of time a step can fail and be
-                        restarted automatically before failing the 
-                        whole workflow  (3 per default)
-
+.PP
+\fB--array--check\fR=\fISCRIPT_FILE\fR points to a python or shell script to
+check if results are ok. This script is systematically called at the
+end of each job of the workflow.
+.PP
+\fB--max-retry\fR=\fIMAX_RETRY\fR sets the number of times a step can fail
+and be restarted automatically before failing the whole workflow (3 per default)
+.PP
 \fBsslog\fR tails out the decimate logging file attached to the
 current directory, tracking all the jobs that were launched
 with dbatch from this directory.
-
-\FBsstatus\fR gives the current status of the workflow excecuting
+.PP
+\fBsstatus\fR gives the current status of the workflow excecuting
 in the current directory.
-       
-
+.PP  
 \fBDecimate\fR is still in a beta phase and under test with some of our KSL
 users. More documentations will be provided once the stabilized and fully tested
 version will be made available.
