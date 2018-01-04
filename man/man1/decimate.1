@@ -1,35 +1,39 @@
-.TH decimate 1  "February 20, 2017" "version 0.4" "USER COMMANDS"
+.TH decimate 1  "January, 2018" "version 0.5" "USER COMMANDS"
 .SH NAME
-decimate \- a fault-tolerant scheduler extension
+Decimate \- a fault-tolerant scheduler SLURM extension
 .
 .
 .SH SYNOPSIS
 .IX Header "SYNOPSIS"
-decimate [\fB\-\-kill\fR | \fB\-\-status\fR | \fB\-\-generate\fR | \fB\-\-launch\fR ]	
-.
+dbatch  [ any SLURM options ] [ \fB\-\-check <user_script>\fR ]
+                                [ \fB\-\-max-retry=<number of restart>\fR ]
+                                script [args...]
 .
 .
 .SH DESCRIPTION
 
 Developped by the KAUST Supercomputing Laboratory (KSL),
-\FBdecimate\FR is a
+\fBDecimate\fR is a
 framework written in python designed to handle dependent jobs more
 easely and efficiently.
 
-Using \fBdecimate\fR on Shaheen II, one can submit, run, monitor or
+\fBDecimate\fR transparently adds to SLURM commands to check the
+correctness of jobs and automitically reshedules jobs found faulty.
+
+Using \fBDecimate\fR on Shaheen II, one can submit, run, monitor or
 terminate a workflow composed of dependent jobs. If asked, thanks to
 standardized or customized messages, the user will be informed by mail
 of the progress of its workflow on the system.
 
-In case of failure of one part of tne workflow, \fBdecimate\fR automatically
+In case of failure of one part of tne workflow, \fBDecimate\fR automatically
 detects the failure, signals it to the user and launches the
 misbehaving part after having fixed the job dependency. By default if
-the same failure happens three consecutive times, \fBdecimate\fR cancels the
+the same failure happens three consecutive times, \fBDecimate\fR cancels the
 whole workfow removing all the depending jobs from the scheduling. In
-a next version, \fBdecimate\fR will allow the automatic restarting of the
+a next version, \fBDecimate\fR will allow the automatic restarting of the
 workflow once the problem causing its failure has been cured.
 
-\FBdecimate\FR also allows the user to define his own mail alerts that can
+\FBDecimate\FR also allows the user to define his own mail alerts that can
 be sent at any point of the workflow through a call to a python
 method. This feature will also be available from bash in a next
 version.
@@ -39,7 +43,7 @@ user. Their purpose is to validate if a step of the workflow was
 succesful or not. It could involved checking for the presence of some
 result files, grepping some error or success messages in them,
 computing ratio or checksum... These intermediate results can be
-easely transmitted to \fBdecimate\fR validating or not the correctness of
+easely transmitted to \fBDecimate\fR validating or not the correctness of
 any step. They can also be forwarded by mail to the user where as the
 workflow is executing.
 
@@ -48,12 +52,36 @@ workflow is executing.
 .SH USE
 .PP
 
+
+At this moment, jobs only need to be submitted through the
+    \fBdbatch\fR
+command that accepts exactely the same parameters as the
+original SLURM sbatch command plus the new parameters
+
+         --check=SCRIPT_FILE
+		               where SCRIPT_FILE  is a python
+		               or shell script
+			       to check if results are ok.
+
+          --max-retry=MAX_RETRY
+		               number of time a step can fail and be
+                        restarted automatically before failing the 
+                        whole workflow  (3 per default)
+
+\fBsslog\fR tails out the decimate logging file attached to the
+current directory, tracking all the jobs that were launched
+with dbatch from this directory.
+
+\FBsstatus\fR gives the current status of the workflow excecuting
+in the current directory.
+       
+
 \fBDecimate\fR is still in a beta phase and under test with some of our KSL
 users. More documentations will be provided once the stabilized and fully tested
 version will be made available.
 
 
-If interested in testing \fBdecimate\fR or contributing, please send a
+If interested in testing \fBDecimate\fR or contributing, please send a
 mail to help@hpc.kaust.edu.sa
 
 
@@ -61,13 +89,13 @@ mail to help@hpc.kaust.edu.sa
 .SH AUTHOR
 Written by Samuel Kortas (samuel.kortas (at) kaust.edu.sa)
 .SH "REPORTING BUGS"
-Report decimate bugs to help@hpc.kaust.edu.sa
+Report Decimate bugs to help@hpc.kaust.edu.sa
 .br
-decimate home page: <https://bitbucket.org/kaust_KSL/decimate>
+Decimate home page: <https://bitbucket.org/kaust_KSL/decimate>
 .br
 KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>
 .SH COPYRIGHT
-Copyright \(co 2016 KAUST Supercomputing Laboratory
+Copyright \(co 2018 KAUST Supercomputing Laboratory
 License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 .br
 This is free software: you are free to change and redistribute it.
@@ -79,4 +107,4 @@ multiple jobs on the Cray XC40 supercomputer Shaheen II' held at KAUST
 On Sunday June 5th 2016. The workshop slides can be freely downloaded from
 <https://www.hpc.kaust.edu.sa/sites/default/files/files/public/many_jobs.pdf>
 .PP
-ktf(1) breakit(1)
+ktf(1) breakit(1) distar(1)

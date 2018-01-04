@@ -47,6 +47,7 @@ DESCRIPTION
        executing.
 
 USE
+
        At this moment, jobs only need to be submitted through the
            dbatch
        command that accepts exactely the same parameters as the
