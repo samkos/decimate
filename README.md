@@ -77,9 +77,11 @@ USE
        a mail to help@hpc.kaust.edu.sa
 
 AUTHOR
+
        Written by Samuel Kortas (samuel.kortas (at) kaust.edu.sa)
 
 REPORTING BUGS
+
        Report decimate bugs to help@hpc.kaust.edu.sa
 
 
