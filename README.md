@@ -1,16 +1,18 @@
 NAME
-       decimate - a fault-tolerant scheduler extension
+       decimate - a fault-tolerant SLURM scheduler extension
 
 SYNOPSIS
-       decimate [--kill | --status | --generate | --launch ]
+       dbatch [Slurm options] [ --check <user_script> ]
+                              [ --max-retry=<number of restart> ]
+                              script [args...]
 
 DESCRIPTION
 
        Developped by the KAUST Supercomputing Laboratory (KSL),
-       decimate is a framework written in python designed to handle
+       decimate is a SLURM extension written in python designed to handle
        dependent jobs more easely and efficiently.
 
-       Using decimate on Shaheen II, one can submit, run, monitor or
+       Using Decimate on Shaheen II, one can submit, run, monitor or
        terminate a workflow composed of dependent jobs. If asked,
        thanks to standardized or customized messages, the user will be
        informed by mail of the progress of its workflow on the system.
@@ -41,10 +43,35 @@ DESCRIPTION
 
 USE
 
+       Decimate transparently adds to SLURM commands to check the
+       correctness of jobs and automitically reshedules jobs found faulty.
+
+       At this moment, jobs only need to be submitted through the
+           dbatch
+       command that accepts exactely the same parameters as the
+       original SLURM sbatch command plus the new parameters
+       
+                --check=SCRIPT_FILE
+		               where SCRIPT_FILE  is a python
+		               or shell script
+			       to check if results are ok.
+
+                 --max-retry=MAX_RETRY
+		               number of time a step can fail and be
+                               restarted automatically before failing the 
+                               whole workflow  (3 per default)
+
+       sslog tails out the decimate logging file attached to the
+       current directory, tracking all the jobs that were launched
+       with dbatch from this directory.
+
+       sstatus gives the current status of the workflow excecuting
+       in the current directory.
+       
        Decimate is still in a beta phase and under test with some of
        our KSL users. More documentations will be provided once the
        stabilized and fully tested version is made available by the
-       end of June 2017.
+       end of June 2018.
 
        If interested in testing decimate or contributing, please send
        a mail to help@hpc.kaust.edu.sa

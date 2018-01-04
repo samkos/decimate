@@ -1,0 +1,7 @@
+CC     = cc
+
+all:
+	$(CC) -g -o yalla.exe yalla.c 
+	@echo "compilation YALLA OK"
+	$(CC) -DDEBUG  -o yalladebug.exe yalla.c 
+	@echo "compilation YALLA_DEBUG OK"

@@ -1,0 +1,66 @@
+mkdir -p __save_dir__/YALLA/HOSTS/
+
+
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __save_dir__/YALLA/machines.txt
+split -n __PARALLEL_RUNS__ -d -a 4  __save_dir__/YALLA/machines.txt  __save_dir__/YALLA/HOSTS/mach
+cd __save_dir__/YALLA/HOSTS
+sort -u ../machines.txt > b
+for f in mach*; do
+    sort -u $f > a
+    grep -Fxvf a b > ex_$f
+done
+
+mkdir -p __save_dir__/YALLA/bin
+echo echo wrapping srun : actually running `which srun`  -N __NB_NODES_PER_PARALLEL_RUNS__ ' -x $HOSTS_EXCLUDED $* ' > __save_dir__/YALLA/bin/srun
+echo `which srun` -N __NB_NODES_PER_PARALLEL_RUNS__ ' -x $HOSTS_EXCLUDED $* ' >> __save_dir__/YALLA/bin/srun
+chmod +x __save_dir__/YALLA/bin/srun
+
+
+export YALLA_JOB_OUTPUT=__job_submit_dir__/__job_name__.___job_array__.yalla.out
+export YALLA_JOB_ERROR=__job_submit_dir__/__job_name__.___job_array__.yalla.err
+
+
+date  >   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
+echo starts of execution on  __PARALLEL_RUNS__ workers with __NB_NODES_PER_PARALLEL_RUNS__ nodes each! >>   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
+
+
+# building command to be run by yalla...
+
+cat > __save_dir__/YALLA/__job_name__.___job_array__.cmd <<EOF
+export nb_task=\$1
+task=\`cut -d ' ' -f\$nb_task __save_dir__/YALLA/__job_name__.___job_array__.tasks \`
+export worker_rank=\$((\$2-1))
+formatted_worker_rank=\$(printf "%04d" \$worker_rank) 
+export HOSTS_EXCLUDED=__save_dir__/YALLA/HOSTS/ex_mach\${formatted_worker_rank}
+export SLURM_ARRAY_JOB_ID=$SLURM_JOB_ID 
+export SLURM_ARRAY_TASK_ID=\$task 
+formatted_task=\$(printf "%04d" \$task)
+export PATH=__save_dir__/YALLA/bin:\$PATH
+cd __job_submit_dir__
+. ./__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+EOF
+chmod +x __save_dir__/YALLA/__job_name__.___job_array__.cmd
+
+echo __ARRAY_UNFOLD__ > __save_dir__/YALLA/__job_name__.___job_array__.tasks
+
+# computing nodes that will wait work to do
+
+# head -1 __RESULTS_PATH__/LOGS/HOSTS/mach* -q > __RESULTS_PATH__/LOGS/machines_head.txt
+
+
+cd __job_submit_dir__
+
+sleep 2s
+echo running srun -n  __PARALLEL_RUNS__   __save_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
+##srun hostname >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+nb_runs=$((__PARALLEL_RUNS__+1))
+nb_nodes_runs=$((nb_runs/32+1))
+srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __save_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+
+echo >>   $YALLA_JOB_OUTPUT   
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
+echo ends of execution on  __PARALLEL_RUNS__ workers __NB_NODES_PER_PARALLEL_RUNS__ nodes each! >>   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
+date >>   $YALLA_JOB_OUTPUT  

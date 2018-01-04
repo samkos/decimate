@@ -1,0 +1,53 @@
+#!/bin/sh
+#SBATCH -o __RESULTS_PATH__/LOGS/job.out
+#SBATCH -e __RESULTS_PATH__/LOGS/job.err
+#SBATCH --ntasks=__NB_PROCS__             # total number of tasks
+#SBATCH --ntasks-per-node=__PPN__
+#SBATCH -p __QUEUE__     # queue (partition) -- normal, development, etc.
+#SBATCH -t __CPUTIME__        # run time (hh:mm:ss) - 1.5 hours
+#####SBATCH -A __ACCOUNT__
+
+
+module load dart_mitgcm/.maestro
+
+export PYTHONPATH=__PYTHONPATH__
+
+touch  __AVANTI_OUTPUT__
+touch  __AVANTI_ERR__
+date >>  __AVANTI_OUTPUT__
+NPP=`wc -l $LOADL_HOSTFILE | awk '{print $1}' `
+
+date >  __AVANTI_OUTPUT__
+NPP=__NB_PROCS__
+echo ----------------------------------------------------- >>  __AVANTI_OUTPUT__
+echo execution sur $NPP cores! >>  __AVANTI_OUTPUT__
+
+
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __RESULTS_PATH__/LOGS/machines.txt
+mkdir __RESULTS_PATH__/LOGS/HOSTS/
+split -l __PARALLEL_RUNS__ -d -a 3  __RESULTS_PATH__/LOGS/machines.txt  __RESULTS_PATH__/LOGS/HOSTS/mach
+cd __RESULTS_PATH__/LOGS/HOSTS
+sort -u ../machines.txt > b
+for f in mach*; do
+    sort -u $f > a
+    grep -Fxvf a b > ex_$f
+done
+
+mkdir -p __RESULTS_PATH__/LOGS/bin
+echo `which srun` -N __NB_NODES_PER_PARALLEL_RUNS__ ' -x $PROG_RUNNING_DIR/ex_hostfile.mpi $* ' > __RESULTS_PATH__/LOGS/bin/srun
+chmod +x __RESULTS_PATH__/LOGS/bin/srun
+
+cd -
+
+head -1 __RESULTS_PATH__/LOGS/HOSTS/mach* -q > __RESULTS_PATH__/LOGS/machines_head.txt
+NPPH=$((__NB_PROCS__/__PARALLEL_RUNS__))
+
+__SPAWN_LOGGER__ 
+sleep 2s
+srun -n  $NPPH   __AVANTI_PATH__/avanti__DEBUG__.exe "__COMMANDE__" __NB_JOBS__ >> __AVANTI_DETAIL_OUTPUT__ 2>> __AVANTI_ERR__
+
+
+
+echo fin de l''execution sur $NPP cores! >>  __AVANTI_OUTPUT__
+echo ----------------------------------------------------- >>  __AVANTI_OUTPUT__
+date >>  __AVANTI_OUTPUT__

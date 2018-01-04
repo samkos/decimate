@@ -1,0 +1,11 @@
+CC     =  /usr/bin/mpicc
+
+all : yalla.exe yalladebug.exe
+
+yalla.exe : yalla.c
+	$(CC) -g -o yalla.exe yalla.c 
+	@echo "compilation YALLA OK"
+
+yalladebug.exe : yalla.c
+	$(CC) -DDEBUG -g -o yalladebug.exe yalla.c 
+	@echo "compilation YALLA_DEBUG OK"

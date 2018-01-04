@@ -1,0 +1,43 @@
+#%Module
+
+module-whatis "decimate"
+
+proc ModulesHelp { } {
+    puts stderr "
+experimental decimate SLURM extension.  try
+    dbatch --help
+or 
+    man decimate
+to know more"
+}
+
+set prefix __INSTALL_PATH__
+set DECIMATE_PATH $prefix
+
+setenv DART_MITGCM_PATH $prefix
+setenv DECIMATE_PATH $prefix
+
+set-alias d   "decimate"
+set-alias dl  "decimate  -l"
+set-alias ds  "decimate  -s "
+set-alias dsl "decimate  -sl"
+set-alias dsa "decimate  -sl"
+set-alias de  "decimate --explore "
+
+
+set-alias se        "dbatch --decimate --explore "
+set-alias sb        "dbatch"
+set-alias sl        "dbatch --decimate -l"
+set-alias slog      "dbatch --decimate -l"
+set-alias ss        "dbatch --decimate -s"
+set-alias sstatus   "dbatch --decimate -s"
+set-alias ssa       "dbatch --decimate -sa"
+set-alias ssl       "dbatch --decimate -sl"
+
+prepend-path PYTHONPATH $DECIMATE_PATH
+prepend-path PATH $prefix/bin
+prepend-path LD_LIBRARY_PATH $DECIMATE_PATH:$DECIMATE_PATH/lib
+prepend-path PATH $prefix
+prepend-path MANPATH $DECIMATE_PATH/man
+
+

@@ -1,223 +1,194 @@
-#!/sw/xc40/python/2.7.11/sles11.3_gnu5.1.0/bin/python
+7#!/sw/xc40/python/2.7.11/sles11.3_gnu5.1.0/bin/python
 
-# 
-# --- decimate (version 0.4) --
-# Samuel KORTAS, KAUST Supercomputing Laboraory
-
-# samuel.kortas@kaust.edu.sa
-
-# Supercomputing Laboratory
-# Core Labs Division
-# King Abdullah University of Science and Technology
-# Copyright (c) 2017, 
-# All rights reserved.
-
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
-
+import argparse
 from decimate import *
-import datetime,time
-
-  
-import glob
-import traceback
 import pprint
 
+DEBUG = False
+
+cmd_line = (" ".join(sys.argv)).split("--decimate")
+cmd_line = (" ".join(sys.argv))
+
+if 'DPARAM' in os.environ.keys():
+  cmd_line = clean_line(os.environ['DPARAM']) + " " + cmd_line
+
+if len(cmd_line) >= 2:
+  if cmd_line.find(" API ") > -1 or cmd_line.find("API,") > -1\
+     or cmd_line.find(",API") > -1:
+    DEBUG = True
 
 
-
-
-
-
-
-class decimate_test(decimate):
+class slurm_frontend(decimate):
 
   def __init__(self):
 
-    decimate.__init__(self,app_name='decimatest', decimate_version_required='0.3',app_version='0.1')
-
-
-    
+    decimate.__init__(self,app_name='decimate', decimate_version_required='0.5',
+                      app_version='0.1',extra_args=True)
 
   #########################################################################
+  def user_filtered_args(self):
 
+    self.job_script = None
+    index = 1
+    args = []
+    decimate_args = []
+    is_decimate = False
+    is_job_parameter = False
+    self.job_parameter = []
+    
+    for f in sys.argv[1:]:
+      if os.path.exists(f) and not is_decimate:
+        self.job_script = f
+        is_job_parameter = True
+        continue
+      if f == "--decimate":
+        is_decimate = True
+        continue
+      if is_decimate:
+        decimate_args = decimate_args + [f]
+      elif is_job_parameter:
+        self.job_parameter = self.job_parameter + [f]
+      else:
+        args = args + [f]
+      index = index + 1
+
+    self.create_slurm_parser(DEBUG)
+    self.slurm_args = self.slurm_parser.parse_args(args)
+
+    if DEBUG:
+      print('command line slurm_args: %s' % pprint.pformat(self.slurm_args))
+
+    if (self.slurm_args.help):
+      print(HELP_MESSAGE)
+      sys.exit(1)
+
+    decimate_extra_config = []
+    if 'DPARAM' in os.environ.keys():
+      decimate_extra_config = clean_line(os.environ['DPARAM']).split(" ")
+
+    if (self.slurm_args.decimate_help or decimate_extra_config == ["-h"]):
+      return ['-h']
+
+    if not(self.job_script) and len(decimate_args) == 0:
+      self.error('job script missing...', exit=True)
+
+    if self.slurm_args.yalla:
+      decimate_extra_config = decimate_extra_config + ['--yalla']
+
+    if self.slurm_args.filter:
+      decimate_extra_config = decimate_extra_config + ['--filter',self.slurm_args.filter]
+
+    if self.slurm_args.max_retry:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--max-retry', "%s" % self.slurm_args.max_retry]
+
+    if self.slurm_args.yalla_parallel_runs:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
+
+    if self.slurm_args.use_burst_buffer_size:
+      decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
+
+    if DEBUG:
+      print('job_file=/%s/\nargs=/%s/\nparams=/%s/\ndecimate_args=/%s/' % \
+            (self.job_script,args,self.job_parameter,decimate_extra_config + decimate_args))
+
+    return decimate_extra_config + decimate_args
+
+  #########################################################################
 
   def user_initialize_parser(self):
-    self.parser.add_argument("--launch", action="store_true", help='start/continue a simulation')
-    self.parser.add_argument("-b", "--begins", type=int, help='run simulation up to this step',default=1)
-    self.parser.add_argument("-e", "--ends", type=int, help='run simulation up to this step',default=10)
-    self.parser.add_argument("-a", "--array", type=int, help='size of the array submitted at each step',default=3)
-    self.parser.add_argument("-n", "--ntasks", type=int, help='number of tasks for the jobs',default=1)
-    self.parser.add_argument("-t", "--time", type=str, help='ellapse time',default='00:05:00')
-    self.parser.add_argument("--nopending", action="store_true", help='do not keep pending the log', default=False)
+
+    self.parser.add_argument("-e", "--ends", type=int,
+                             help=argparse.SUPPRESS,default=-1)
+    self.parser.add_argument("--banner", action="store_true",
+                             help=argparse.SUPPRESS, default=False)
+    self.parser.add_argument("-np", "--no-pending", action="store_true",
+
+                             help='do not keep pending the log', default=True)
 
 
-    # showing some hidden engine options
-    self.parser.add_argument("-m", action="count", default=0, \
-                             help='if activated sends a mail tracking the progression of the workflow')
-
-    # hidding some engine options
-    self.parser.add_argument("--create-template", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--generate", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("-r","--reservation", type=str , help=argparse.SUPPRESS)
-    self.parser.add_argument("-p","--partition", type=str , help=argparse.SUPPRESS)
-    
-  #########################################################################
-  # create job files
-  #########################################################################
-  
-  def create_job_files(self):
-
-
-      self.log_debug('from step=%s to %s ' % (self.args.begins,self.args.ends))
-
-      for step in range(self.args.begins,self.args.ends+1):
-
-        self.log_info('creating job files for step %d' % step)
-
-        output = """\
-######################
-# Begin work section #
-######################
-
-# Print this sub-job's task ID
-echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
-
-#sleep 10
-"""
-        
-        
-        input_file = '%s/templates/filter_first.job.template' 
-        open("%s/%d.job" % (self.SAVE_DIR,step), "w").write(output)
-
-
-      # finish job
-      open("%s/%d-finish.job" % (self.SAVE_DIR,step), "w").write(output)
-
-  
   #########################################################################
   # submitting all the first jobs
   #########################################################################
 
-  def user_launch_jobs(self,reading_input = True):
+  def user_launch_jobs(self):
 
-
-    #self.log_info('ZZZZZZZZZZZZZ setting max_retry to 1 ZZZZZZZZZZZZ')
+    # self.log_info('ZZZZZZZZZZZZZ setting max_retry to 1 ZZZZZZZZZZZZ')
     self.load()
 
-    # claning SAVE directory
-    self.system('rm %s/Done*'% self.SAVE_DIR)
-    self.system('rm %s/Complete*'% self.SAVE_DIR)
-    self.system('rm %s/*job*'% self.SAVE_DIR)
+    new_job = {}
 
+    p_slurm_args = vars(self.slurm_args)
+    self.slurm_args.script = os.path.abspath("%s" % self.job_script)
+
+    # does the checking script exist?
+    if self.slurm_args.check:
+      if not(os.path.exists(self.slurm_args.check)):
+        self.error('checking job script %s missing...' % self.slurm_args.check, exit=True)
+      self.slurm_args.check = os.path.abspath("%s" % self.slurm_args.check)
+              
+    for k,v in p_slurm_args.items():
+      new_job[k] = v
+
+    self.log_debug('job submitted:\n%s' % \
+                   self.print_job(new_job,allkey=False,\
+                                  print_all=True,except_none=True), \
+                   4, trace='API')
+
+    if self.args.yalla:
+      new_job['yalla'] = self.args.yalla_parallel_runs
+    if self.args.use_burst_buffer_size:
+      new_job['burst_buffer_size'] = self.args.burst_buffer_size
+    if self.args.use_burst_buffer_space:
+      new_job['burst_buffer_space'] = self.args.burst_buffer_space
       
-    self.create_job_files()
-
-    self.ask("Ready... All set... Go? ", default='y' )
-
-    dep = step_before = job_before = last_task_id_before =  None
-                     
-    for step in range(self.args.begins,self.args.ends+1):
-
-        last_task_id = 1
-        array_item = None
-        
-        job_name = '%s'  % (step)
-        job_script = '%s/%s.job' % (self.SAVE_DIR,job_name)
-        
-        array_item = "1-%s" % self.args.array
-
-        new_job = { 'name' : job_name,
-                    'comes_before': None,
-                    'comes_after': dep,
-                    'make_depend' : None,
-                    'depends_on' : dep,
-                    'step_before' : step_before,
-                    'script' : os.path.abspath("%s" % job_script),
-                    'ntasks' : self.args.ntasks,
-                    'time'   : self.args.time,
-                    'account' : 'k01',
-                    'output_name' : '%s.out' % step,
-                    'error_name' :  '%s.err' % step,
-                    'submit_dir' : os.getcwd(),
-                    'array_item' : array_item,
-                    'last_task_id' : last_task_id,
-                    'last_task_id_before' : last_task_id_before,
-                    'attempt' : 0
-        }
-
-        # if self.DEBUG:
-        #   print 'new_job',step
-        #   print new_job
-
-        new_job_script_content = self.wrap_job_script(new_job)
-
-        f = open("%s+" % job_script,'w')
-        f.write(new_job_script_content)
-        f.close()
-
-        new_job['script_file'] = job_script+'+'
-        (job_id, cmd) = self.submit_job(new_job)
-
-        new_job['job_id'] = job_id
-        new_job['submit_cmd'] = cmd
-        
-        
-        if dep:
-          self.JOBS[dep]['comes_before']  = job_id
-          self.JOBS[dep]['make_depend'] = job_id
-
-        self.JOBS[job_id] = new_job
-        
-        dep = job_id
-        step_before = job_name
-        last_task_id_before = last_task_id
-
+    (job_id, cmd) = self.submit_job(new_job)
 
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
-    self.tail_log_file(keep_probing=self.args.no_pending, nb_lines_tailed=1, no_timestamp=True, stop_tailing=['workflow is finishing','workflow is aborting'])
-    sys.exit(0)
+    print('Submitted batch job %s' % job_id)
 
   #########################################################################
   # checking job correct completion
   #########################################################################
 
-  def fake_job(self,step,task,attempt):
+  def check_job_old(self, what, attempt, task_id, running_dir, output_file, error_file,
+                is_done, fix, job_tasks,step_tasks):
 
-    self.log_info('faking step %s task %s attempt %s' % (step,task,attempt))
+    self.log_info(("check_job(what=>%s<, attempt=>%s<, task_id=>%s<, running_dir=>%s<," +\
+                   "output_file=>%s<, error_file=>%s<, is_done=>%s<, fix=>%s<, " +\
+                   "job_tasks=>%s<,step_tasks=>%s<") % \
+                  (what, attempt, task_id, running_dir, output_file, error_file,
+                   is_done, fix, job_tasks,step_tasks))
+
+    return SUCCESS
 
 
   #########################################################################
   # checking job correct completion
   #########################################################################
 
-  def check_job(self,what,task_id,running_dir,output_file,error_file,is_job_completed):
+  def check_job(self,step, attempt, task_id,running_dir,output_file,error_file,\
+                is_job_completed,fix=True,job_tasks=None,step_tasks=None):
 
-    return is_job_completed
-    
+    s = "CHECKING step : %s attempt : %s   task : %s " % \
+        (step,attempt,task_id) + "\n" + \
+        "job_tasks : %s  \t step_tasks : %s" % (job_tasks,step_tasks) + "\n" +\
+        "Output file : %s" % (output_file) + "\n" +\
+        "Error file : %s" % (error_file) + "\n" +\
+        "Running dir : %s" % (running_dir) + "\n"
+    self.log_info(s,4,trace='CHECK,USER_CHECK')
+
+    done = 'job DONE'
+    is_done = self.greps(done,output_file,exclude_patterns=['[INFO','[DEBUG'])
+    if not(is_done):
+      return FAILURE
+    else:
+      return SUCCESS
+
+  
 if __name__ == "__main__":
-    K=decimate_test()
+    K = slurm_frontend()
     K.start()

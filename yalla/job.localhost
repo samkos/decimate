@@ -1,0 +1,25 @@
+#!/bin/bash
+
+date >  __AVANTI_OUTPUT__
+NPP=__NB_PROCS__
+echo ----------------------------------------------------- >>  __AVANTI_OUTPUT__
+echo execution sur $NPP cores! >>  __AVANTI_OUTPUT__
+
+cd __AVANTI_PATH__/../pp
+
+echo localhost > __RESULTS_PATH__/LOGS/machines.txt
+cp __RESULTS_PATH__/LOGS/machines.txt __RESULTS_PATH__/LOGS/machines_head.txt
+mkdir __RESULTS_PATH__/LOGS/HOSTS/
+split -l __PARALLEL_RUNS__ -d -a 3 __RESULTS_PATH__/LOGS/machines.txt  __RESULTS_PATH__/LOGS/HOSTS/mach
+
+
+NPPH=$((__NB_PROCS__/__PARALLEL_RUNS__))
+
+__SPAWN_LOGGER__ 
+cd __AVANTI_PATH__/../pp
+python avanti.py "__COMMANDE__" __NB_JOBS__ $NPPH "__RESULTS_PATH__/LOGS/machines_head.txt" >> __AVANTI_DETAIL_OUTPUT__
+
+
+echo fin de l''execution sur $NPP cores! >>  __AVANTI_OUTPUT__
+echo ----------------------------------------------------- >>  __AVANTI_OUTPUT__
+date >>  __AVANTI_OUTPUT__
