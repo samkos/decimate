@@ -1,4 +1,5 @@
 NAME
+
        decimate - a fault-tolerant SLURM scheduler extension
 
 SYNOPSIS
