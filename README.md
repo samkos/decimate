@@ -4,9 +4,9 @@ NAME
 
 SYNOPSIS
 
-       dbatch [Slurm options] [ --check <user_script> ]
-                              [ --max-retry=<number of restart> ]
-                              script [args...]
+       dbatch [ Slurm options ] [ --check <user_script> ]
+                                [ --max-retry=<number of restart> ]
+                                script [args...]
 
 DESCRIPTION
 
@@ -14,8 +14,9 @@ DESCRIPTION
        decimate is a SLURM extension written in python designed to handle
        dependent jobs more easely and efficiently.
 
-       Decimate transparently adds to SLURM commands to check the
-       correctness of jobs and automitically reshedules jobs found faulty.
+       Decimate transparently adds parameters to SLURM sbatch command
+       to check the correctness of jobs and automatically
+       reschedules jobs found faulty.
 
        Using Decimate on Shaheen II, one can submit, run, monitor or
        terminate a workflow composed of dependent jobs. If asked,
