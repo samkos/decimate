@@ -27,9 +27,7 @@ once the problem causing its failure has been cured.
 .. image:: images/healing_workflow.png
 	   
 Decimate also allows the user to define his own mail alerts
-that can be sent at any point of the workflow through a call to
-a python method. This feature will also be available from bash
-in a next version.
+that can be sent at any point of the workflow.
 
 Some customized checking functions can also be designed by the
 user. Their purpose is to validate if a step of the workflow
