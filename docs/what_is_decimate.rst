@@ -10,12 +10,12 @@ Decimate transparently adds parameters to SLURM sbatch command
 to check the correctness of jobs and automatically
 reschedules jobs found faulty.
 
-Using Decimate on Shaheen II, one can submit, run, monitor or
+Using Decimate, one can submit, run, monitor or
 terminate a workflow composed of dependent jobs. If asked,
 thanks to standardized or customized messages, the user will be
 informed by mail of the progress of its workflow on the system.
 
-In case of failure of one part of tne workflow, decimate
+In case of failure of one part of the workflow, decimate
 automatically detects the failure, signals it to the user and
 launches the misbehaving part after having fixed the job
 dependency. By default if the same failure happens three
@@ -24,7 +24,9 @@ all the depending jobs from the scheduling. In a next version,
 decimate will allow the automatic restarting of the workflow
 once the problem causing its failure has been cured.
 
-decimate also allows the user to define his own mail alerts
+.. image:: images/healing_workflow.png
+	   
+Decimate also allows the user to define his own mail alerts
 that can be sent at any point of the workflow through a call to
 a python method. This feature will also be available from bash
 in a next version.

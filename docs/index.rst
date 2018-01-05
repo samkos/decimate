@@ -1,19 +1,13 @@
 Welcome to Decimate's documentation!
 ====================================
 
-The main documentation for the site is organized into a couple sections:
-
-* :ref:`user-docs`
-
-Information about development is also available:
-
-* :ref:`dev-docs`
+.. image:: images/healing_workflow.png
 
 
 .. _user-docs:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: User Documentation
 
    what_is_decimate
@@ -22,7 +16,7 @@ Information about development is also available:
 .. _dev-docs:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Developer Documentation
 
    install
