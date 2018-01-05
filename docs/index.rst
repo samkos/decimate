@@ -12,6 +12,7 @@ Welcome to Decimate's documentation!
 
    what_is_decimate
    use
+   options
    
 .. _dev-docs:
 
