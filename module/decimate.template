@@ -25,14 +25,15 @@ set-alias dsa "decimate  -sl"
 set-alias de  "decimate --explore "
 
 
-set-alias se        "dbatch --decimate --explore "
-set-alias sb        "dbatch"
-set-alias sl        "dbatch --decimate -l"
-set-alias slog      "dbatch --decimate -l"
-set-alias ss        "dbatch --decimate -s"
-set-alias sstatus   "dbatch --decimate -s"
-set-alias ssa       "dbatch --decimate -sa"
-set-alias ssl       "dbatch --decimate -sl"
+set-alias de        "dbatch --decimate --explore "
+set-alias db        "dbatch"
+set-alias dl        "dbatch --decimate -l"
+set-alias dlog      "dbatch --decimate -l"
+set-alias ds        "dbatch --decimate -s"
+set-alias dstat     "dbatch --decimate -s"
+set-alias dkill     "dbatch --decimate --kill"
+set-alias dsa       "dbatch --decimate -sa"
+set-alias dsl       "dbatch --decimate -sl"
 
 prepend-path PYTHONPATH $DECIMATE_PATH
 prepend-path PATH $prefix/bin
