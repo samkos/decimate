@@ -22,10 +22,10 @@ Workflow management:
                        restarted automatically before failing the 
                        whole workflow  (3 per default)
 
-Execution in a container:
+.. Execution in a container:
 
--xy, --yalla               Use Yalla Container
--xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a container
+   -xy, --yalla               Use Yalla Container
+   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a container
 
 Burst Buffer:
 

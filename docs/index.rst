@@ -7,7 +7,7 @@ Welcome to Decimate's documentation!
 .. _user-docs:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :caption: User Documentation
 
    what_is_decimate
@@ -17,7 +17,7 @@ Welcome to Decimate's documentation!
 .. _dev-docs:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :caption: Developer Documentation
 
    install
