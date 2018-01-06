@@ -924,7 +924,7 @@ class decimate(engine):
     filename_all_ok = '%s/Done-%s!%s-all' % (self.SAVE_DIR, what, attempt)
     filename_all_nok = '%s/Done-%s!%s-nok' % (self.SAVE_DIR, what, attempt)
     check_it = False
-    if checking_from_console:
+    if checking_from_console or from_finalize:
         check_it = True
     else:
         if self.TASK_ID == RangeSet(self.TASK_IDS)[0]:
@@ -993,6 +993,8 @@ class decimate(engine):
             continue
 
         if not(is_done) or not(user_check==SUCCESS):
+          self.log_debug('adding task %s to tasks_not_complete' % i,\
+                         4,trace='CHECK')
           tasks_not_complete = tasks_not_complete + [i]
           all_complete = False
           if is_done:
@@ -1012,16 +1014,17 @@ class decimate(engine):
         # self.log.info('all_complete=%s' % all_complete,1)
         # self.log.info('not_complete=%s' %  pprint.pformat(tasks_not_complete),1)
 
+        if (user_check == ABORT):
+          self.log_info('User error detected... and asking for abortion of the whole workflow!!!' + \
+                        '\n\t for step %s  attempt %s' % (what, attempt))
+          self.kill_workflow(force=True, exceptMe=True)
+
+        filename_result = '%s/%s-%s-%s' % (self.SAVE_DIR,task_status, what, i)
+        open(filename_result, "w")
+      
+    
       self.errors_print()
 
-      if (user_check == ABORT):
-        self.log_info('User error detected... and asking for abortion of the whole workflow!!!' + \
-                       '\n\t for step %s  attempt %s' % (what, attempt))
-        self.kill_workflow(force=True, exceptMe=True)
-
-      filename_result = '%s/%s-%s-%s' % (self.SAVE_DIR,task_status, what, i)
-      open(filename_result, "w")
-      
       if (from_finalize):
         return
         
