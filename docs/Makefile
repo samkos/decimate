@@ -14,6 +14,10 @@ help:
 
 .PHONY: help Makefile
 
+man: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	cp  _build/man/decimate.1 ../man/man1/workflow.1
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile

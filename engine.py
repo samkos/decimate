@@ -1362,7 +1362,8 @@ class engine(object):
                            1,trace='STATUS_DETAIL,ACTIVE')
             nb_jobs_active = nb_jobs_active + 1
 
-    if nb_jobs_active == 0 and not(self.args.spawned) and not(from_resubmit):
+    if nb_jobs_active == 0 and not(self.args.spawned) \
+       and not(self.args.decimate) and not(from_resubmit):
       self.log_info('no active job in the queue, changing all WAITING in ABORTED???')
     if False:
       for step in self.STEPS.keys():
@@ -1607,7 +1608,8 @@ class engine(object):
   # os.system wrapped to enable Trace if needed
   #########################################################################
 
-  def system(self,cmd,comment="No comment",fake=False,verbosity=1,force=False,trace=True):
+  def system(self,cmd,comment="No comment",fake=False,verbosity=1,
+             force=False,trace=True,return_code=False):
 
     self.log_info('in system cmd=/%s/ ' % cmd,2)
     self.log_debug("\tcurrently executing /%s/ :\n\t\t%s" % (comment,cmd),verbosity,trace='SYSTEM')
@@ -1625,6 +1627,7 @@ class engine(object):
       # subprocess.call(cmd,shell=True,stderr=subprocess.STDOUT)
       proc = subprocess.Popen(cmd, shell=True, bufsize=1, stdout=subprocess.PIPE, \
                               stderr=subprocess.STDOUT)
+      proc.wait()
       output = ""
       while (True):
           # Read line from stdout, break if EOF reached, append line to output
@@ -1638,8 +1641,10 @@ class engine(object):
       if trace and self.args.save:
           self.SYSTEM_OUTPUTS[self.args.save].append(output)
           self.log_info('writing to trace file / output = /%s/' % output,3)
-
-    return output
+    if (return_code):
+      return (proc.returncode,output)
+    else:
+      return output
 
   #########################################################################
   # send mail back to the user

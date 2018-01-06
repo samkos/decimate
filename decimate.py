@@ -10,6 +10,7 @@ import os
 import pprint
 from stat import *
 import sys
+import termios
 
 
 DECIMATE_VERSION = '0.9'
@@ -138,10 +139,10 @@ Burst Buffer
   -xs,  --burst-buffer-space=BURST_BUFFER_SPACE_name
 
 Checking option
-        --check=SCRIPT_FILE    python or shell to check if results are ok
-        --max-retry=MAX_RETRY  number of time a step can fail and be
-                               restarted automatically before failing the 
-                               whole workflow  (3 per default)
+        --check=SCRIPT_FILE      python or shell to check if results are ok
+        --max-retry=MAX_RETRY    number of time a step can fail and be
+                                 restarted automatically before failing the 
+                                 whole workflow  (3 per default)
 
 Other options:
   -V, --version               output version information and exit
@@ -284,6 +285,8 @@ class decimate(engine):
     # fake option to separate option targetted at decimate from the slurm frontend
 
     self.parser.add_argument("--decimate", action="store_true",
+                             help=argparse.SUPPRESS)
+    self.parser.add_argument("--check", type=str,
                              help=argparse.SUPPRESS)
     self.parser.add_argument("-pe", "--print-environment", action="store_true", default=False,
                              help="print environment variables in job output file")
@@ -670,7 +673,8 @@ class decimate(engine):
     if not(self.args.spawned):
       if len(self.jobs_list) > 0 and self.args.cont:
           # self.ask("Adding jobs to the current workflow? ", default='y' )
-          self.log_info('Workflow has already run in this directory, trying to continue it')
+          self.log_debug('Workflow has already run in this directory, trying to continue it',\
+                         4, trace='WORKFLOW')
       elif len(self.jobs_list) > 0 and self.args.scratch:
           self.ask("Forgetting the previous workflow and starting from scratch? ", default='n')
           self.clean()
@@ -872,6 +876,12 @@ class decimate(engine):
 
       self.log_info('Done! -> creating stub file %s' % filename, 3)
 
+      # checking current worflow
+      self.check_current_state(self.args.step, self.args.attempt,
+                               tasks=[self.TASK_ID],
+                               from_finalize=True)
+
+
       # need to feed the workflow when finalizing, removing current job
       # from running or waiting job...
       self.feed_workflow(from_finalize=True)
@@ -889,7 +899,8 @@ class decimate(engine):
   #########################################################################
 
   def check_current_state(self, what, attempt, tasks=None,
-                          checking_from_console=False,from_heal_workflow=False):
+                          checking_from_console=False,from_heal_workflow=False,
+                          from_finalize=False):
 
     if not(checking_from_console):
       self.load()
@@ -975,7 +986,7 @@ class decimate(engine):
 
             if self.CanLock:
                 open(filename_complete, 'w')
-            self.TASKS[step][i]['status'] = 'SUCCESS'
+            task_status = self.TASKS[step][i]['status'] = 'SUCCESS'
             self.log_info("set status=SUCCESS for task %s-%s (step=%s) " % (what,i,step),
                           2,trace='CHECK')
             state_has_changed = True
@@ -1007,6 +1018,12 @@ class decimate(engine):
         self.log_info('User error detected... and asking for abortion of the whole workflow!!!' + \
                        '\n\t for step %s  attempt %s' % (what, attempt))
         self.kill_workflow(force=True, exceptMe=True)
+
+      filename_result = '%s/%s-%s-%s' % (self.SAVE_DIR,task_status, what, i)
+      open(filename_result, "w")
+      
+      if (from_finalize):
+        return
         
       if not(all_complete):
         s = '!!!!!!!! oooops pb : job missing or uncomplete at last step %s : (%s)' % \
@@ -1100,10 +1117,6 @@ class decimate(engine):
                                      is_done, checking_from_console=False):
 
     step = "%s-%s" % (what, attempt)
-    # skkkkkkk
-    # print(step,task_id,what,attempt)
-    # print(self.TASKS.keys())
-    # print(pprint.pformat(self.TASKS))
     job_id = self.TASKS[step][task_id]['job']
     if job_id == 'UNKNOWN':
       # poor workaround
@@ -1112,6 +1125,7 @@ class decimate(engine):
                  (step,task_id,step,pprint.pformat(self.TASKS[step])),\
                  exit=False,exception=False)  # ,exit=True,exception=True)
       return False
+
     # poor workaround
     if not(job_id in self.JOBS.keys()):
       return False
@@ -1179,15 +1193,42 @@ class decimate(engine):
 
     s = "CHECKING step : %s task %s " % (step, task_id)
 
-    self.log_info(s, 2,)
-    if checking_from_console:
-        self.log_console(s, noCR=True)
+    self.log_info(s, 2)
+    
+    if checking_from_console and not(self.args.decimate):
+      self.log_console(s, noCR=True)
+        
+    if self.args.check:
+      # if a user check procedure was given as a script file
+      # executing it
+      cmd = "%s %s %s %s %s %s %s %s" % \
+            (self.args.check,what, attempt, task_id, running_dir, output_file, error_file, is_done)
+      self.log_debug('checking via user_script with cmd/%s/' % cmd,\
+                     4,trace='USER_CHECK')
+      (return_code,result) = self.system(cmd,return_code=True)
+      user_check = FAILURE
+      self.log_debug('return_code=/%s/' % return_code, 4, trace='USER_CHECK')
+      try:
+        return_code = int(return_code)
+      except:
+        self.log_info('Aborting workflow because\nreturn_code=/%s/ not integer code while checking via user_script with cmd/%s/' % \
+                      (return_code,cmd))
+        user_check = ABORT
+      if return_code == 0:
+        user_check = SUCCESS
+      elif return_code == -9999 or return_code == 'ABORT':
+        user_check = ABORT
+      self.log_debug('user_check=/%s/\nresult=/%s/' % (user_check,result), \
+                     4,trace='USER_CHECK')
 
-    try:
+    else:
+      # else calling either default python method, either user overload python method    
+      
+      try:
         user_check = self.check_job(what, attempt, task_id, running_dir, output_file, error_file,
                                     is_done, fix=not(checking_from_console),
                                     job_tasks=job_tasks,step_tasks=step_tasks)
-    except Exception:
+      except Exception:
         # something went wrong during user_check
         s = "User defined function check_job had a problem while CHECKING step: %s Task: %s " %\
             (step, task_id)
@@ -2762,6 +2803,8 @@ class decimate(engine):
     l0 = l0 + " --max-jobs=%s" % self.args.max_jobs
     l0 = l0 + " --workflowid='%s'" % self.args.workflowid
     l0 = l0 + " --filter='%s'" % self.args.filter
+    if job['check']:
+      l0 = l0 + " --check='%s'" % job['check']
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
@@ -3568,7 +3611,7 @@ class decimate(engine):
 
   def general_info(self):
       if not(self.args.no_clear_screen):
-          print("\033[H\033[J",)
+          print "\033[H\033[J",
       if False:
           print('Current explored step  : %s from [%s]' % \
                    (self.console_current_step_name, self.console_step_filter))
@@ -3639,7 +3682,7 @@ class decimate(engine):
         offset = 0
         current_choices = ""
         if more_message > 1:
-          print("\r" + " " * 80 + "\r",)
+          print "\r" + " " * 80 + "\r",
           more_message = more_message - 1
         if len(choice_list) == 0:
             choice_list = choice_list_initial
@@ -3677,10 +3720,10 @@ class decimate(engine):
               pick_a_choice = 'pick a choice,'
 
           if len(choice_list):
-            print('\r ----  %s call a command or press space for more ----' % pick_a_choice,)
+            print '\r ----  %s call a command or press space for more ----' % pick_a_choice,
             space_accepted = " "
           else:
-            print('\r ---- %s  call a command ----' % pick_a_choice,)
+            print '\r ---- %s  call a command ----' % pick_a_choice,
             space_accepted = ""
           more_message = 2
           sys.stdout.flush()

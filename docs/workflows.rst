@@ -1,5 +1,6 @@
- Example of Workflows
-======================
+=======================
+ Examples of Workflows
+=======================
 
 Test job
 --------

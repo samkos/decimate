@@ -1,0 +1,507 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "DECIMATE" "1" "Jan 06, 2018" "0.5" "Decimate"
+.SH NAME
+decimate \- Decimate Documentation
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+[image]
+.SH WHAT IS DECIMATE?
+.sp
+Developped by the KAUST Supercomputing Laboratory (KSL), \fIDecimate\fP is
+a SLURM extension written in Python allowing the user to handle jobs
+per hundreds in an efficient and transparent way. In this context, the
+constraint limiting the number of jobs per users is completely
+masked. The time consuming burden of managing thousands of jobs by
+hand is also alleviated by making available to the user the concept of
+workflow gathering a set of jobs that he can manipulate as a whole.
+.sp
+\fIDecimate\fP is released as an Open Source Software under BSD Licence.
+It is available at
+.SS Features
+.sp
+\fIDecimate\fP allows a user to:
+.INDENT 0.0
+.IP \(bu 2
+Submit any number of jobs regardless of any limitation set in the
+scheduling policy on the maximum number of jobs authorized per user.
+.IP \(bu 2
+Manage all the submitted jobs as a single workflow easing their
+submission, monitoring, deletion or reconfiguration.
+.IP \(bu 2
+Benefit from a centralized log file,  a unique point of
+capture of relevant information about the behavior of the workflow.
+From Python or shell, at any time and from any jobs,
+the logging levels info, debug, console and mail are available.
+.IP \(bu 2
+Send fully\-configurable mail messages detailing the
+current completion of the workflow at any step of its execution.
+.IP \(bu 2
+Easily define a procedure (in shell or Python) to check for
+correctness of the results obtained at the end of given step. Having
+access to the complete current status of the workflow, this
+procedure can make the decision on\-the\-fly either
+to stop the whole workflow, to resubmit partially the failing
+components as is, or to modify it dynamically.
+.UNINDENT
+.SS Automated restart in case of failure
+.sp
+In case of failure of one part of the workflow, \fIDecimate\fP
+automatically detects the failure, signals it to the user and
+launches the misbehaving part after having fixed the job
+dependency. By default if the same failure happens three
+consecutive times, \fIDecimate\fP cancels the whole workfow removing
+all the depending jobs from the scheduling. In a next version,
+\fIDecimate\fP will allow the automatic restarting of the workflow
+once the problem causing its failure has been cured.
+[image]
+.SS Fully user configurable environment
+.sp
+\fIDecimate\fP also allows the user to define his own mail alerts
+that can be sent at any point of the workflow.
+.sp
+Some customized checking functions can also be designed by the
+user. Their purpose is to validate if a step of the workflow
+was succesful or not. It could involved checking for the
+presence of some result files, grepping some error or success
+messages in them, computing ratio or checksum… These
+intermediate results can be easely transmitted to \fIDecimate\fP
+validating or not the correctness of any step. They can also be
+forwarded by mail to the user where as the workflow is
+executing.
+.SH USING DECIMATE
+.sp
+Via \fIDecimate\fP, four commands are added to the user environment:
+\fBdbatch\fP to submit workflows, \fBdstat\fP to monitor their current
+status, \fBdlog\fP to tail the log information produced and \fBdkill\fP to
+cancel the execution of the workflow.
+.SS Supported Workflows
+.sp
+For \fIDecimate\fP, a \fIworkflow\fP is a set of jobs submitted from a same
+directory. These jobs can depend on one another and be job array
+of any size.
+.sp
+How job are named: \fIjob_name\-attempt\-array\fP
+.SS Submitting a job
+.SS options
+.sp
+\fIDecimate\fP \fBdbatch\fP command accepts the same \fI\%options\fP as the SLURM
+\fBsbatch\fP command and extends it in two ways:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+it transparently submits the user job within a fauit\-tolerant framework
+.IP \(bu 2
+it adds new options to manage the workflow execution if a problem occurs
+.INDENT 2.0
+.IP \(bu 2
+\fB\-\-check=SCRIPT_FILE\fP points to a user script (either in python or shell) to
+validate the correctness of the job at the end of its execution
+.IP \(bu 2
+\fB\-\-max\-retry=MAX_RETRY\fP setting number of time a step can fail
+and be restarted automatically before failing the whole workflow
+(3 per default)
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS single job
+.sp
+Here is how to submit a simple job:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dbatch \-\-job\-name=job_1 my_job.sh
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] submitting job job_1 (for 1) \-\-> Job # job_1\-0\-1 <\-depends\-on None
+[INFO ] launch\-0!0:submitting job job_1 [1] \-\-> Job # job_1\-0\-1 <\-depends\-on None
+Submitted batch job job_1\-0\-1
+[1] \-\-> Job # job_1\-0\-1 <\-depends\-on None
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Notice how the command syntax is similar to \fBsbatch\fP command.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+In lines starting with \fB[MSG]\fP, \fB[INFO]\fP, or \fB[DEBUG]\fP, \fIDecimate\fP gives us
+additional information about what is going on.
+.IP \(bu 2
+All the traces \fB[INFO]\fP, or \fB[DEBUG]\fP also appears in the
+corresponding job output file as well as in \fIDecimate\fP central log
+file dumped in \fI<current_directory>/.decimate/LOGS/decimate.log\fP
+\fB[MSG]\fP traces only appears at the console or in the output
+file of the job.
+.IP \(bu 2
+for \fIDecimate\fP, every job is considered as a job array. In this
+simple case, it considers an array of job made of a single element
+\fB1\-1\fP\&. In the traces, the array indice shows in “(for
+\fB1\fP)”, “submitting job job_1 [\fB1\fP]”, or “job
+job_1\-0\-\fB1\fP”.  (if needed check \fI\%SLURM job array
+documentation\fP for more information).
+.IP \(bu 2
+Every job submitted via \fIDecimate\fP is part of a fault\-tolerant
+environment.  At the end of its execution, its correctness is
+systematically checked thanks to a user defined function or by
+default thanks the return code of the job given by SLURM.  If the
+job is not considered as correct, (and if the return code of the
+user\-defined function is not \fIABORT\fP), the job is automatically
+resubmitted for a first and a second attempt if needed.
+In the traces, the attempt number shows as the second figure in
+the job denomination:  “job job_1\-\fB0\fP\-1”.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS dependent job
+.sp
+Here is how to submit a job dependending on a previous job:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dbatch \-\-dependency=job_1  \-\-job\-name=job_2 my_job.sh
+[INFO ] launch\-0!0:Workflow has already run in this directory, trying to continue it
+[MSG  ] submitting job job_2 (for 1) \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+[INFO ] launch\-0!0:submitting job job_2 [1] \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+Submitted batch job job_2\-0\-1
+[1] \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+It again matches \fBsbatch\fP original syntax with the subtility that via \fIDecimate\fP dependency can be
+expressed with respect to a previous job name and not only to a previous job id as \fBSLURM\fP only
+allows it.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+It makes it more convenient to write automated script.
+.IP \(bu 2
+At this submission time, \fIDecimate\fP checks if a previous submitted job has actually
+been submitted with this particular name. If not, an error will be issued and
+the submission is canceled.
+.IP \(bu 2
+Of course, dependency on a previous job id is also supported.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS other kind of jobs
+.sp
+A comprehensive list of job examples can be found in 
+.nf
+\(gaExample of Workflows\(ga_
+.fi
+
+.INDENT 0.0
+.INDENT 3.5
+Example of Workflows
+.UNINDENT
+.UNINDENT
+
+.sp
+.ce
+----
+
+.ce 0
+.sp
+.SS Test job
+.sp
+Let \fImy_job.sh\fP be the following example job:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+#!/bin/bash
+#SBATCH \-n 1
+#SBATCH \-t 0:05:00
+
+
+echo job running on...
+hostname
+sleep 10
+
+echo job DONE
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If not done yet, we first load the \fIDecimate\fP module:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+module load decimate
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Nominal 2 job workflow
+.sp
+Then submission of jobs follows the same syntax than with the \fBsbatch\fP command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dbatch \-\-job\-name=job_1 my_job.sh
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] submitting job job_1 (for 1) \-\-> Job # job_1\-0\-1 <\-depends\-on None
+[INFO ] launch\-0!0:submitting job job_1 [1] \-\-> Job # job_1\-0\-1 <\-depends\-on None
+Submitted batch job job_1\-0\-1
+[1] \-\-> Job # job_1\-0\-1 <\-depends\-on None
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dbatch \-\-dependency=job_1  \-\-job\-name=job_2 my_job.sh
+[INFO ] launch\-0!0:Workflow has already run in this directory, trying to continue it
+[MSG  ] submitting job job_2 (for 1) \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+[INFO ] launch\-0!0:submitting job job_2 [1] \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+Submitted batch job job_2\-0\-1
+[1] \-\-> Job # job_2\-0\-1 <\-depends\-on 218459
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dstat
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  RUNNING   SUCCESS:    0%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dstat
+[MSG  ] CHECKING step : job_2\-0 task 1
+[INFO ] launch\-0!0:no active job in the queue, changing all WAITING in ABORTED???
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS checking the status
+.sp
+The current workflow status can be checked with \fBdstat\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dstat
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+When no job has been submitted from the current directory. \fBdstat\fP shows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] No workflow has been submitted yet
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+When jobs submitted submitted the current directory are currently running . \fBdstat\fP shows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  RUNNING   SUCCESS:    0%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+And when a workflow is completed:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dstat
+[MSG  ] CHECKING step : job_2\-0 task 1
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Displaying the log file
+.sp
+The current \fIDecimate\fP log file can be checked with \fBdlog\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dlog
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Cancelling the whole workflow
+.sp
+The current workflow can be completly killed with the command \fBdkill\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dkill
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If no job of the workflow is either running, queueing or waiting to be queued,
+\fBdkill\fP prints:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[INFO ] No jobs are currently running or waiting... Nothing to kill then!
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If any job is still waiting or running, \fIdkill\fP asks a confirmation to the user and
+cancels all jobs from the current workflow.
+.SH SHELL API
+.SS dbatch
+.sp
+Usage: dbatch [OPTIONS…] job_script [args…]
+.sp
+Help:
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+show all possible options for \fBdbatch\fP
+.TP
+.B \-H\fP,\fB  \-\-decimate\-help
+show hidden option to manage \fIDecimate\fP engine
+.UNINDENT
+.sp
+Workflow management:
+.INDENT 0.0
+.TP
+.BI \-\-check\fB= SCRIPT_FILE
+python or shell to check if results are ok
+.TP
+.BI \-\-max\-retry\fB= MAX_RETRY
+number of time a step can fail and be
+restarted automatically before failing the
+whole workflow  (3 per default)
+.UNINDENT
+.sp
+Burst Buffer:
+.INDENT 0.0
+.TP
+.BI \-b\fB bz\fP,\fB \ \-\-use\-burst\-buffer\-size
+use a non persistent burst buffer space
+.TP
+.BI \-x\fB z\fP,\fB \ \-\-burst\-buffer\-size\fB= BURST_BUFFER_SIZE
+set Burst Buffer space size
+.TP
+.BI \-b\fB bs\fP,\fB \ \-\-use\-burst\-buffer\-space
+use a persistent burst buffer space
+.TP
+.BI \-x\fB s\fP,\fB \ \-\-burst\-buffer\-space\fB= BURST_BUFFER_SPACE_name
+sets Burst Buffer name
+.UNINDENT
+.sp
+environment variables:
+.sp
+DPARAM                      options forwarded to Decimate
+.SH INSTALLATION OF DECIMATE
+.SS How to submit
+.SH AUTHOR
+Samuel KORTAS
+.SH COPYRIGHT
+2018, Samuel KORTAS
+.\" Generated by docutils manpage writer.
+.

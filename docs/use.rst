@@ -107,7 +107,11 @@ allows it.
   - Of course, dependency on a previous job id is also supported.
 
 
+other kind of jobs
+``````````````````
+A comprehensive list of job examples can be found in `Examples of Workflows`_.
 
+.. _Examples of Workflows: http:workflows.html
 
   
 checking the status
@@ -139,14 +143,41 @@ And when a workflow is completed:
 
    dstat
    [MSG  ] CHECKING step : job_2-0 task 1  
-    [MSG  ] step job_1-0:1-1                  SUCCESS   SUCCESS:  100% 	FAILURE:   0% -> [] 
-   [MSG  ] step job_2-0:1-1                  SUCCESS   SUCCESS:  100% 	FAILURE:   0% -> [] 
+   [MSG  ] step job_1-0:1-1                  SUCCESS   SUCCESS:  100% 	FAILURE:   0% -> [] 
+   [MSG  ] step job_2-0:1-1                  SUCCESS   SUCCESS:  100% 	FAILURE:   0% -> []
+
+   
 
 
-     
+  
+Displaying the log file
+-----------------------
 
-How to submit
--------------
+The current *Decimate* log file can be checked with **dlog**:
 
-.. toctree::
-   workflows
+::
+   
+   dlog
+
+
+Cancelling the whole workflow
+-----------------------------
+
+The current workflow can be completly killed with the command **dkill**:
+
+::
+   
+   dkill
+
+If no job of the workflow is either running, queueing or waiting to be queued,
+**dkill** prints:
+   
+::
+
+   [INFO ] No jobs are currently running or waiting... Nothing to kill then!
+
+If any job is still waiting or running, *dkill* asks a confirmation to the user and
+cancels all jobs from the current workflow.
+
+   
+    
