@@ -7,7 +7,7 @@ class decimate_test(decimate):
 
   def __init__(self):
 
-    decimate.__init__(self,app_name='decimatest',
+    decimate.__init__(self,app_name='decimate',
                       decimate_version_required='0.3',app_version='0.1')
 
     self.tasks_to_check = []

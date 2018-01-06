@@ -1903,6 +1903,7 @@ class decimate(engine):
 
     job_default_value = {'array': '1-1', \
                          'attempt': 0, \
+                         'check': None,
                          'initial_attempt': 0, \
                          'make_depend': None, \
                          'yalla': 0,
