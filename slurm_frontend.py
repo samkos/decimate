@@ -56,6 +56,9 @@ class slurm_frontend(decimate):
       index = index + 1
 
     self.create_slurm_parser(DEBUG)
+    self.slurm_parser.add_argument('--debug', action="count", default=0, help=argparse.SUPPRESS)
+    self.slurm_parser.add_argument('--info', action="count", default=0, help=argparse.SUPPRESS)
+
     self.slurm_args = self.slurm_parser.parse_args(args)
 
     if DEBUG:
@@ -85,12 +88,22 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--max-retry', "%s" % self.slurm_args.max_retry]
 
+    if self.slurm_args.max_retry:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--max-retry', "%s" % self.slurm_args.max_retry]
+
     if self.slurm_args.yalla_parallel_runs:
       decimate_extra_config = decimate_extra_config + \
                               ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
 
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
+
+    if self.slurm_args.info:
+      decimate_extra_config = decimate_extra_config + ['--info' * self.slurm_args.info]
+
+    if self.slurm_args.debug:
+      decimate_extra_config = decimate_extra_config + ['--debug' * self.slurm_args.debug]
 
     if DEBUG:
       print('job_file=/%s/\nargs=/%s/\nparams=/%s/\ndecimate_args=/%s/' % \
