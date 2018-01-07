@@ -1921,13 +1921,6 @@ class decimate(engine):
                          'ntasks': 1,
                          }
 
-    # forcing job output or error filename to be valued
-    for n in ['error', 'output']:
-      if not(job[n]):
-        job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
-        self.log_info('empty job %s filename forced to %s' % (n,job[n]), \
-                      4, trace='ACTIVATE_DETAIL,JOB_OUTERR')
-
     # scanning original script for merging slurm option
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'],\
                    4, trace='PARSE')
@@ -1941,6 +1934,10 @@ class decimate(engine):
     if not(job['time']):
       self.error('sbatch: error: Invalid time limit specification', exit=1)
 
+    # if no name is given, rejecting the job...
+    if not(job['job_name']):
+      self.error('sbatch: error: Invalid name specification', exit=1)
+
     for field in job_default_value:
          if not(field in job.keys()):
             job[field] = job_default_value[field]
@@ -1953,6 +1950,13 @@ class decimate(engine):
 
     if not('nodes' in job.keys()):
       job['nodes'] = int(math.ceil(job['ntasks'] / 64.))
+
+    # forcing job output or error filename to be valued
+    for n in ['error', 'output']:
+      if job[n]==None:
+        job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
+        self.log_info('empty job %s filename forced to %s' % (n,job[n]), \
+                      4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
 
     self.log_debug('after wrap job=%s' % self.print_job(job),4,trace='WRAP')
 
