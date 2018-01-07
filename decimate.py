@@ -960,6 +960,14 @@ class decimate(engine):
           self.error('missing key for step=%s i=%s from tasks=(%s) self.TASKS=\n%s' %  \
                      (step,i,tasks,pprint.pformat(self.TASKS)),killall=True,exception=True)
 
+        # filename_failure = '%s/FAILURE-%s-%s' % (self.SAVE_DIR, what, i)
+        # is_failure = os.path.exists(filename_failure)
+        # if is_failure and not(self.args.force_check):
+        #     self.log_info("Failure file found for task %s-%s (step=%s) " % (what,i,step),
+        #                   2,trace='CHECK')
+        #     self.TASKS[step][i]['status'] = 'FAILURE'
+        #     continue
+          
         filename_complete = '%s/Complete-%s-%s' % (self.SAVE_DIR, what, i)
         is_complete = os.path.exists(filename_complete)
         if is_complete and not(self.args.force_check):

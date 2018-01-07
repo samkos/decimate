@@ -726,6 +726,8 @@ class engine(object):
       self.log_info('clearing information and result about step %s' % (step_without_attempt))
       for pattern in ['%s/%s?*' % (self.SAVE_DIR,step_without_attempt),
                       '%s/Complete-%s*' % (self.SAVE_DIR,step_without_attempt),
+                      '%s/FAILURE-%s*' % (self.SAVE_DIR,step_without_attempt),
+                      '%s/SUCESS-%s*' % (self.SAVE_DIR,step_without_attempt),
                       '%s/Done-%s*' % (self.SAVE_DIR,step_without_attempt)]:
           self.log_debug('removing %s' % pattern, 1,trace='ROLLBACK,RESTART,FORGET')
           cmd = '\\rm -rf %s' % pattern

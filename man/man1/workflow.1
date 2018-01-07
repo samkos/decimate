@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "DECIMATE" "1" "Jan 06, 2018" "0.5" "Decimate"
+.TH "DECIMATE" "1" "Jan 07, 2018" "0.5" "Decimate"
 .SH NAME
 decimate \- Decimate Documentation
 .
@@ -229,23 +229,103 @@ Of course, dependency on a previous job id is also supported.
 .UNINDENT
 .SS other kind of jobs
 .sp
-A comprehensive list of job examples can be found in 
-.nf
-\(gaExample of Workflows\(ga_
-.fi
-
+A comprehensive list of job examples can be found in \fI\%Examples of Workflows\fP\&.
+.SS checking the status
+.sp
+The current workflow status can be checked with \fBdstat\fP:
 .INDENT 0.0
 .INDENT 3.5
-Example of Workflows
+.sp
+.nf
+.ft C
+dstat
+.ft P
+.fi
 .UNINDENT
 .UNINDENT
-
 .sp
-.ce
-----
-
-.ce 0
+When no job has been submitted from the current directory. \fBdstat\fP shows:
+.INDENT 0.0
+.INDENT 3.5
 .sp
+.nf
+.ft C
+[MSG  ] No workflow has been submitted yet
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+When jobs submitted submitted the current directory are currently running . \fBdstat\fP shows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  RUNNING   SUCCESS:    0%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+And when a workflow is completed:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dstat
+[MSG  ] CHECKING step : job_2\-0 task 1
+[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+[MSG  ] step job_2\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Displaying the log file
+.sp
+The current \fIDecimate\fP log file can be checked with \fBdlog\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dlog
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Cancelling the whole workflow
+.sp
+The current workflow can be completly killed with the command \fBdkill\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dkill
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If no job of the workflow is either running, queueing or waiting to be queued,
+\fBdkill\fP prints:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[INFO ] No jobs are currently running or waiting... Nothing to kill then!
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If any job is still waiting or running, \fIdkill\fP asks a confirmation to the user and
+cancels all jobs from the current workflow.
+.SH EXAMPLES OF WORKFLOWS
 .SS Test job
 .sp
 Let \fImy_job.sh\fP be the following example job:
@@ -356,101 +436,6 @@ dstat
 .fi
 .UNINDENT
 .UNINDENT
-.SS checking the status
-.sp
-The current workflow status can be checked with \fBdstat\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-dstat
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-When no job has been submitted from the current directory. \fBdstat\fP shows:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-[MSG  ] No workflow has been submitted yet
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-When jobs submitted submitted the current directory are currently running . \fBdstat\fP shows:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
-[MSG  ] step job_2\-0:1\-1                  RUNNING   SUCCESS:    0%   FAILURE:   0% \-> []
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-And when a workflow is completed:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-dstat
-[MSG  ] CHECKING step : job_2\-0 task 1
-[MSG  ] step job_1\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
-[MSG  ] step job_2\-0:1\-1                  SUCCESS   SUCCESS:  100%   FAILURE:   0% \-> []
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.SS Displaying the log file
-.sp
-The current \fIDecimate\fP log file can be checked with \fBdlog\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-dlog
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.SS Cancelling the whole workflow
-.sp
-The current workflow can be completly killed with the command \fBdkill\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-dkill
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-If no job of the workflow is either running, queueing or waiting to be queued,
-\fBdkill\fP prints:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-[INFO ] No jobs are currently running or waiting... Nothing to kill then!
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-If any job is still waiting or running, \fIdkill\fP asks a confirmation to the user and
-cancels all jobs from the current workflow.
 .SH SHELL API
 .SS dbatch
 .sp
@@ -497,7 +482,7 @@ sets Burst Buffer name
 environment variables:
 .sp
 DPARAM                      options forwarded to Decimate
-.SH INSTALLATION OF DECIMATE
+.SH INSTALLATION
 .SS How to submit
 .SH AUTHOR
 Samuel KORTAS
