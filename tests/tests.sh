@@ -96,7 +96,9 @@ gC
 db -J 1 --check=tests/check_job.sh tests/my_job_no_wait.sh
 ds
 dl
-db -f PARSE,WORKFLOW --check=tests/check_job.sh tests/my_job.sh 
+db -f USER_CHECK --check=tests/check_job.sh -J 3 tests/my_job_no_wait.sh
+
+db -f USER_CHECK --check=tests/check_job.sh -a 1-90 -J 4 tests/my_job_no_wait.sh 
 
 python
 import subprocess

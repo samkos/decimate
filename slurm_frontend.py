@@ -41,7 +41,8 @@ class slurm_frontend(decimate):
         print 'testing:',f
       if os.path.exists(f) and not is_decimate:
         self.job_script = f
-        print 'job_script found:', f
+        if DEBUG:
+          print 'job_script found:', f
         is_job_parameter = True
         continue
       if f == "--decimate":
