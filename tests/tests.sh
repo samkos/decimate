@@ -82,7 +82,9 @@ db -a 1-90 -o 1.%j.out -e 1.%j.err -J 1_a tests/my_job.sh --decimate -xj 10 -xr 
 # testing yalla
 ml dart_mitgcm/decimate_only
 gC
-db -N 1 -f YALLA -a 1-10 -o 1.%j.out -e 1.%j.err -J 1 --yalla tests/my_job.sh 
+db -N 1 -f YALLA -a 1-30 --yalla tests/my_job.sh my_job_no_wait.sh
+
+
 db -a 1-10 -N 1 -c 32 -o 1.%j.out -e 1.%j.err -J 1 --yalla tests/my_job.sh --decimate  -f SUBMIT_JOB
 db -f YALLA -a 1-10 -o 1.%j.out -e 1.%j.err -J 1 --yalla tests/my_job.sh 
 

@@ -57,9 +57,16 @@ class slurm_frontend(decimate):
       index = index + 1
 
     self.create_slurm_parser(DEBUG)
+<<<<<<< HEAD
     self.slurm_parser.add_argument('--debug', action="count", default=0, help=argparse.SUPPRESS)
     self.slurm_parser.add_argument('--info', action="count", default=0, help=argparse.SUPPRESS)
 
+=======
+    self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
+                             help='Use yalla container', default=False)
+    self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
+                             help='# of job to run in parallel in a container', default=4)
+>>>>>>> bc813ae7e06fba7476280bc449264299706e148d
     self.slurm_args = self.slurm_parser.parse_args(args)
 
     if DEBUG:

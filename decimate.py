@@ -1945,6 +1945,14 @@ class decimate(engine):
             if not(job[field]):
                 job[field] = job_default_value[field]
 
+    # forcing job output or error filename to be valued
+    for n in ['error', 'output']:
+      print 'xxxxx',n,job[n]
+      if job[n]==None:
+        job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
+        self.log_info('empty job %s filename forced to %s' % (n,job[n]), \
+                      4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
+      
     (job_script_content,job) = self.wrap_job_script(job,original_script_content_lines,
                                                     job_file_args_overloaded)
 
@@ -2318,10 +2326,11 @@ class decimate(engine):
                    exit=True)
 
       nb_jobs = len(RangeSet(job['array']))
-      job['yalla'] = min(job['yalla'],nb_jobs)
+      job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'],nb_jobs)
       # compute new time for yalla container
       (d,h,m,s) = ([0,0,0,0,0] + map(lambda x:int(x),job['time'].split(':')))[-4:]
-      factor = math.ceil(nb_jobs / (job['yalla'] + 0.))
+      print job['yalla_parallel_runs']
+      factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
       whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor     # NOQA
       (h,m,s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
       job['time'] = '%d:%02d:%02d' % (h,m,s)
@@ -2331,8 +2340,8 @@ class decimate(engine):
 
       prolog = prolog + \
                ['--time=%s' % job['time'],
-                '--ntasks=%s' % (int(job['ntasks']) * job['yalla']),
-                '--nodes=%s' % (job['nodes'] * job['yalla']),
+                '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
+                '--nodes=%s' % (job['nodes'] * job['yalla_parallel_runs']),
                 '--error=%s.task_yyy-attempt_%s' % \
                 (job['error'].replace('%a',job['array'][0:20]), attempt),
                 '--output=%s.task_yyy-attempt_%s' % \
@@ -2971,7 +2980,7 @@ class decimate(engine):
         s = job[w].replace('%J','\$SLURM_JOB_ID').replace('%j','\$SLURM_JOB_ID')\
             .replace('%a','\${task}')
         stream[w] = s + '.task_\${formatted_task}-attempt_%s' % job['attempt']
-
+      
       l = prefix + (l).replace('$','\$') + 'EOF\n'
 
       # l = l + \
@@ -2986,7 +2995,7 @@ class decimate(engine):
       input_file = "%s/job.%s" % (self.YALLA_DIR, self.machine)
       output = "".join(open(input_file,"r").readlines())
       output = output.replace('__save_dir__',self.SAVE_DIR)
-      output = output.replace('__PARALLEL_RUNS__',str(job['yalla']))
+      output = output.replace('__PARALLEL_RUNS__',str(job['yalla_parallel_runs']))
       output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__',str(job['nodes']))
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__',str(job['ntasks']))
       output = output.replace('__job_name__',str(job['job_name']))
