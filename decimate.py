@@ -8,6 +8,7 @@ from env import TMPDIR
 import math
 import os
 import pprint
+import shlex
 from stat import *
 import sys
 import termios
@@ -131,6 +132,11 @@ Help options:
   -xy,  --yalla               Use Yalla Container
   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
                               of parallel runs in a container
+  -xyf, --yalla-parameter-file=PARAM_FILE file listing all parameter
+                                          combinations to cover
+  -xyF, --yalla-parameter-filter=FILTER filter while reading parameter file
+  -xyn, --yalla-parameter-range=range numeric filter while reading parameter file
+
 
 Burst Buffer
   -bbz, --use-burst-buffer-size        use a non persistent burst buffer space
@@ -390,6 +396,8 @@ class decimate(engine):
                              help='Use yalla container', default=False)
     self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
                              help='# of job to run in parallel in a container', default=4)
+    self.parser.add_argument("-xyf", "--yalla-parameter-file", type=str,
+                             help='file listing all parameter combinations to cover')
 
     self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
                              help='Use a non persistent burst buffer space', default=False)
@@ -508,6 +516,10 @@ class decimate(engine):
         if not(os.path.exists(yalla_exe)):
           self.error('could not compile yalla successfully\n output=\n%s' % output,
                      exit=True, exception=True)
+
+    # reading of the parameter file
+    if self.args.yalla_parameter_file:
+          self.read_yalla_parameter_file()
 
     if self.args.taskid:
       try:
@@ -1805,6 +1817,151 @@ class decimate(engine):
                          (len(l), self.SCENARIO))
 
   #########################################################################
+  # parse an additional tags from the yalla parameter file
+  #########################################################################
+  def additional_tag(self,line):
+    matchObj = re.match(r'^#YALLA\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    if (matchObj):
+      (t,v) = (matchObj.group(1), matchObj.group(2))
+      self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.direct_tag[t] = v
+      return True
+    return False
+  
+  #########################################################################
+  # read the yalla parameter file in order to submit a pool of jobs
+  #########################################################################
+
+  def read_yalla_parameter_file(self):
+    self.log_debug('reading yalla parameter files %s' % self.args.yalla_parameter_file,\
+                   2, trace='YALLA,PARAMETRIC_DETAIL')
+
+    if not(os.path.exists(self.args.yalla_parameter_file)):
+      self.error('Parameter file %s does not exist!!!' % self.args.yalla_parameter_file)
+    else:
+      tags_ok = False
+      lines = open(self.args.yalla_parameter_file).readlines()
+
+    # warning message is sent to the user if filter is applied on the combination to consider
+
+    if self.args.yalla_parameter_filter or self.args.yalla_parameter_range:
+      if self.args.yalla_parameter_filter:
+        self.log_info("the filter %s will be applied... Only following lines will be taken into account : " % \
+                      (self.args.yalla_parameter_filter))
+      if self.args.yalla_parameter_range:
+        self.log_info("only lines %s will be taken " % self.args.yalla_parameter_range)
+
+      self.direct_tag = {}
+      nb_case = 1
+
+      for line in lines:
+        line = self.clean_line(line)
+        if self.additional_tag(line):
+          continue
+        if len(line)>0  and not (line[0]=='#'):
+          if not(tags_ok):
+            tags_ok=True
+            continue
+          for k in self.direct_tag.keys():
+            line = line+" "+self.direct_tag[k]
+          self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
+          matchObj = re.match("^.*"+self.args.yalla_parameter_filter+".*$",line)
+          # prints all the tests that will be selected
+          if (matchObj) and not(self.args.yes):
+            if nb_case==1:
+              for k in self.direct_tag.keys():
+                print "%6s" % k,
+              print
+
+            if not(self.args.yalla_parameter_range) or self.args.yalla_parameter_range==nb_case:
+              print "%3d: " % (nb_case),
+              for k in line.split(" "):
+                print "%6s " % k[:20],
+              print
+            nb_case = nb_case + 1
+
+      # askine to the user if he is ok or not
+      self.ask("Is this correct?", default='n')
+
+      tags_ok = False
+          
+    # direct_tag contains the tags set through #KTF tag = value
+    # it needs to be evaluated on the fly to apply right tag value at a given job
+    self.direct_tag = {}
+
+    nb_case = 0
+    self.parameters = {}
+    # parsing of the input file starts...
+    for line in lines:
+      line = clean_line(line)
+      # is it a tag enforced by #KTF directive?
+      if self.additional_tag(line):
+        continue
+      
+      # if line void or starting with '#', go to the next line
+      if len(line)==0 or (line[0]=='#'):
+        continue
+
+      # parsing other line than #KTF directive
+      if not(tags_ok):
+        # first line ever -> Containaing tag names
+        tags_names = line.split(" ")
+        tags_ok = True
+        continue 
+
+      line2scan = line
+      for k in self.direct_tag.keys():
+        line2scan = line2scan+" "+self.direct_tag[k]
+        
+      nb_case = nb_case+1
+
+      # if job case are filtered, apply it, jumping to next line if filter not match
+      if self.args.yalla_parameter_filter:
+        matchObj = re.match("^.*"+self.args.yalla_parameter_filter+".*$",line2scan)
+        if not(matchObj):
+          continue
+
+      if self.args.yalla_parameter_range and not(self.args.yalla_parameter_range==nb_case-1):
+        continue
+
+      self.log_debug("testing : %s\ntags_names:%s" % (line,tags_names),\
+                     4, trace='PARAMETRIC_DETAIL')
+    
+      tags = shlex.split(line)
+
+      if not(len(tags)==len(tags_names)):
+        self.error("\tError : pb encountered in reading the test matrix file : %s" % test_matrix_filename + \
+                   "at  line \n\t\t!%s" % line + \
+                   "\n\t\tless parameters to read than expected... Those expected are\n" + \
+                   "\n\t\t\t",tags_names+\
+                   "\n\t\tand so far, we read"+\
+                   "\n\t\t\t" + tag, exit=True)
+      
+      ts = copy.deepcopy(tags_names)
+      tag = {}
+      self.log_debug("ts:%s\ntags:%s" % (pprint.pformat(ts),pprint.pformat(tags))\
+                     ,4,trace='PARAMETRIC_DETAIL')
+      
+      while(len(ts)):
+        t = ts.pop(0)
+        tag["%s" % t] = tags.pop(0)
+        self.log_debug("tag %s : !%s! " % (t,tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
+      self.log_debug('tag:%s' % pprint.pformat(tag),4,trace='PARAMETRIC_DETAIL')
+          
+      # adding the tags enforced by a #KTF directive
+      tag.update(self.direct_tag)
+
+      self.log_debug('self.direct_tag %s tag:%s' % \
+                     (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
+                     4,trace='PARAMETRIC_DETAIL')
+      self.parameters[nb_case] = tag
+
+    self.log_debug('self.parameters: %s ' % \
+                     (pprint.pformat(self.parameters)), \
+                     4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
+      
+
+  #########################################################################
   # print job
   #########################################################################
 
@@ -1947,7 +2104,6 @@ class decimate(engine):
 
     # forcing job output or error filename to be valued
     for n in ['error', 'output']:
-      print 'xxxxx',n,job[n]
       if job[n]==None:
         job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
         self.log_info('empty job %s filename forced to %s' % (n,job[n]), \

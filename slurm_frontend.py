@@ -35,14 +35,16 @@ class slurm_frontend(decimate):
     is_decimate = False
     is_job_parameter = False
     self.job_parameter = []
-    
+
     for f in sys.argv[1:]:
       if DEBUG:
-        print 'testing:',f
+        print('testing:',f)
       if os.path.exists(f) and not is_decimate:
+        if self.job_script:
+          args = args + [self.job_script]
         self.job_script = f
         if DEBUG:
-          print 'job_script found:', f
+          print('job_script found:', f)
         is_job_parameter = True
         continue
       if f == "--decimate":
@@ -56,17 +58,25 @@ class slurm_frontend(decimate):
         args = args + [f]
       index = index + 1
 
+    if DEBUG:
+      print 'ARGS:',args
+      print 'index:',index
+
     self.create_slurm_parser(DEBUG)
-<<<<<<< HEAD
     self.slurm_parser.add_argument('--debug', action="count", default=0, help=argparse.SUPPRESS)
     self.slurm_parser.add_argument('--info', action="count", default=0, help=argparse.SUPPRESS)
 
-=======
     self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
-                             help='Use yalla container', default=False)
+                                   help='Use yalla container', default=False)
     self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                             help='# of job to run in parallel in a container', default=4)
->>>>>>> bc813ae7e06fba7476280bc449264299706e148d
+                                   help='# of job to run in parallel in a container', default=4)
+    self.parser.add_argument("-xyf", "--yalla-parameter-file", type=str,
+                             help='file listing all parameter combinations to cover')
+    self.parser.add_argument("-xyF", "--yalla-parameter-filter", type=str,
+                             help='filter to apply on combinations to cover')
+    self.parser.add_argument("-xyf", "--yalla-parameter-range", type=str,
+                             help='filtered range to apply on combinations to cover')
+
     self.slurm_args = self.slurm_parser.parse_args(args)
 
     if DEBUG:
@@ -104,6 +114,18 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
 
+    if self.slurm_args.yalla_parameter_file:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--yalla-parameter-file', "%s" % self.slurm_args.yalla_parameter_file]
+
+    if self.slurm_args.yalla_parameter_filter:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--yalla-parameter-filter', "%s" % self.slurm_args.yalla_parameter_filter]
+
+    if self.slurm_args.yalla_parameter_range:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--yalla-parameter-range', "%s" % self.slurm_args.yalla_parameter_range]
+
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
 
@@ -131,7 +153,6 @@ class slurm_frontend(decimate):
 
                              help='do not keep pending the log', default=True)
 
-
   #########################################################################
   # submitting all the first jobs
   #########################################################################
@@ -151,7 +172,7 @@ class slurm_frontend(decimate):
       if not(os.path.exists(self.slurm_args.check)):
         self.error('checking job script %s missing...' % self.slurm_args.check, exit=True)
       self.slurm_args.check = os.path.abspath("%s" % self.slurm_args.check)
-              
+
     for k,v in p_slurm_args.items():
       new_job[k] = v
 
@@ -166,7 +187,7 @@ class slurm_frontend(decimate):
       new_job['burst_buffer_size'] = self.args.burst_buffer_size
     if self.args.use_burst_buffer_space:
       new_job['burst_buffer_space'] = self.args.burst_buffer_space
-      
+
     (job_id, cmd) = self.submit_job(new_job)
 
     self.log_debug("Saving Job Ids...",1)
@@ -179,7 +200,7 @@ class slurm_frontend(decimate):
   #########################################################################
 
   def check_job_old(self, what, attempt, task_id, running_dir, output_file, error_file,
-                is_done, fix, job_tasks,step_tasks):
+                    is_done, fix, job_tasks,step_tasks):
 
     self.log_info(("check_job(what=>%s<, attempt=>%s<, task_id=>%s<, running_dir=>%s<," +\
                    "output_file=>%s<, error_file=>%s<, is_done=>%s<, fix=>%s<, " +\
@@ -188,7 +209,6 @@ class slurm_frontend(decimate):
                    is_done, fix, job_tasks,step_tasks))
 
     return SUCCESS
-
 
   #########################################################################
   # checking job correct completion
@@ -212,7 +232,6 @@ class slurm_frontend(decimate):
     else:
       return SUCCESS
 
-  
 if __name__ == "__main__":
     K = slurm_frontend()
     K.start()
