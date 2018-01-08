@@ -520,7 +520,7 @@ class decimate(engine):
     # reading of the parameter file
     if self.args.yalla_parameter_file:
           self.read_yalla_parameter_file()
-
+            
     if self.args.taskid:
       try:
         args = self.args.taskid.split(',')
@@ -666,6 +666,16 @@ class decimate(engine):
 
       self.feed_workflow()
       sys.exit(0)
+
+    if self.args.yalla_parameter_file and self.args.spawned:
+      task_parameter_file = fopen('/tmp/parameters.%s' % self.TASK_ID)
+      params = self.parameters[int(self.TASK_ID)]
+      task_parameter_file.write('# set parameter from file %s for task %s' %\
+                                self.args.yalla_parameter_file, self.TASK_ID)
+      for p in params.keys():
+        task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
+      task_parameter_file.write('\n')
+      task_parameter_file.close()
 
     if self.args.job_status:
       self.get_current_jobs_status()
@@ -1855,7 +1865,7 @@ class decimate(engine):
       nb_case = 1
 
       for line in lines:
-        line = self.clean_line(line)
+        line = clean_line(line)
         if self.additional_tag(line):
           continue
         if len(line)>0  and not (line[0]=='#'):
@@ -1959,6 +1969,8 @@ class decimate(engine):
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
                      4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
+
+    return self.parameters
       
 
   #########################################################################
@@ -2149,6 +2161,16 @@ class decimate(engine):
       job['initial_array'] = job['array']
 
     index_to_submit = RangeSet(job['array'])
+
+    if self.args.yalla_parameter_file and not(self.args.spawned):
+      array_params_coherent = False
+      parameter_nb = len(self.parameters)
+      array_length = len(index_to_submit)
+      if not(array_length == parameter_nb):
+        msg = "array has %s occurence while there are %d parameters" % \
+              (array_length,parameter_nb)
+        self.error(msg,exit=True)
+    
 
     if job['job_name'] in self.STEPS_RESTART_STATUS.keys():
       if self.STEPS_RESTART_STATUS[job['job_name']] in ['TO_RERUN','TO_RESTART']:
@@ -3011,6 +3033,15 @@ class decimate(engine):
     if self.args.test:
       l0 = l0 + " --test %s" % self.args.test
 
+    if self.args.yalla_parameter_file:
+      l0 = l0 + " --yalla-parameter-file %s" % self.args.yalla_parameter_file
+
+    if self.args.yalla_parameter_file:
+      l0 = l0 + " --yalla-parameter-filter %s" % self.args.yalla_parameter_filter
+
+    if self.args.yalla_parameter_file:
+      l0 = l0 + " --yalla-parameter-range %s" % self.args.yalla_parameter_range
+
     if self.args.fake:
       l0 = l0 + " --fake"
       l = '#!/bin/bash\n#JOB_FAKE\n'
@@ -3105,6 +3136,13 @@ class decimate(engine):
       prefix0 = ""
     else:
       prefix0 = check_previous
+      if self.args.yalla_parameter_file:
+        prefix0 = prefix0 + '\n# Sourcing parameters taken from file: %s ' % \
+                  self.args.yalla_parameter_file
+        prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+      
+
 
     l = prefix0 + "\n\n# Starting user job\n" + \
         "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + l\

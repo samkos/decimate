@@ -173,6 +173,12 @@ class slurm_frontend(decimate):
         self.error('checking job script %s missing...' % self.slurm_args.check, exit=True)
       self.slurm_args.check = os.path.abspath("%s" % self.slurm_args.check)
 
+    # does the checking script exist?
+    if self.slurm_args.yalla_parameter_file:
+      if not(os.path.exists(self.slurm_args.yalla_parameter_file)):
+        self.error('parameter file %s missing...' % self.slurm_args.yalla_parameter_file, exit=True)
+      self.slurm_args.yalla_parameter_file = os.path.abspath("%s" % self.slurm_args.yalla_parameter_file)
+
     for k,v in p_slurm_args.items():
       new_job[k] = v
 
