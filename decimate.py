@@ -127,15 +127,15 @@ Help options:
   -H,   --decimate-help       show Decimate help message
   -f,   --filter=FILTERS      activate traces
                               API, PARSE, USER_CHECK
-  -u,   --usage               display brief usage message
-        --test-only           Validate the batch script
+
+  -P,  --parameter-file=PARAM_FILE file listing all parameter
+                                          combinations to cover
+  -Pf, --parameter-filter=FILTER filter while reading parameter file
+  -Pa, --parameter-range=range numeric filter while reading parameter file
+
   -xy,  --yalla               Use Yalla Container
   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
                               of parallel runs in a container
-  -xyf, --yalla-parameter-file=PARAM_FILE file listing all parameter
-                                          combinations to cover
-  -xyF, --yalla-parameter-filter=FILTER filter while reading parameter file
-  -xyn, --yalla-parameter-range=range numeric filter while reading parameter file
 
 
 Burst Buffer
@@ -396,7 +396,7 @@ class decimate(engine):
                              help='Use yalla container', default=False)
     self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
                              help='# of job to run in parallel in a container', default=4)
-    self.parser.add_argument("-xyf", "--yalla-parameter-file", type=str,
+    self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
 
     self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
@@ -518,8 +518,8 @@ class decimate(engine):
                      exit=True, exception=True)
 
     # reading of the parameter file
-    if self.args.yalla_parameter_file:
-          self.read_yalla_parameter_file()
+    if self.args.parameter_file:
+          self.read_parameter_file()
             
     if self.args.taskid:
       try:
@@ -609,12 +609,12 @@ class decimate(engine):
       self.finalize()
       sys.exit(0)
 
-    if self.args.check_previous_step and self.args.yalla_parameter_file and self.args.spawned:
+    if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
       param_file = '/tmp/parameters.%s' % self.TASK_ID
       task_parameter_file = open(param_file,"w")
       params = self.parameters[int(self.TASK_ID)]
       task_parameter_file.write('# set parameter from file %s for task %s' %\
-                                (self.args.yalla_parameter_file, self.TASK_ID))
+                                (self.args.parameter_file, self.TASK_ID))
       for p in params.keys():
         task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
       task_parameter_file.write('\n')
@@ -1845,25 +1845,25 @@ class decimate(engine):
   # read the yalla parameter file in order to submit a pool of jobs
   #########################################################################
 
-  def read_yalla_parameter_file(self):
-    self.log_debug('reading yalla parameter files %s' % self.args.yalla_parameter_file,\
+  def read_parameter_file(self):
+    self.log_debug('reading yalla parameter files %s' % self.args.parameter_file,\
                    2, trace='YALLA,PARAMETRIC_DETAIL')
 
-    if not(os.path.exists(self.args.yalla_parameter_file)):
-      self.error('Parameter file %s does not exist!!!' % self.args.yalla_parameter_file)
+    if not(os.path.exists(self.args.parameter_file)):
+      self.error('Parameter file %s does not exist!!!' % self.args.parameter_file)
     else:
       tags_ok = False
-      lines = open(self.args.yalla_parameter_file).readlines()
+      lines = open(self.args.parameter_file).readlines()
 
     # warning message is sent to the user if filter is applied on the combination to consider
 
-    if not(self.args.yalla_parameter_filter==None) or \
-       not(self.args.yalla_parameter_range==None):
-      if self.args.yalla_parameter_filter:
+    if not(self.args.parameter_filter==None) or \
+       not(self.args.parameter_range==None):
+      if self.args.parameter_filter:
         self.log_info("the filter %s will be applied... Only following lines will be taken into account : " % \
-                      (self.args.yalla_parameter_filter))
-      if self.args.yalla_parameter_range:
-        self.log_info("only lines %s will be taken " % self.args.yalla_parameter_range)
+                      (self.args.parameter_filter))
+      if self.args.parameter_range:
+        self.log_info("only lines %s will be taken " % self.args.parameter_range)
 
       self.direct_tag = {}
       nb_case = 1
@@ -1879,7 +1879,7 @@ class decimate(engine):
           for k in self.direct_tag.keys():
             line = line+" "+self.direct_tag[k]
           self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
-          matchObj = re.match("^.*"+self.args.yalla_parameter_filter+".*$",line)
+          matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
             if nb_case==1:
@@ -1887,7 +1887,7 @@ class decimate(engine):
                 print "%6s" % k,
               print
 
-            if not(self.args.yalla_parameter_range) or self.args.yalla_parameter_range==nb_case:
+            if not(self.args.parameter_range) or self.args.parameter_range==nb_case:
               print "%3d: " % (nb_case),
               for k in line.split(" "):
                 print "%6s " % k[:20],
@@ -1931,12 +1931,12 @@ class decimate(engine):
       nb_case = nb_case+1
 
       # if job case are filtered, apply it, jumping to next line if filter not match
-      if self.args.yalla_parameter_filter:
-        matchObj = re.match("^.*"+self.args.yalla_parameter_filter+".*$",line2scan)
+      if self.args.parameter_filter:
+        matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line2scan)
         if not(matchObj):
           continue
 
-      if self.args.yalla_parameter_range and not(self.args.yalla_parameter_range==nb_case-1):
+      if self.args.parameter_range and not(self.args.parameter_range==nb_case-1):
         continue
 
       self.log_debug("testing : %s\ntags_names:%s" % (line,tags_names),\
@@ -2167,7 +2167,7 @@ class decimate(engine):
 
     index_to_submit = RangeSet(job['array'])
 
-    if self.args.yalla_parameter_file and not(self.args.spawned):
+    if self.args.parameter_file and not(self.args.spawned):
       array_params_coherent = False
       parameter_nb = len(self.parameters)
       array_length = len(index_to_submit)
@@ -3038,14 +3038,14 @@ class decimate(engine):
     if self.args.test:
       l0 = l0 + " --test %s" % self.args.test
 
-    if self.args.yalla_parameter_file:
-      l0 = l0 + " --yalla-parameter-file %s" % self.args.yalla_parameter_file
+    if self.args.parameter_file:
+      l0 = l0 + " --parameter-file %s" % self.args.parameter_file
 
-    if self.args.yalla_parameter_filter:
-      l0 = l0 + " --yalla-parameter-filter %s" % self.args.yalla_parameter_filter
+    if self.args.parameter_filter:
+      l0 = l0 + " --parameter-filter %s" % self.args.parameter_filter
 
-    if self.args.yalla_parameter_range:
-      l0 = l0 + " --yalla-parameter-range %s" % self.args.yalla_parameter_range
+    if self.args.parameter_range:
+      l0 = l0 + " --parameter-range %s" % self.args.parameter_range
 
     if self.args.fake:
       l0 = l0 + " --fake"
@@ -3141,9 +3141,9 @@ class decimate(engine):
       prefix0 = ""
     else:
       prefix0 = check_previous
-      if self.args.yalla_parameter_file:
+      if self.args.parameter_file:
         prefix0 = prefix0 + '\n# Sourcing parameters taken from file: %s ' % \
-                  self.args.yalla_parameter_file
+                  self.args.parameter_file
         prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
         #prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       

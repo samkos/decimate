@@ -70,11 +70,11 @@ class slurm_frontend(decimate):
                                    help='Use yalla container', default=False)
     self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
                                    help='# of job to run in parallel in a container', default=4)
-    self.parser.add_argument("-xyf", "--yalla-parameter-file", type=str,
+    self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
-    self.parser.add_argument("-xyF", "--yalla-parameter-filter", type=str,
+    self.parser.add_argument("-xyF", "--parameter-filter", type=str,
                              help='filter to apply on combinations to cover')
-    self.parser.add_argument("-xyf", "--yalla-parameter-range", type=str,
+    self.parser.add_argument("-xyf", "--parameter-range", type=str,
                              help='filtered range to apply on combinations to cover')
 
     self.slurm_args = self.slurm_parser.parse_args(args)
@@ -114,17 +114,17 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
 
-    if self.slurm_args.yalla_parameter_file:
+    if self.slurm_args.parameter_file:
       decimate_extra_config = decimate_extra_config + \
-                              ['--yalla-parameter-file', "%s" % self.slurm_args.yalla_parameter_file]
+                              ['--parameter-file', "%s" % self.slurm_args.parameter_file]
 
-    if self.slurm_args.yalla_parameter_filter:
+    if self.slurm_args.parameter_filter:
       decimate_extra_config = decimate_extra_config + \
-                              ['--yalla-parameter-filter', "%s" % self.slurm_args.yalla_parameter_filter]
+                              ['--parameter-filter', "%s" % self.slurm_args.parameter_filter]
 
-    if self.slurm_args.yalla_parameter_range:
+    if self.slurm_args.parameter_range:
       decimate_extra_config = decimate_extra_config + \
-                              ['--yalla-parameter-range', "%s" % self.slurm_args.yalla_parameter_range]
+                              ['--parameter-range', "%s" % self.slurm_args.parameter_range]
 
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
@@ -174,10 +174,10 @@ class slurm_frontend(decimate):
       self.slurm_args.check = os.path.abspath("%s" % self.slurm_args.check)
 
     # does the checking script exist?
-    if self.slurm_args.yalla_parameter_file:
-      if not(os.path.exists(self.slurm_args.yalla_parameter_file)):
-        self.error('parameter file %s missing...' % self.slurm_args.yalla_parameter_file, exit=True)
-      self.slurm_args.yalla_parameter_file = os.path.abspath("%s" % self.slurm_args.yalla_parameter_file)
+    if self.slurm_args.parameter_file:
+      if not(os.path.exists(self.slurm_args.parameter_file)):
+        self.error('parameter file %s missing...' % self.slurm_args.parameter_file, exit=True)
+      self.slurm_args.parameter_file = os.path.abspath("%s" % self.slurm_args.parameter_file)
 
     for k,v in p_slurm_args.items():
       new_job[k] = v
