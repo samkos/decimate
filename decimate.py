@@ -609,6 +609,18 @@ class decimate(engine):
       self.finalize()
       sys.exit(0)
 
+    if self.args.check_previous_step and self.args.yalla_parameter_file and self.args.spawned:
+      param_file = '/tmp/parameters.%s' % self.TASK_ID
+      task_parameter_file = open(param_file,"w")
+      params = self.parameters[int(self.TASK_ID)]
+      task_parameter_file.write('# set parameter from file %s for task %s' %\
+                                (self.args.yalla_parameter_file, self.TASK_ID))
+      for p in params.keys():
+        task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
+      task_parameter_file.write('\n')
+      task_parameter_file.close()
+      self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
+      
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
@@ -667,15 +679,6 @@ class decimate(engine):
       self.feed_workflow()
       sys.exit(0)
 
-    if self.args.yalla_parameter_file and self.args.spawned:
-      task_parameter_file = fopen('/tmp/parameters.%s' % self.TASK_ID)
-      params = self.parameters[int(self.TASK_ID)]
-      task_parameter_file.write('# set parameter from file %s for task %s' %\
-                                self.args.yalla_parameter_file, self.TASK_ID)
-      for p in params.keys():
-        task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
-      task_parameter_file.write('\n')
-      task_parameter_file.close()
 
     if self.args.job_status:
       self.get_current_jobs_status()
@@ -1854,7 +1857,8 @@ class decimate(engine):
 
     # warning message is sent to the user if filter is applied on the combination to consider
 
-    if self.args.yalla_parameter_filter or self.args.yalla_parameter_range:
+    if not(self.args.yalla_parameter_filter==None) or \
+       not(self.args.yalla_parameter_range==None):
       if self.args.yalla_parameter_filter:
         self.log_info("the filter %s will be applied... Only following lines will be taken into account : " % \
                       (self.args.yalla_parameter_filter))
@@ -1891,7 +1895,8 @@ class decimate(engine):
             nb_case = nb_case + 1
 
       # askine to the user if he is ok or not
-      self.ask("Is this correct?", default='n')
+      if not(self.args.spawned):
+        self.ask("Is this correct?", default='n')
 
       tags_ok = False
           
@@ -3036,10 +3041,10 @@ class decimate(engine):
     if self.args.yalla_parameter_file:
       l0 = l0 + " --yalla-parameter-file %s" % self.args.yalla_parameter_file
 
-    if self.args.yalla_parameter_file:
+    if self.args.yalla_parameter_filter:
       l0 = l0 + " --yalla-parameter-filter %s" % self.args.yalla_parameter_filter
 
-    if self.args.yalla_parameter_file:
+    if self.args.yalla_parameter_range:
       l0 = l0 + " --yalla-parameter-range %s" % self.args.yalla_parameter_range
 
     if self.args.fake:
@@ -3140,7 +3145,7 @@ class decimate(engine):
         prefix0 = prefix0 + '\n# Sourcing parameters taken from file: %s ' % \
                   self.args.yalla_parameter_file
         prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
-        prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        #prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       
 
 

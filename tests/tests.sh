@@ -102,6 +102,13 @@ db -f USER_CHECK --check=tests/check_job.sh -J 3 tests/my_job_no_wait.sh
 
 db -f USER_CHECK --check=tests/check_job.sh -a 1-90 -J 4 tests/my_job_no_wait.sh 
 
+
+# testing parameter file
+gC;
+db -a 1-2 -xyf tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC -a 1-2 -xyf tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_DETAIL -a 1-2 -xyf tests/my_params.txt tests/my_job_params.sh
+
 python
 import subprocess
 cmd='/home/kortass/DECIMATE-GITHUB/tests/check_job.sh 1 0 1 /home/kortass/DECIMATE-GITHUB 1.218470.out.task_0001-attempt_0 1.218470.err.task_0001-attempt_0 True/'

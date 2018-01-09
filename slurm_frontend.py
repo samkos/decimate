@@ -138,7 +138,7 @@ class slurm_frontend(decimate):
     if DEBUG:
       print('job_file=/%s/\nargs=/%s/\nparams=/%s/\ndecimate_args=/%s/' % \
             (self.job_script,args,self.job_parameter,decimate_extra_config + decimate_args))
-
+      
     return ['--decimate'] + decimate_extra_config + decimate_args
 
   #########################################################################
