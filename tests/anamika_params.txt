@@ -1,0 +1,171 @@
+# parameter example file
+x  y z   nodes   ntasks_per_node
+
+
+#YALLA t = 10
+#YALLA k = x
+#YALLA ntasks = nodes * ntasks_per_node
+
+##################
+#Mod_Par_file.txt
+##################
+
+#YALLA NPROC = 2; #Number of processors
+#k = 2; #level [0,1,2,3,4,5,6,7];
+
+#YALLA n = int(2*(2**(k)));
+#YALLA T = 15;
+#YALLA y = 5.0e-03;  
+#YALLA WidthPML=5000;
+
+#YALLA DT    = y*5/n;
+#YALLA NSTEP = T/DT;
+
+#YALLA NSOURCES = 1
+
+#YALLA nreceiversets = 4
+
+#YALLA nrec1 = 11
+#YALLA xdeb1 = 5500+WidthPML
+#YALLA xfin1 = 29500+WidthPML
+
+#YALLA nrec2 = 11            
+#YALLA xdeb2 = 30000+WidthPML         
+#YALLA xfin2 = 54500+WidthPML          
+
+#YALLA nrec3 = 2              
+#YALLA xdeb3 = 27742+WidthPML       
+#YALLA xfin3 = 40349+WidthPML          
+
+#YALLA nrec4 = 1              
+#YALLA xdeb4 = 49224+WidthPML       
+
+#YALLA NELEM_PML_THICKNESS = WidthPML/60000*(n*12);
+
+#YALLA rho1 = 2500 
+#YALLA Vp1  = 6000
+#YALLA Vs1   = Vp1/math.sqrt(2)
+#YALLA Qmu1 = 300
+
+#YALLA rho2  = 2500
+#YALLA Vp2  = 6300
+#YALLA Vs2   = Vp2/math.sqrt(2)
+#YALLA Qmu2 = 300
+
+#YALLA rho3  = 2500
+#YALLA Vp3  = 6600
+#YALLA Vs3   = Vp3/math.sqrt(2)
+#YALLA Qmu3 = 800
+
+#YALLA rho4  = 2500
+#YALLA Vp4  = 6650
+#YALLA Vs4   = Vp4/math.sqrt(2)
+#YALLA Qmu4 = 800
+
+#YALLA rho5  = 2500
+#YALLA Vp5  = 8000
+#YALLA Vs5   = Vp5/math.sqrt(2)
+#YALLA Qmu5 = 800
+
+#YALLA rho6  = 2500
+#YALLA Vp6  = 8150
+#YALLA Vs6   = Vp6/math.sqrt(2)
+#YALLA Qmu6 = 600
+
+#YALLA rho7  = 2500
+#YALLA Vp7  = 8200
+#YALLA Vs7   = Vp7/math.sqrt(2)
+#YALLA Qmu7 = 600
+
+#YALLA xmax = 60000+WidthPML
+#YALLA nx = 12*n+2*NELEM_PML_THICKNESS
+
+#YALLA nz1 = 2*n+NELEM_PML_THICKNESS
+#YALLA nz11= nz1+1
+
+#YALLA nz2 = nz1+n
+#YALLA nz22= nz2+1
+
+#YALLA nz3 = nz2+n
+#YALLA nz33= nz3+1
+
+#YALLA nz4 = nz3+2*n
+#YALLA nz44= nz4+1
+
+#YALLA nz5 = nz4+2*n
+#YALLA nz55= nz5+1
+
+#YALLA nz6 = nz5+2*n
+#YALLA nz66= nz6+1
+
+#YALLA nz7 = nz6+2*n
+
+
+#################
+#Mod_interfaces.dat
+#################
+
+#YALLA xmax = 60000+WidthPML
+
+#YALLA Interface1 = 10000 + WidthPML 
+#YALLA Interface2 = 20000 + WidthPML 
+#YALLA Interface3 = 25000 + WidthPML
+#YALLA Interface4 = 30000 + WidthPML
+#YALLA Interface5 = 40000 + WidthPML 
+#YALLA Interface6 = 50000 + WidthPML
+#YALLA Interface7 = 60000 + WidthPML
+
+#YALLA NbElementsLayer1 = 2*n + NELEM_PML_THICKNESS
+#YALLA NbElementsLayer2 = 2*n
+#YALLA NbElementsLayer3 = n
+#YALLA NbElementsLayer4 = n
+#YALLA NbElementsLayer5 = 2*n
+#YALLA NbElementsLayer6 = 2*n
+#YALLA NbElementsLayer7 = 2*n
+
+#################
+#Mod_SOURCE
+#################
+
+#YALLA xs = 12750 + WidthPML
+#YALLA zs = 33250 + WidthPML
+
+#YALLA f0 = 2
+
+#YALLA Mxx = 5.5895 #5.5895d13
+#YALLA Mzz = -2.5698 #-2.5698d14
+#YALLA Mxz = 7.9762 #7.9762d13
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1  3 4   1        16
+1  1 1   1        32
+
+1  3 4   2        16
+1  1 1   2        32
+
+1  3 4   4        16
+1  1 1   4        32
+
+
+
+
+ 
