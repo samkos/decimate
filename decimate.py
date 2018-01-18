@@ -7,6 +7,7 @@ from engine import *
 from env import TMPDIR
 import math
 import os
+import pandas as pd
 import pprint
 import shlex
 from stat import *
@@ -615,8 +616,13 @@ class decimate(engine):
       params = self.parameters[int(self.TASK_ID)]
       task_parameter_file.write('# set parameter from file %s for task %s' %\
                                 (self.args.parameter_file, self.TASK_ID))
+      s = ""
       for p in params.keys():
         task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
+        s = s + "%s=>%s< " % (p,params[p])
+        
+      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID,s))
+      
       task_parameter_file.write('\n')
       task_parameter_file.close()
       self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
@@ -1840,6 +1846,14 @@ class decimate(engine):
       self.direct_tag[t] = v
       return True
     return False
+
+  def eval_tag(self,tag,formula,already_set_variables):
+    expr = already_set_variables + "\n%s = %s"  % (tag,formula)
+    exec(expr)
+    value = locals()[tag]
+    self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
+                   4,trace='PARAMETRIC_DETAIL')
+    return value 
   
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
@@ -1900,7 +1914,7 @@ class decimate(engine):
 
       tags_ok = False
           
-    # direct_tag contains the tags set through #KTF tag = value
+    # direct_tag contains the tags set through #YALLA tag = value
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
 
@@ -1909,7 +1923,7 @@ class decimate(engine):
     # parsing of the input file starts...
     for line in lines:
       line = clean_line(line)
-      # is it a tag enforced by #KTF directive?
+      # is it a tag enforced by #YALLA directive?
       if self.additional_tag(line):
         continue
       
@@ -1917,7 +1931,7 @@ class decimate(engine):
       if len(line)==0 or (line[0]=='#'):
         continue
 
-      # parsing other line than #KTF directive
+      # parsing other line than #YALLA directive
       if not(tags_ok):
         # first line ever -> Containaing tag names
         tags_names = line.split(" ")
@@ -1962,18 +1976,41 @@ class decimate(engine):
         tag["%s" % t] = tags.pop(0)
         self.log_debug("tag %s : !%s! " % (t,tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
       self.log_debug('tag:%s' % pprint.pformat(tag),4,trace='PARAMETRIC_DETAIL')
-          
-      # adding the tags enforced by a #KTF directive
-      tag.update(self.direct_tag)
 
-      self.log_debug('self.direct_tag %s tag:%s' % \
+
+      if len(self.direct_tag):
+        
+        self.log_debug('self.direct_tag %s tag:%s' % \
                      (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
                      4,trace='PARAMETRIC_DETAIL')
+        # adding the tags enforced by a #YALLA directive
+        # evaluating them first
+        already_set_variables = ""
+        for t,v in tag.items():
+          already_set_variables =  already_set_variables + "\n" + "%s = %s " % (t,v)
+            
+        for t,formula in self.direct_tag.items():
+          value = self.eval_tag(t,formula,already_set_variables)
+          tag[t] = value
+          self.log_debug('evaluated! %s = %s = %s' % (t,formula,value),\
+                         4,trace='PARAMETRIC_DETAIL')
+
+    
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
                      4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
+
+    l = pd.DataFrame(self.parameters).transpose()
+    print l
+    job_per_node_number = l.groupby(['nodes']).size()
+    print job_per_node_number
+    for j in job_per_node_number.keys():
+      print j,':',job_per_node_number[j]
+    print l.groupby(['nodes']).size()
+
+    sys.exit(1)
 
     return self.parameters
       
@@ -2172,7 +2209,7 @@ class decimate(engine):
       parameter_nb = len(self.parameters)
       array_length = len(index_to_submit)
       if not(array_length == parameter_nb):
-        msg = "array has %s occurence while there are %d parameters" % \
+        msg = "array has %s occurence while there are %d combinations" % \
               (array_length,parameter_nb)
         self.error(msg,exit=True)
     

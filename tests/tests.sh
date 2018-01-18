@@ -106,8 +106,8 @@ db -f USER_CHECK --check=tests/check_job.sh -a 1-90 -J 4 tests/my_job_no_wait.sh
 # testing parameter file
 gC;
 db -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
-db -f PARAMETRIC -a 1-2 -Pf tests/my_params.txt tests/my_job_params.sh
-db -f PARAMETRIC_DETAIL -a 1-2 -Pf tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_DETAIL -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
 
 python
 import subprocess
