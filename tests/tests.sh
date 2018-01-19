@@ -109,11 +109,13 @@ db -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
 db -f PARAMETRIC -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
 db -f PARAMETRIC_DETAIL -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
 db -f PARAMETRIC_DETAIL -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_SUMMARY -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
 db  -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
 db  -a 1-2 -P tests/anamika_params_errors.txt tests/my_job_params.sh
 db  -f PARAMETRIC_DETAIL -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
 db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
 db  -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/loop_params_error.txt tests/my_job_params.sh
 
 python
 import subprocess

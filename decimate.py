@@ -2030,11 +2030,18 @@ class decimate(engine):
         result = self.eval_tag(t,formula,already_set_variables)
         self.log_debug('evaluated! %s = %s = %s' % (t,formula,result),\
                        4,trace='PARAMETRIC_DETAIL')
+        # output produced is a row of values
         if isinstance(result,list):
           if len(result)==len(l):
             ser = pd.Series(result,index=l.index)
             l[t] = ser
+          else:
+            self.error(('parameters number mistmatch for expression' +\
+                        '\n\t %s = %s \n\t --> ' +\
+                        'expected %d and got %d parameters...') % \
+                       (t,formula,len(l),len(result)))
         else:
+          # output produced is only one value -> computing it for all combination 
           results = [result]
           for row in range(1,len(l)):
             values = l.iloc[[row]]
