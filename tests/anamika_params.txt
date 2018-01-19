@@ -1,9 +1,18 @@
 # parameter example file
 x  y z   nodes   ntasks_per_node
 
+1  3 4   1        16
+1  1 1   1        32
+
+1  3 4   2        16
+1  1 1   2        32
+
+1  3 4   4        16
+1  1 1   4        32
+
 
 #YALLA t = 10
-#YALLA k = x
+#YALLA k = range(6)
 #YALLA ntasks = nodes * ntasks_per_node
 
 ##################
@@ -137,17 +146,3 @@ x  y z   nodes   ntasks_per_node
 #YALLA Mxz = 7.9762 #7.9762d13
  
 
-
-1  3 4   1        16
-1  1 1   1        32
-
-1  3 4   2        16
-1  1 1   2        32
-
-1  3 4   4        16
-1  1 1   4        32
-
-
-
-
- 

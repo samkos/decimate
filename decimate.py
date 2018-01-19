@@ -1984,38 +1984,77 @@ class decimate(engine):
         self.log_debug("tag %s : !%s! " % (t,tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
       self.log_debug('tag:%s' % pprint.pformat(tag),4,trace='PARAMETRIC_DETAIL')
 
-
-      if len(self.direct_tag):
-        
-        self.log_debug('self.direct_tag %s tag:%s' % \
-                     (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
-                     4,trace='PARAMETRIC_DETAIL')
-        self.log_debug('self.direct_tag_ordered %s ' % \
-                     (pprint.pformat(self.direct_tag_ordered)),\
-                     4,trace='PARAMETRIC_DETAIL')
-        # adding the tags enforced by a #YALLA directive
-        # evaluating them first
-        already_set_variables = ""
-        for t,v in tag.items():
-          already_set_variables = already_set_variables + "\n" + "%s = %s " % (t,v)
-
-        for t in self.direct_tag_ordered:
-          formula = self.direct_tag[t]
-          value = self.eval_tag(t,formula,already_set_variables)
-          tag[t] = value
-          already_set_variables = already_set_variables + "\n" + "%s = %s " % (t,value)
-          self.log_debug('evaluated! %s = %s = %s' % (t,formula,value),\
-                         4,trace='PARAMETRIC_DETAIL')
-
-    
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
                      4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
 
+    pd.options.display.max_rows = 999
+    pd.options.display.max_columns = 999
+    pd.options.display.width = 3000
+    pd.options.display.expand_frame_repr=True
+    pd.options.display.max_columns = None
+
+    
     l = pd.DataFrame(self.parameters).transpose()
-    print l
+    tag = l.iloc[[0]]
+    self.log_debug('%d parameters before functional_tags : \n %s' % (len(l),l),\
+                   4, trace='PARAMETRIC_DETAIL')
+    self.log_debug('tag before functional_tags : \n %s' % l.columns,\
+                   4, trace='PARAMETRIC_DETAIL')
+
+    if len(self.direct_tag):
+      
+      self.log_debug('self.direct_tag %s tag:%s' % \
+                   (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
+                   4,trace='PARAMETRIC_DETAIL')
+      self.log_debug('self.direct_tag_ordered %s ' % \
+                   (pprint.pformat(self.direct_tag_ordered)),\
+                   4,trace='PARAMETRIC_DETAIL')
+      # adding the tags enforced by a #YALLA directive
+      # evaluating them first
+
+      for t in self.direct_tag_ordered:
+        already_set_variables = ""
+        if len(l)>1:
+          values = l.iloc[[1]]
+          self.log_debug('values on first line : \n %s' % values,\
+                         4, trace='PARAMETRIC_DETAIL')
+          for c in l.columns:
+            already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[0][c])
+        self.log_debug('already_set_variables : \n %s' % already_set_variables,\
+                       4, trace='PARAMETRIC_DETAIL')
+
+        formula = self.direct_tag[t]
+        result = self.eval_tag(t,formula,already_set_variables)
+        self.log_debug('evaluated! %s = %s = %s' % (t,formula,result),\
+                       4,trace='PARAMETRIC_DETAIL')
+        if isinstance(result,list):
+          if len(result)==len(l):
+            ser = pd.Series(result,index=l.index)
+            l[t] = ser
+        else:
+          results = [result]
+          for row in range(1,len(l)):
+            values = l.iloc[[row]]
+            self.log_debug('values on row %s: \n %s' % (row,values),\
+                           4, trace='PARAMETRIC_DETAIL')
+            already_set_variables = ""
+            for c in l.columns:
+              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+            result = self.eval_tag(t,formula,already_set_variables)
+            results = results + [result]
+          self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
+                       4,trace='PARAMETRIC_DETAIL')
+
+          ser = pd.Series(results,index=l.index)
+          l[t] = ser
+    
+    self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
+                   4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+
+    
     job_per_node_number = l.groupby(['nodes']).size()
     print job_per_node_number
     for j in job_per_node_number.keys():
