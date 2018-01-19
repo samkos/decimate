@@ -1844,6 +1844,7 @@ class decimate(engine):
       (t,v) = (matchObj.group(1), matchObj.group(2))
       self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
       self.direct_tag[t] = v
+      self.direct_tag_ordered = self.direct_tag_ordered + [t]
       return True
     return False
 
@@ -1880,6 +1881,7 @@ class decimate(engine):
         self.log_info("only lines %s will be taken " % self.args.parameter_range)
 
       self.direct_tag = {}
+      self.direct_tag_ordered = []
       nb_case = 1
 
       for line in lines:
@@ -1917,7 +1919,8 @@ class decimate(engine):
     # direct_tag contains the tags set through #YALLA tag = value
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
-
+    self.direct_tag_ordered = []
+    
     nb_case = 0
     self.parameters = {}
     # parsing of the input file starts...
@@ -1983,15 +1986,20 @@ class decimate(engine):
         self.log_debug('self.direct_tag %s tag:%s' % \
                      (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
                      4,trace='PARAMETRIC_DETAIL')
+        self.log_debug('self.direct_tag_ordered %s ' % \
+                     (pprint.pformat(self.direct_tag_ordered)),\
+                     4,trace='PARAMETRIC_DETAIL')
         # adding the tags enforced by a #YALLA directive
         # evaluating them first
         already_set_variables = ""
         for t,v in tag.items():
-          already_set_variables =  already_set_variables + "\n" + "%s = %s " % (t,v)
-            
-        for t,formula in self.direct_tag.items():
+          already_set_variables = already_set_variables + "\n" + "%s = %s " % (t,v)
+
+        for t in self.direct_tag_ordered:
+          formula = self.direct_tag[t]
           value = self.eval_tag(t,formula,already_set_variables)
           tag[t] = value
+          already_set_variables = already_set_variables + "\n" + "%s = %s " % (t,value)
           self.log_debug('evaluated! %s = %s = %s' % (t,formula,value),\
                          4,trace='PARAMETRIC_DETAIL')
 
