@@ -1849,8 +1849,12 @@ class decimate(engine):
     return False
 
   def eval_tag(self,tag,formula,already_set_variables):
-    expr = already_set_variables + "\n%s = %s"  % (tag,formula)
-    exec(expr)
+    expr = already_set_variables + "\n%s = %s" % (tag,formula)
+    try:
+      exec(expr)
+    except Exception:
+      self.error('error in evalution of the parameters: expression to be evaluted : %s=%s '  % (tag,formula), \
+                 exception=True,exit=True)
     value = locals()[tag]
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
                    4,trace='PARAMETRIC_DETAIL')
