@@ -2118,7 +2118,7 @@ class decimate(engine):
                          (tag,formula,len(l),len(result)))
           else:
             # output produced is only one value -> computing it for all combination
-            print 't=',t
+            print 't=',t,results
             if t.find("YALLA_prog")==-1:
               results = [result]
               for row in range(1,len(l)):
