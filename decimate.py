@@ -2174,8 +2174,9 @@ class decimate(engine):
                            4,trace='PARAMETRIC_PROG_DETAIL')
 
           for v in results.keys():
-            ser = pd.Series(results_per_var[v],index=l.index)
-            l[v] = ser
+            if not(v in result_as_column.keys()):
+              ser = pd.Series(results_per_var[v],index=l.index)
+              l[v] = ser
     
     self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
