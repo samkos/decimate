@@ -1960,15 +1960,6 @@ class decimate(engine):
 
 
     full_text = "\n".join(lines)
-    if full_text.find("#YALLA PYTHON")>-1:
-        chunks = full_text.split("#YALLA PYTHON")
-        nb_chunk = 1
-        for c in chunks[1:]:
-          prog = c.split("#YALLA")[0]
-          self.python_tag[nb_chunk] = c
-          nb_chunk = nb_chunk + 1
-
-
     in_prog=False
     prog = ""
     nb_prog = 0
@@ -1988,7 +1979,8 @@ class decimate(engine):
                        4, trace='PARAMETRIC_PROG,PARAMETRIC_PROG_DETAIL')
         in_prog = False
       # is it a program  enforced by #YALLA PYTHON directive?
-      if line.find("#YALLA PYTHON")>-1:
+      matchObj = re.match(r'^#YALLA\s*PYTHON\s*$',line)
+      if (matchObj):
         in_prog = True
         prog = ""
         continue
@@ -2111,21 +2103,22 @@ class decimate(engine):
         else:
           results = { t:  self.eval_tag(t,formula,already_set_variables)}
 
-        for t,result in results.items():  
-          self.log_debug('evaluated! %s = %s = %s' % (t,formula,result),\
+        for tag,result in results.items():  
+          self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
                          4,trace='PARAMETRIC_DETAIL')
           # output produced is a row of values
           if isinstance(result,list):
             if len(result)==len(l):
               ser = pd.Series(result,index=l.index)
-              l[t] = ser
+              l[tag] = ser
             else:
               self.error(('parameters number mistmatch for expression' +\
                           '\n\t %s = %s \n\t --> ' +\
                           'expected %d and got %d parameters...') % \
-                         (t,formula,len(l),len(result)))
+                         (tag,formula,len(l),len(result)))
           else:
-            # output produced is only one value -> computing it for all combination 
+            # output produced is only one value -> computing it for all combination
+            print 't=',t
             if t.find("YALLA_prog")==-1:
               results = [result]
               for row in range(1,len(l)):
@@ -2144,6 +2137,8 @@ class decimate(engine):
 
               ser = pd.Series(results,index=l.index)
               l[t] = ser
+            else:
+              self.error('Still to be done', exit=True, exception=True)
     
     self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
