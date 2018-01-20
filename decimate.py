@@ -1874,12 +1874,13 @@ class decimate(engine):
       exec(eval_expr)
     except Exception:
       self.error('error in evaluation of the parameters (eval_tags): expression to be evaluted : %s ' % \
-                 (formula), where="eval_tags",  exception=True,exit=True)
+                 (eval_expr), where="eval_tags",  exception=True,exit=True)
     values = {}
     variables = locals()
     del variables['formula']
     del variables['already_set_variables']
     del variables['eval_expr']
+    del variables['values']
     
     for tag,value in variables.items():
       if tag.find('__')==-1 and ("%s" % value).find('<')==-1:
@@ -2097,13 +2098,9 @@ class decimate(engine):
                        4, trace='PARAMETRIC_DETAIL')
 
         formula = self.direct_tag[t]
-        if t.find("YALLA_prog")>-1:
-           results = self.eval_tags(formula,already_set_variables)
-           del self.direct_tag[t]
-        else:
+        if t.find("YALLA_prog")==-1:
           results = { t:  self.eval_tag(t,formula,already_set_variables)}
-
-        for tag,result in results.items():  
+          tag,result = t,results[t]
           self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
                          4,trace='PARAMETRIC_DETAIL')
           # output produced is a row of values
@@ -2118,27 +2115,67 @@ class decimate(engine):
                          (tag,formula,len(l),len(result)))
           else:
             # output produced is only one value -> computing it for all combination
-            print 't=',t,results
-            if t.find("YALLA_prog")==-1:
-              results = [result]
-              for row in range(1,len(l)):
-                values = l.iloc[[row]]
-                self.log_debug('values on row %s: \n %s' % (row,values),\
-                               4, trace='PARAMETRIC_DETAIL')
-                already_set_variables = ""
-                for c in l.columns:
-                  already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
-                self.log_debug('about to be revaluated! t=%s results=%s' % (t,results),\
-                           4,trace='PARAMETRIC_DETAIL')
-                result = self.eval_tag(t,formula,already_set_variables)
-                results = results + [result]
-              self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
-                           4,trace='PARAMETRIC_DETAIL')
+            results = [result]
+            for row in range(1,len(l)):
+              values = l.iloc[[row]]
+              self.log_debug('values on row %s: \n %s' % (row,values),\
+                             4, trace='PARAMETRIC_DETAIL')
+              already_set_variables = ""
+              for c in l.columns:
+                already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+              self.log_debug('about to be revaluated! t=%s results=%s' % (t,results),\
+                             4,trace='PARAMETRIC_DETAIL')
+              result = self.eval_tag(t,formula,already_set_variables)
+              results = results + [result]
+            self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
+                          4,trace='PARAMETRIC_DETAIL')
 
-              ser = pd.Series(results,index=l.index)
-              l[t] = ser
-            else:
-              self.error('Still to be done', exit=True, exception=True)
+            ser = pd.Series(results,index=l.index)
+            l[t] = ser
+        else:
+          results = self.eval_tags(formula,already_set_variables)
+          del self.direct_tag[t]
+
+          # first updating all parameter that produces a vector
+          result_as_column = {}
+          for tag,result in results.items():  
+            self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
+                           4,trace='PARAMETRIC_DETAIL')
+            # output produced is a row of values
+            if isinstance(result,list):
+              if len(result)==len(l):
+                result_as_column[tag] = result
+                ser = pd.Series(result,index=l.index)
+                l[tag] = ser
+              else:
+                self.error(('parameters number mistmatch for expression' +\
+                            '\n\t %s = %s \n\t --> ' +\
+                            'expected %d and got %d parameters...') % \
+                           (tag,formula,len(l),len(result)))
+
+          # second applying formula for all other variables and check that
+          # row as column remains constant
+          results_per_var = {}
+          for v in results.keys():
+            results_per_var[v] = [results[v]]
+            
+          for row in range(1,len(l)):
+            
+            values = l.iloc[[row]]
+            self.log_debug('values on row %s: \n %s' % (row,values),\
+                           4, trace='PARAMETRIC_PROG_DETAIL')
+            already_set_variables = ""
+            for c in l.columns:
+              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+            results_for_this_row = self.eval_tags(formula,already_set_variables)
+            for v in results.keys():
+              results_per_var[v] = results_per_var[v] + [results_for_this_row[v]]
+            self.log_debug('evaluated! for row %s = %s' % (row,pprint.pformat(results_for_this_row)),\
+                           4,trace='PARAMETRIC_PROG_DETAIL')
+
+          for v in results.keys():
+            ser = pd.Series(results_per_var[v],index=l.index)
+            l[v] = ser
     
     self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
