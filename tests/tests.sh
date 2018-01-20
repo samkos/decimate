@@ -117,6 +117,9 @@ db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
 db  -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
 db  -a 1-2 -P tests/loop_params_error.txt tests/my_job_params.sh
 
+db  -f PARAMETRIC_PROG,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+db  -f ,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+
 python
 import subprocess
 cmd='/home/kortass/DECIMATE-GITHUB/tests/check_job.sh 1 0 1 /home/kortass/DECIMATE-GITHUB 1.218470.out.task_0001-attempt_0 1.218470.err.task_0001-attempt_0 True/'

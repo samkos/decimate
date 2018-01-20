@@ -1848,17 +1848,45 @@ class decimate(engine):
       return True
     return False
 
+  #########################################################################
+  # evaluate a tag from a formula
+  #########################################################################
   def eval_tag(self,tag,formula,already_set_variables):
     expr = already_set_variables + "\n%s = %s" % (tag,formula)
     try:
       exec(expr)
     except Exception:
       self.error('error in evalution of the parameters: expression to be evaluted : %s=%s '  % (tag,formula), \
-                 exception=True,exit=True)
+                 exception=True,exit=True, where="eval_tag")
     value = locals()[tag]
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
                    4,trace='PARAMETRIC_DETAIL')
     return value 
+  
+  #########################################################################
+  # evaluate tags from a formula
+  #########################################################################
+  def eval_tags(self,formula,already_set_variables):
+    eval_expr = already_set_variables + "\n%s" % (formula)
+    self.log_debug('expression to be evaluated : %s  '  % (eval_expr), \
+                       4,trace='PARAMETRIC_PROG_DETAIL')
+    try:
+      exec(eval_expr)
+    except Exception:
+      self.error('error in evaluation of the parameters (eval_tags): expression to be evaluted : %s ' % \
+                 (formula), where="eval_tags",  exception=True,exit=True)
+    values = {}
+    variables = locals()
+    del variables['formula']
+    del variables['already_set_variables']
+    del variables['eval_expr']
+    
+    for tag,value in variables.items():
+      if tag.find('__')==-1 and ("%s" % value).find('<')==-1:
+        values[tag] = value 
+        self.log_debug('value of %s = %s'  % (tag,value), \
+                       4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
+    return values 
   
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
@@ -1924,12 +1952,49 @@ class decimate(engine):
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
     self.direct_tag_ordered = []
+    self.python_tag = {}
+    self.python_tag_ordered = []
     
     nb_case = 0
     self.parameters = {}
+
+
+    full_text = "\n".join(lines)
+    if full_text.find("#YALLA PYTHON")>-1:
+        chunks = full_text.split("#YALLA PYTHON")
+        nb_chunk = 1
+        for c in chunks[1:]:
+          prog = c.split("#YALLA")[0]
+          self.python_tag[nb_chunk] = c
+          nb_chunk = nb_chunk + 1
+
+
+    in_prog=False
+    prog = ""
+    nb_prog = 0
+    line_nb = 0
+    nb_lines = len(lines)
     # parsing of the input file starts...
     for line in lines:
+      line_nb = line_nb + 1
       line = clean_line(line)
+      # while scanning a python section storing it...
+      if ((line.find("#YALLA") >-1) or (line_nb == nb_lines)) and in_prog:
+        t = "YALLA_prog_%d" % nb_prog
+        self.direct_tag[t] = prog 
+        self.direct_tag_ordered = self.direct_tag_ordered + [t]
+        nb_prog = nb_prog + 1
+        self.log_debug("prog python found in parametric file:\n%s" % prog, \
+                       4, trace='PARAMETRIC_PROG,PARAMETRIC_PROG_DETAIL')
+        in_prog = False
+      # is it a program  enforced by #YALLA PYTHON directive?
+      if line.find("#YALLA PYTHON")>-1:
+        in_prog = True
+        prog = ""
+        continue
+      elif in_prog:
+        prog = prog + line + "\n"
+        continue
       # is it a tag enforced by #YALLA directive?
       if self.additional_tag(line):
         continue
@@ -1966,12 +2031,12 @@ class decimate(engine):
       tags = shlex.split(line)
 
       if not(len(tags)==len(tags_names)):
-        self.error("\tError : pb encountered in reading the test matrix file : %s" % test_matrix_filename + \
+        self.error("\tError : pb encountered in reading the test matrix file : %s " % self.args.parameter_file + \
                    "at  line \n\t\t!%s" % line + \
                    "\n\t\tless parameters to read than expected... Those expected are\n" + \
-                   "\n\t\t\t",tags_names+\
-                   "\n\t\tand so far, we read"+\
-                   "\n\t\t\t" + tag, exit=True)
+                   "\n\t\t\t %s " % ",".join(tags_names) +\
+                   "\n\t\tand so far, we read" +\
+                   "\n\t\t\t %s" % tag, exception=True, exit=True)
       
       ts = copy.deepcopy(tags_names)
       tag = {}
@@ -2004,7 +2069,18 @@ class decimate(engine):
     self.log_debug('tag before functional_tags : \n %s' % l.columns,\
                    4, trace='PARAMETRIC_DETAIL')
 
+    # evaluating parameter computed...
+    
     if len(self.direct_tag):
+
+      # first evaluatin these parameter with the first combination of
+      # parameter to check if they are unique or an array of values
+      #
+      # if unique, then evaluation remains to be done for all the
+      #            possible combination
+      # if arrays of values, its dimension  should be conformant to the set of
+      #            combinations already known and that these values will complete
+
       
       self.log_debug('self.direct_tag %s tag:%s' % \
                    (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
@@ -2015,6 +2091,8 @@ class decimate(engine):
       # adding the tags enforced by a #YALLA directive
       # evaluating them first
 
+      # first path of evaluation for every computed tag
+      
       for t in self.direct_tag_ordered:
         already_set_variables = ""
         if len(l)>1:
@@ -2027,36 +2105,45 @@ class decimate(engine):
                        4, trace='PARAMETRIC_DETAIL')
 
         formula = self.direct_tag[t]
-        result = self.eval_tag(t,formula,already_set_variables)
-        self.log_debug('evaluated! %s = %s = %s' % (t,formula,result),\
-                       4,trace='PARAMETRIC_DETAIL')
-        # output produced is a row of values
-        if isinstance(result,list):
-          if len(result)==len(l):
-            ser = pd.Series(result,index=l.index)
-            l[t] = ser
-          else:
-            self.error(('parameters number mistmatch for expression' +\
-                        '\n\t %s = %s \n\t --> ' +\
-                        'expected %d and got %d parameters...') % \
-                       (t,formula,len(l),len(result)))
+        if t.find("YALLA_prog")>-1:
+           results = self.eval_tags(formula,already_set_variables)
+           del self.direct_tag[t]
         else:
-          # output produced is only one value -> computing it for all combination 
-          results = [result]
-          for row in range(1,len(l)):
-            values = l.iloc[[row]]
-            self.log_debug('values on row %s: \n %s' % (row,values),\
-                           4, trace='PARAMETRIC_DETAIL')
-            already_set_variables = ""
-            for c in l.columns:
-              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
-            result = self.eval_tag(t,formula,already_set_variables)
-            results = results + [result]
-          self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
-                       4,trace='PARAMETRIC_DETAIL')
+          results = { t:  self.eval_tag(t,formula,already_set_variables)}
 
-          ser = pd.Series(results,index=l.index)
-          l[t] = ser
+        for t,result in results.items():  
+          self.log_debug('evaluated! %s = %s = %s' % (t,formula,result),\
+                         4,trace='PARAMETRIC_DETAIL')
+          # output produced is a row of values
+          if isinstance(result,list):
+            if len(result)==len(l):
+              ser = pd.Series(result,index=l.index)
+              l[t] = ser
+            else:
+              self.error(('parameters number mistmatch for expression' +\
+                          '\n\t %s = %s \n\t --> ' +\
+                          'expected %d and got %d parameters...') % \
+                         (t,formula,len(l),len(result)))
+          else:
+            # output produced is only one value -> computing it for all combination 
+            if t.find("YALLA_prog")==-1:
+              results = [result]
+              for row in range(1,len(l)):
+                values = l.iloc[[row]]
+                self.log_debug('values on row %s: \n %s' % (row,values),\
+                               4, trace='PARAMETRIC_DETAIL')
+                already_set_variables = ""
+                for c in l.columns:
+                  already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+                self.log_debug('about to be revaluated! t=%s results=%s' % (t,results),\
+                           4,trace='PARAMETRIC_DETAIL')
+                result = self.eval_tag(t,formula,already_set_variables)
+                results = results + [result]
+              self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
+                           4,trace='PARAMETRIC_DETAIL')
+
+              ser = pd.Series(results,index=l.index)
+              l[t] = ser
     
     self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
