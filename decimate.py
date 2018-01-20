@@ -2148,10 +2148,9 @@ class decimate(engine):
                 ser = pd.Series(result,index=l.index)
                 l[tag] = ser
               else:
-                self.error(('parameters number mistmatch for expression' +\
-                            '\n\t %s = %s \n\t --> ' +\
-                            'expected %d and got %d parameters...') % \
-                           (tag,formula,len(l),len(result)))
+                self.error(('parameters number mistmatch for parameter %s computed from a python section' +\
+                            '\n\t expected %d and got %d parameters...') % \
+                           (tag,len(l),len(result)))
 
           # second applying formula for all other variables and check that
           # row as column remains constant
@@ -2170,6 +2169,14 @@ class decimate(engine):
             results_for_this_row = self.eval_tags(formula,already_set_variables)
             for v in results.keys():
               results_per_var[v] = results_per_var[v] + [results_for_this_row[v]]
+              if (v in result_as_column.keys()):
+                if not(cmp(result_as_column[v],results_for_this_row[v])==0):
+                  self.error('mismatch in parameter list  computed from file %s \n\tfor parameter %s: ' % \
+                             (self.args.parameter_file,v) +\
+                             '\n\t    returned %s for first combination ' % result_as_column[v] +\
+                             '\n\tbut returned %s for %dth combination ' % (results_for_this_row[v],row),
+                             exit=True,where='read_parameter_file',exception=False)
+
             self.log_debug('evaluated! for row %s = %s' % (row,pprint.pformat(results_for_this_row)),\
                            4,trace='PARAMETRIC_PROG_DETAIL')
 

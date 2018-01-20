@@ -17,7 +17,7 @@ import math
 
 t = 10
 ntasks = nodes * ntasks_per_node
-xxx = range(6)
+xxx = range(k,6+k)
 
 ##################
 #Mod_Par_file.txt
