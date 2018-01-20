@@ -2050,7 +2050,7 @@ class decimate(engine):
 
     pd.options.display.max_rows = 999
     pd.options.display.max_columns = 999
-    pd.options.display.width = 3000
+    #pd.options.display.width = 3000
     pd.options.display.expand_frame_repr=True
     pd.options.display.max_columns = None
 
@@ -2194,7 +2194,7 @@ class decimate(engine):
     for j in job_per_node_number.keys():
       print j,':',job_per_node_number[j]
     print l.groupby(['nodes']).size()
-
+    print l.groupby(['nodes','ntasks','k']).size()
     sys.exit(1)
 
     return self.parameters
