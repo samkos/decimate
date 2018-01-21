@@ -2134,13 +2134,16 @@ class decimate(engine):
             if len(result)==len(l) or len(l)>0 or (t in self.combined_tag):
               ser = pd.Series(result)
               if t in self.combined_tag:
-                new_column = pd.DataFrame(pd.Series(result))
+                new_column = []
+                for r in results:
+                  new_column = new_column = + r * len(l))
+                  pd.DataFrame(pd.Series(result))
                 self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
                    4, trace='PARAMETRIC_DETAIL')
                 self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
                    4, trace='PARAMETRIC_DETAIL')
-                l = self.cartesian(l,new_column)
-                self.log_debug('after cartesian product %d combinations : \n %s' % (len(l),l),\
+                u = self.cartesian(l,new_column)
+                self.log_debug('after cartesian product \n u %d combinations : \n %s' % (len(u),u),\
                    4, trace='PARAMETRIC_DETAIL')
 
               else:
