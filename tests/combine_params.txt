@@ -1,0 +1,5 @@
+# parameter example file
+
+#DECIM COMBINE i = [1,2]
+#DECIM COMBINE j = [1,2,3]
+#DECIM COMBINE k = range(4)

@@ -1,0 +1,152 @@
+# parameter example file
+x  y z   nodes   ntasks_per_node
+
+1  3 4   1        16
+1  1 1   1        32
+
+1  3 4   2        16
+1  1 1   2        32
+
+1  3 4   4        16
+1  1 1   4        32
+
+#DECIM k = range(6)
+#DECIM PYTHON
+
+import math
+
+t = 10
+ntasks = nodes * ntasks_per_node
+xxx = range(7)
+
+##################
+#Mod_Par_file.txt
+##################
+
+NPROC = 2; #Number of processors
+#k = 2; #level [0,1,2,3,4,5,6,7];
+
+n = int(2*(2**(k)));
+T = 15;
+y = 5.0e-03;  
+WidthPML=5000;
+
+DT    = y*5/n;
+NSTEP = T/DT;
+
+NSOURCES = 1
+
+nreceiversets = 4
+
+nrec1 = 11
+xdeb1 = 5500+WidthPML
+xfin1 = 29500+WidthPML
+
+nrec2 = 11            
+xdeb2 = 30000+WidthPML         
+xfin2 = 54500+WidthPML          
+
+nrec3 = 2              
+xdeb3 = 27742+WidthPML       
+xfin3 = 40349+WidthPML          
+
+nrec4 = 1              
+xdeb4 = 49224+WidthPML       
+
+NELEM_PML_THICKNESS = WidthPML/60000*(n*12);
+
+rho1 = 2500 
+Vp1  = 6000
+Vs1   = Vp1/math.sqrt(2)
+Qmu1 = 300
+
+rho2  = 2500
+Vp2  = 6300
+Vs2   = Vp2/math.sqrt(2)
+Qmu2 = 300
+
+rho3  = 2500
+Vp3  = 6600
+Vs3   = Vp3/math.sqrt(2)
+Qmu3 = 800
+
+rho4  = 2500
+Vp4  = 6650
+Vs4   = Vp4/math.sqrt(2)
+Qmu4 = 800
+
+rho5  = 2500
+Vp5  = 8000
+Vs5   = Vp5/math.sqrt(2)
+Qmu5 = 800
+
+rho6  = 2500
+Vp6  = 8150
+Vs6   = Vp6/math.sqrt(2)
+Qmu6 = 600
+
+rho7  = 2500
+Vp7  = 8200
+Vs7   = Vp7/math.sqrt(2)
+Qmu7 = 600
+
+xmax = 60000+WidthPML
+nx = 12*n+2*NELEM_PML_THICKNESS
+
+nz1 = 2*n+NELEM_PML_THICKNESS
+nz11= nz1+1
+
+nz2 = nz1+n
+nz22= nz2+1
+
+nz3 = nz2+n
+nz33= nz3+1
+
+nz4 = nz3+2*n
+nz44= nz4+1
+
+nz5 = nz4+2*n
+nz55= nz5+1
+
+nz6 = nz5+2*n
+nz66= nz6+1
+
+nz7 = nz6+2*n
+
+
+#################
+#Mod_interfaces.dat
+#################
+
+xmax = 60000+WidthPML
+
+Interface1 = 10000 + WidthPML 
+Interface2 = 20000 + WidthPML 
+Interface3 = 25000 + WidthPML
+Interface4 = 30000 + WidthPML
+Interface5 = 40000 + WidthPML 
+Interface6 = 50000 + WidthPML
+Interface7 = 60000 + WidthPML
+
+NbElementsLayer1 = 2*n + NELEM_PML_THICKNESS
+NbElementsLayer2 = 2*n
+NbElementsLayer3 = n
+NbElementsLayer4 = n
+NbElementsLayer5 = 2*n
+NbElementsLayer6 = 2*n
+NbElementsLayer7 = 2*n
+
+#################
+#Mod_SOURCE
+#################
+
+xs = 12750 + WidthPML
+zs = 33250 + WidthPML
+
+f0 = 2
+
+Mxx = 5.5895 #5.5895d13
+Mzz = -2.5698 #-2.5698d14
+Mxz = 7.9762 #7.9762d13
+ 
+

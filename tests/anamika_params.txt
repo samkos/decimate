@@ -1,0 +1,148 @@
+# parameter example file
+x  y z   nodes   ntasks_per_node
+
+1  3 4   1        16
+1  1 1   1        32
+
+1  3 4   2        16
+1  1 1   2        32
+
+1  3 4   4        16
+1  1 1   4        32
+
+
+#DECIM t = 10
+#DECIM k = range(6)
+#DECIM ntasks = nodes * ntasks_per_node
+
+##################
+#Mod_Par_file.txt
+##################
+
+#DECIM NPROC = 2; #Number of processors
+#k = 2; #level [0,1,2,3,4,5,6,7];
+
+#DECIM n = int(2*(2**(k)));
+#DECIM T = 15;
+#DECIM y = 5.0e-03;  
+#DECIM WidthPML=5000;
+
+#DECIM DT    = y*5/n;
+#DECIM NSTEP = T/DT;
+
+#DECIM NSOURCES = 1
+
+#DECIM nreceiversets = 4
+
+#DECIM nrec1 = 11
+#DECIM xdeb1 = 5500+WidthPML
+#DECIM xfin1 = 29500+WidthPML
+
+#DECIM nrec2 = 11            
+#DECIM xdeb2 = 30000+WidthPML         
+#DECIM xfin2 = 54500+WidthPML          
+
+#DECIM nrec3 = 2              
+#DECIM xdeb3 = 27742+WidthPML       
+#DECIM xfin3 = 40349+WidthPML          
+
+#DECIM nrec4 = 1              
+#DECIM xdeb4 = 49224+WidthPML       
+
+#DECIM NELEM_PML_THICKNESS = WidthPML/60000*(n*12);
+
+#DECIM rho1 = 2500 
+#DECIM Vp1  = 6000
+#DECIM Vs1   = Vp1/math.sqrt(2)
+#DECIM Qmu1 = 300
+
+#DECIM rho2  = 2500
+#DECIM Vp2  = 6300
+#DECIM Vs2   = Vp2/math.sqrt(2)
+#DECIM Qmu2 = 300
+
+#DECIM rho3  = 2500
+#DECIM Vp3  = 6600
+#DECIM Vs3   = Vp3/math.sqrt(2)
+#DECIM Qmu3 = 800
+
+#DECIM rho4  = 2500
+#DECIM Vp4  = 6650
+#DECIM Vs4   = Vp4/math.sqrt(2)
+#DECIM Qmu4 = 800
+
+#DECIM rho5  = 2500
+#DECIM Vp5  = 8000
+#DECIM Vs5   = Vp5/math.sqrt(2)
+#DECIM Qmu5 = 800
+
+#DECIM rho6  = 2500
+#DECIM Vp6  = 8150
+#DECIM Vs6   = Vp6/math.sqrt(2)
+#DECIM Qmu6 = 600
+
+#DECIM rho7  = 2500
+#DECIM Vp7  = 8200
+#DECIM Vs7   = Vp7/math.sqrt(2)
+#DECIM Qmu7 = 600
+
+#DECIM xmax = 60000+WidthPML
+#DECIM nx = 12*n+2*NELEM_PML_THICKNESS
+
+#DECIM nz1 = 2*n+NELEM_PML_THICKNESS
+#DECIM nz11= nz1+1
+
+#DECIM nz2 = nz1+n
+#DECIM nz22= nz2+1
+
+#DECIM nz3 = nz2+n
+#DECIM nz33= nz3+1
+
+#DECIM nz4 = nz3+2*n
+#DECIM nz44= nz4+1
+
+#DECIM nz5 = nz4+2*n
+#DECIM nz55= nz5+1
+
+#DECIM nz6 = nz5+2*n
+#DECIM nz66= nz6+1
+
+#DECIM nz7 = nz6+2*n
+
+
+#################
+#Mod_interfaces.dat
+#################
+
+#DECIM xmax = 60000+WidthPML
+
+#DECIM Interface1 = 10000 + WidthPML 
+#DECIM Interface2 = 20000 + WidthPML 
+#DECIM Interface3 = 25000 + WidthPML
+#DECIM Interface4 = 30000 + WidthPML
+#DECIM Interface5 = 40000 + WidthPML 
+#DECIM Interface6 = 50000 + WidthPML
+#DECIM Interface7 = 60000 + WidthPML
+
+#DECIM NbElementsLayer1 = 2*n + NELEM_PML_THICKNESS
+#DECIM NbElementsLayer2 = 2*n
+#DECIM NbElementsLayer3 = n
+#DECIM NbElementsLayer4 = n
+#DECIM NbElementsLayer5 = 2*n
+#DECIM NbElementsLayer6 = 2*n
+#DECIM NbElementsLayer7 = 2*n
+
+#################
+#Mod_SOURCE
+#################
+
+#DECIM xs = 12750 + WidthPML
+#DECIM zs = 33250 + WidthPML
+
+#DECIM f0 = 2
+
+#DECIM Mxx = 5.5895 #5.5895d13
+#DECIM Mzz = -2.5698 #-2.5698d14
+#DECIM Mxz = 7.9762 #7.9762d13
+ 
+

@@ -3,3 +3,4 @@ Install.ksh
 docs/_build
 .decimate/SAVE/YALLA
 TAGS
+#tests/anamika_params.txt

@@ -5,8 +5,10 @@ from contextlib import contextmanager
 import copy
 from engine import *
 from env import TMPDIR
+import itertools
 import math
 import os
+import pandas as pd
 import pprint
 import shlex
 from stat import *
@@ -186,7 +188,8 @@ class decimate(engine):
 
     if not(hasattr(self, 'FILES_TO_COPY')):
         self.FILES_TO_COPY = []
-    for f in ['decimate.py', 'engine.py', 'env.py', 'decimate.pyc', 'engine.pyc', 'env.pyc', ]:
+    for f in ['decimate.py', 'engine.py', 'env.py', 'slurm_frontend.py',
+              'decimate.pyc', 'engine.pyc', 'env.pyc', 'slurm_frontend.pyc']:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR, f)]
 
     # checking
@@ -612,11 +615,16 @@ class decimate(engine):
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
       param_file = '/tmp/parameters.%s' % self.TASK_ID
       task_parameter_file = open(param_file,"w")
-      params = self.parameters[int(self.TASK_ID)]
+      params = self.parameters.iloc[self.TASK_ID]
       task_parameter_file.write('# set parameter from file %s for task %s' %\
                                 (self.args.parameter_file, self.TASK_ID))
-      for p in params.keys():
+      s = ""
+      for p in self.parameters.columns:
         task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
+        s = s + "%s=>%s< " % (p,params[p])
+        
+      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID,s))
+      
       task_parameter_file.write('\n')
       task_parameter_file.close()
       self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
@@ -1833,14 +1841,75 @@ class decimate(engine):
   # parse an additional tags from the yalla parameter file
   #########################################################################
   def additional_tag(self,line):
-    matchObj = re.match(r'^#YALLA\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    # direct sweeping of parameter
+    matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    if (matchObj):
+      (t,v) = (matchObj.group(1), matchObj.group(2))
+      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.combined_tag[t] = v
+      self.direct_tag[t] = v
+      self.direct_tag_ordered = self.direct_tag_ordered + [t]
+      return True
+    # direct setting of parameter
+    matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$',line)
     if (matchObj):
       (t,v) = (matchObj.group(1), matchObj.group(2))
       self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
       self.direct_tag[t] = v
+      self.direct_tag_ordered = self.direct_tag_ordered + [t]
       return True
     return False
-  
+
+  #########################################################################
+  # evaluate a tag from a formula
+  #########################################################################
+  def eval_tag(self,tag,formula,already_set_variables):
+    expr = already_set_variables + "\n%s = %s" % (tag,formula)
+    try:
+      exec(expr)
+    except Exception:
+      self.error('error in evalution of the parameters: expression to be evaluted : %s=%s '  % (tag,formula), \
+                 exception=True,exit=True, where="eval_tag")
+    value = locals()[tag]
+    self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
+                   4,trace='PARAMETRIC_DETAIL')
+    return value
+
+  #########################################################################
+  # compute a cartesian product of two dataframe
+  #########################################################################
+  def cartesian(self,df1, df2):
+    rows = itertools.product(df1.iterrows(), df2.iterrows())
+
+    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
+    return df.reset_index(drop=True)
+
+  #########################################################################
+  # evaluate tags from a formula
+  #########################################################################
+  def eval_tags(self,formula,already_set_variables):
+    eval_expr = already_set_variables + "\n%s" % (formula)
+    self.log_debug('expression to be evaluated : %s  ' % (eval_expr), \
+                   4,trace='PARAMETRIC_PROG_DETAIL')
+    try:
+      exec(eval_expr)
+    except Exception:
+      self.error('error in evaluation of the parameters (eval_tags): expression to be evaluted : %s ' % \
+                 (eval_expr), where="eval_tags",exception=True,exit=True)
+    values = {}
+    variables = locals()
+    del variables['formula']
+    del variables['already_set_variables']
+    del variables['eval_expr']
+    del variables['values']
+
+    for tag,value in variables.items():
+      if tag.find('__') == -1 and ("%s" % value).find('<') == -1:
+        values[tag] = value
+        self.log_debug('value of %s = %s' % (tag,value), \
+                       4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
+    return values
+
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
   #########################################################################
@@ -1857,8 +1926,8 @@ class decimate(engine):
 
     # warning message is sent to the user if filter is applied on the combination to consider
 
-    if not(self.args.parameter_filter==None) or \
-       not(self.args.parameter_range==None):
+    if not(self.args.parameter_filter == None) or \
+       not(self.args.parameter_range == None):
       if self.args.parameter_filter:
         self.log_info("the filter %s will be applied... Only following lines will be taken into account : " % \
                       (self.args.parameter_filter))
@@ -1866,23 +1935,25 @@ class decimate(engine):
         self.log_info("only lines %s will be taken " % self.args.parameter_range)
 
       self.direct_tag = {}
+      self.combined_tag = {}
+      self.direct_tag_ordered = []
       nb_case = 1
 
       for line in lines:
         line = clean_line(line)
         if self.additional_tag(line):
           continue
-        if len(line)>0  and not (line[0]=='#'):
+        if len(line) > 0 and not (line[0] == '#'):
           if not(tags_ok):
-            tags_ok=True
+            tags_ok = True
             continue
           for k in self.direct_tag.keys():
-            line = line+" "+self.direct_tag[k]
+            line = line + " " + self.direct_tag[k]
           self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
-          matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line)
+          matchObj = re.match("^.*" + self.args.parameter_filter + ".*$",line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
-            if nb_case==1:
+            if nb_case == 1:
               for k in self.direct_tag.keys():
                 print "%6s" % k,
               print
@@ -1900,16 +1971,47 @@ class decimate(engine):
 
       tags_ok = False
           
-    # direct_tag contains the tags set through #KTF tag = value
+    # direct_tag contains the tags set through #DECIM tag = value
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
-
+    self.combined_tag = {}
+    self.direct_tag_ordered = []
+    self.python_tag = {}
+    self.python_tag_ordered = []
+    
     nb_case = 0
     self.parameters = {}
+
+
+    full_text = "\n".join(lines)
+    in_prog=False
+    prog = ""
+    nb_prog = 0
+    line_nb = 0
+    nb_lines = len(lines)
     # parsing of the input file starts...
     for line in lines:
+      line_nb = line_nb + 1
       line = clean_line(line)
-      # is it a tag enforced by #KTF directive?
+      # while scanning a python section storing it...
+      if ((line.find("#DECIM") >-1) or (line_nb == nb_lines)) and in_prog:
+        t = "YALLA_prog_%d" % nb_prog
+        self.direct_tag[t] = prog 
+        self.direct_tag_ordered = self.direct_tag_ordered + [t]
+        nb_prog = nb_prog + 1
+        self.log_debug("prog python found in parametric file:\n%s" % prog, \
+                       4, trace='PARAMETRIC_PROG,PARAMETRIC_PROG_DETAIL')
+        in_prog = False
+      # is it a program  enforced by #DECIM PYTHON directive?
+      matchObj = re.match(r'^#DECIM\s*PYTHON\s*$',line)
+      if (matchObj):
+        in_prog = True
+        prog = ""
+        continue
+      elif in_prog:
+        prog = prog + line + "\n"
+        continue
+      # is it a tag enforced by #DECIM directive?
       if self.additional_tag(line):
         continue
       
@@ -1917,7 +2019,7 @@ class decimate(engine):
       if len(line)==0 or (line[0]=='#'):
         continue
 
-      # parsing other line than #KTF directive
+      # parsing other line than #DECIM directive
       if not(tags_ok):
         # first line ever -> Containaing tag names
         tags_names = line.split(" ")
@@ -1945,12 +2047,12 @@ class decimate(engine):
       tags = shlex.split(line)
 
       if not(len(tags)==len(tags_names)):
-        self.error("\tError : pb encountered in reading the test matrix file : %s" % test_matrix_filename + \
+        self.error("\tError : pb encountered in reading the test matrix file : %s " % self.args.parameter_file + \
                    "at  line \n\t\t!%s" % line + \
                    "\n\t\tless parameters to read than expected... Those expected are\n" + \
-                   "\n\t\t\t",tags_names+\
-                   "\n\t\tand so far, we read"+\
-                   "\n\t\t\t" + tag, exit=True)
+                   "\n\t\t\t %s " % ",".join(tags_names) +\
+                   "\n\t\tand so far, we read" +\
+                   "\n\t\t\t %s" % tag, exception=True, exit=True)
       
       ts = copy.deepcopy(tags_names)
       tag = {}
@@ -1962,19 +2064,186 @@ class decimate(engine):
         tag["%s" % t] = tags.pop(0)
         self.log_debug("tag %s : !%s! " % (t,tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
       self.log_debug('tag:%s' % pprint.pformat(tag),4,trace='PARAMETRIC_DETAIL')
-          
-      # adding the tags enforced by a #KTF directive
-      tag.update(self.direct_tag)
 
-      self.log_debug('self.direct_tag %s tag:%s' % \
-                     (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
-                     4,trace='PARAMETRIC_DETAIL')
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
                      4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
 
+    pd.options.display.max_rows = 999
+    pd.options.display.max_columns = 999
+    #pd.options.display.width = 3000
+    pd.options.display.expand_frame_repr=True
+    pd.options.display.max_columns = None
+
+    
+    l = pd.DataFrame(self.parameters).transpose()
+    if len(l):
+      tag = l.iloc[[0]]
+    else:
+      tag = {}
+    self.log_debug('%d parameters before functional_tags : \n %s' % (len(l),l),\
+                   4, trace='PARAMETRIC_DETAIL')
+    self.log_debug('tag before functional_tags : \n %s' % l.columns,\
+                   4, trace='PARAMETRIC_DETAIL')
+
+    # evaluating parameter computed...
+    
+    if len(self.direct_tag):
+
+      # first evaluation these parameter with the first combination of
+      # parameter to check if they are unique or an array of values
+      #
+      # if unique, then evaluation remains to be done for all the
+      #            possible combination
+      # if arrays of values, its dimension  should be conformant to the set of
+      #            combinations already known and that these values will complete
+
+      
+      self.log_debug('self.direct_tag %s tag:%s' % \
+                   (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
+                   4,trace='PARAMETRIC_DETAIL')
+      self.log_debug('self.direct_tag_ordered %s ' % \
+                   (pprint.pformat(self.direct_tag_ordered)),\
+                   4,trace='PARAMETRIC_DETAIL')
+      # adding the tags enforced by a #DECIM directive
+      # evaluating them first
+
+      # first path of evaluation for every computed tag
+      
+      for t in self.direct_tag_ordered:
+        already_set_variables = ""
+        if len(l)>1:
+          values = l.iloc[[1]]
+          self.log_debug('values on first line : \n %s' % values,\
+                         4, trace='PARAMETRIC_DETAIL')
+          for c in l.columns:
+            already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[0][c])
+        self.log_debug('already_set_variables : \n %s' % already_set_variables,\
+                       4, trace='PARAMETRIC_DETAIL')
+
+        formula = self.direct_tag[t]
+        if t.find("YALLA_prog")==-1:
+          results = { t:  self.eval_tag(t,formula,already_set_variables)}
+          tag,result = t,results[t]
+          self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
+                         4,trace='PARAMETRIC_DETAIL')
+          # output produced is a row of values
+          if isinstance(result,list):
+            if  len(l)>0 and (t in self.combined_tag):
+              new_column = pd.DataFrame(pd.Series(result),columns=[t])
+              self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
+                             4, trace='PARAMETRIC_DETAIL')
+              self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
+                             4, trace='PARAMETRIC_DETAIL')
+              l = self.cartesian(l,new_column)
+              self.log_debug('after cartesian product %d combinations : \n %s' % (len(l),l),\
+                             4, trace='PARAMETRIC_DETAIL')
+            else:
+              if len(result)==len(l) or len(l) == 0:
+                if len(l)>0:
+                  ser = pd.Series(result,index=l.index)
+                else:
+                  ser = pd.Series(result)
+                l[t] = ser
+              else:
+                self.error(('parameters number mistmatch for expression' +\
+                            '\n\t %s = %s \n\t --> ' +\
+                            'expected %d and got %d parameters...') % \
+                           (tag,formula,len(l),len(result)))
+          else:
+            # output produced is only one value -> computing it for all combination
+            results = [result]
+            for row in range(1,len(l)):
+              values = l.iloc[[row]]
+              self.log_debug('values on row %s: \n %s' % (row,values),\
+                             4, trace='PARAMETRIC_DETAIL')
+              already_set_variables = ""
+              for c in l.columns:
+                already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+              self.log_debug('about to be revaluated! t=%s results=%s' % (t,results),\
+                             4,trace='PARAMETRIC_DETAIL')
+              result = self.eval_tag(t,formula,already_set_variables)
+              results = results + [result]
+            self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
+                          4,trace='PARAMETRIC_DETAIL')
+
+            ser = pd.Series(results,index=l.index)
+            l[t] = ser
+        else:
+          results = self.eval_tags(formula,already_set_variables)
+          del self.direct_tag[t]
+
+          # first updating all parameter that produces a vector
+          result_as_column = {}
+          for tag,result in results.items():  
+            self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
+                           4,trace='PARAMETRIC_DETAIL')
+            # output produced is a row of values
+            if isinstance(result,list):
+              if len(result)==len(l) or len(l)==0 or (t in self.combined_tag):
+                result_as_column[tag] = result
+                ser = pd.Series(result,index=l.index)
+                l[tag] = ser
+              else:
+                self.error(('parameters number mistmatch for parameter %s computed from a python section' +\
+                            '\n\t expected %d and got %d parameters...') % \
+                           (tag,len(l),len(result)))
+
+          # second applying formula for all other variables and check that
+          # row as column remains constant
+          results_per_var = {}
+          for v in results.keys():
+            results_per_var[v] = [results[v]]
+            
+          for row in range(1,len(l)):
+            
+            values = l.iloc[[row]]
+            self.log_debug('values on row %s: \n %s' % (row,values),\
+                           4, trace='PARAMETRIC_PROG_DETAIL')
+            already_set_variables = ""
+            for c in l.columns:
+              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
+            results_for_this_row = self.eval_tags(formula,already_set_variables)
+            for v in results.keys():
+              results_per_var[v] = results_per_var[v] + [results_for_this_row[v]]
+              if (v in result_as_column.keys()):
+                if not(cmp(result_as_column[v],results_for_this_row[v])==0):
+                  self.error('mismatch in parameter list  computed from file %s \n\tfor parameter %s: ' % \
+                             (self.args.parameter_file,v) +\
+                             '\n\t    returned %s for first combination ' % result_as_column[v] +\
+                             '\n\tbut returned %s for %dth combination ' % (results_for_this_row[v],row),
+                             exit=True,where='read_parameter_file',exception=False)
+
+            self.log_debug('evaluated! for row %s = %s' % (row,pprint.pformat(results_for_this_row)),\
+                           4,trace='PARAMETRIC_PROG_DETAIL')
+
+          for v in results.keys():
+            if not(v in result_as_column.keys()):
+              ser = pd.Series(results_per_var[v],index=l.index)
+              l[v] = ser
+    
+    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l),len(l.columns),l),\
+                   4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+
+
+    if 'nodes' in l.columns:
+      job_per_node_number = l.groupby(['nodes']).size()
+      # print job_per_node_number
+      # for j in job_per_node_number.keys():
+      #   print j,':',job_per_node_number[j]
+      #print l.groupby(['nodes']).size()
+      cols_orig = l.columns
+      cols = ['nodes','ntasks']
+      for c in cols_orig:
+        if not(c in ['nodes','ntasks']):
+          cols = cols + [c]
+      print cols
+      print l.groupby(cols).size()
+    #sys.exit(1)
+
+    self.parameters = l
     return self.parameters
       
 
@@ -2172,7 +2441,7 @@ class decimate(engine):
       parameter_nb = len(self.parameters)
       array_length = len(index_to_submit)
       if not(array_length == parameter_nb):
-        msg = "array has %s occurence while there are %d parameters" % \
+        msg = "array has %s occurence while there are %d combinations" % \
               (array_length,parameter_nb)
         self.error(msg,exit=True)
     
@@ -3142,8 +3411,15 @@ class decimate(engine):
     else:
       prefix0 = check_previous
       if self.args.parameter_file:
-        prefix0 = prefix0 + '\n# Sourcing parameters taken from file: %s ' % \
+        prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
+        # prefix0 = prefix0 + '\necho Sourcing parameters taken from file: %s ' % \
+        #           self.args.parameter_file
+        # prefix0 = prefix0 + '\necho --- parameters set here --------------'
+        # prefix0 = prefix0 + '\ncat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        # prefix0 = prefix0 + '\necho --------------------------------------'
+        
+        
         prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
         #prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       

@@ -1477,7 +1477,7 @@ class engine(object):
   # dumping error report ...
   #########################################################################
 
-  def error(self,message=None, error_detail="", exit=True,exception=False, killall=False):
+  def error(self,message=None, error_detail="", exit=True,exception=False, killall=False, where='Not Known'):
       """helping message"""
       print(colors.FAIL)
       if message:
@@ -1505,7 +1505,7 @@ class engine(object):
              \n" % self.APPLICATION_NAME)
 
       if not(exception is False):
-        self.dump_exception()
+        self.dump_exception(where='Not Known')
 
       print(colors.END)
       if killall:

@@ -106,8 +106,27 @@ db -f USER_CHECK --check=tests/check_job.sh -a 1-90 -J 4 tests/my_job_no_wait.sh
 # testing parameter file
 gC;
 db -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
-db -f PARAMETRIC -a 1-2 -Pf tests/my_params.txt tests/my_job_params.sh
-db -f PARAMETRIC_DETAIL -a 1-2 -Pf tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_DETAIL -a 1-2 -P tests/my_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_DETAIL -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
+db -f PARAMETRIC_SUMMARY -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/anamika_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/anamika_params_errors.txt tests/my_job_params.sh
+db  -f PARAMETRIC_DETAIL -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
+db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/loop_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/loop_params_error.txt tests/my_job_params.sh
+
+db  -f PARAMETRIC_PROG,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+db  -f PARAMETRIC_PROG_DETAIL,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+
+db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params_error.txt tests/my_job_params.sh
+db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params_error2.txt tests/my_job_params.sh
+
+db  -f PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY -a 1-2 -P tests/combine_params.txt tests/my_job_params.sh
+db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/combine_params.txt tests/my_job_params.sh
 
 python
 import subprocess
