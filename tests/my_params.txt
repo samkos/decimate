@@ -5,3 +5,8 @@ x  y z
 1 3 4
 1 1 1
  
+#YALLA EVAL
+
+u = t*x
+
+#YALLA EVAL
