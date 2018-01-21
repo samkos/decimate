@@ -1839,6 +1839,16 @@ class decimate(engine):
   # parse an additional tags from the yalla parameter file
   #########################################################################
   def additional_tag(self,line):
+    # direct sweeping of parameter
+    matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    if (matchObj):
+      (t,v) = (matchObj.group(1), matchObj.group(2))
+      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.combined_tag[t] = v
+      self.direct_tag[t] = v
+      self.direct_tag_ordered = self.direct_tag_ordered + [t]
+      return True
+    # direct setting of parameter
     matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$',line)
     if (matchObj):
       (t,v) = (matchObj.group(1), matchObj.group(2))
@@ -1914,6 +1924,7 @@ class decimate(engine):
         self.log_info("only lines %s will be taken " % self.args.parameter_range)
 
       self.direct_tag = {}
+      self.combined_tag = {}
       self.direct_tag_ordered = []
       nb_case = 1
 
@@ -1952,6 +1963,7 @@ class decimate(engine):
     # direct_tag contains the tags set through #DECIM tag = value
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
+    self.combined_tag = {}
     self.direct_tag_ordered = []
     self.python_tag = {}
     self.python_tag_ordered = []
@@ -2056,7 +2068,10 @@ class decimate(engine):
 
     
     l = pd.DataFrame(self.parameters).transpose()
-    tag = l.iloc[[0]]
+    if len(l):
+      tag = l.iloc[[0]]
+    else:
+      tag = {}
     self.log_debug('%d parameters before functional_tags : \n %s' % (len(l),l),\
                    4, trace='PARAMETRIC_DETAIL')
     self.log_debug('tag before functional_tags : \n %s' % l.columns,\
@@ -2066,7 +2081,7 @@ class decimate(engine):
     
     if len(self.direct_tag):
 
-      # first evaluatin these parameter with the first combination of
+      # first evaluation these parameter with the first combination of
       # parameter to check if they are unique or an array of values
       #
       # if unique, then evaluation remains to be done for all the
