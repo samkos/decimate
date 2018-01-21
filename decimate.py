@@ -364,6 +364,8 @@ class decimate(engine):
     # ease of use of decimate
     self.parser.add_argument("--template", action="store_true",
                              help='create template files')
+    self.parser.add_argument("--process-templates", action="store_true",
+                             help=argparse.SUPPRESS)
     if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
         self.parser.add_argument("--create-template", action="store_true",
@@ -523,6 +525,10 @@ class decimate(engine):
     # reading of the parameter file
     if self.args.parameter_file:
           self.read_parameter_file()
+            
+    # process template file
+    if self.args.process_templates:
+          self.process_templates()
             
     if self.args.taskid:
       try:
@@ -1860,6 +1866,15 @@ class decimate(engine):
       return True
     return False
 
+ #########################################################################
+  # compute a cartesian product of two dataframe
+  #########################################################################
+  def cartesian(self,df1, df2):
+    rows = itertools.product(df1.iterrows(), df2.iterrows())
+
+    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
+    return df.reset_index(drop=True)
+
   #########################################################################
   # evaluate a tag from a formula
   #########################################################################
@@ -1874,15 +1889,6 @@ class decimate(engine):
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
                    4,trace='PARAMETRIC_DETAIL')
     return value
-
-  #########################################################################
-  # compute a cartesian product of two dataframe
-  #########################################################################
-  def cartesian(self,df1, df2):
-    rows = itertools.product(df1.iterrows(), df2.iterrows())
-
-    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
-    return df.reset_index(drop=True)
 
   #########################################################################
   # evaluate tags from a formula
@@ -1909,6 +1915,21 @@ class decimate(engine):
         self.log_debug('value of %s = %s' % (tag,value), \
                        4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
     return values
+
+  #########################################################################
+  # apply parameters to template files
+  #########################################################################
+  def process_templates(self):
+      for f in  glob.glob('DATA/*.template'):
+          print('processing template file %s' % f)
+          content = "".join(open(f).readlines())
+          for k,v in self.variables.items():
+               content = content.replace('__%s__' % k, "%s" % v)
+          processed_file = open(f.replace('.template',""),'w')
+          processed_file.write(content)
+          processed_file.close()
+
+ 
 
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
@@ -2239,8 +2260,8 @@ class decimate(engine):
       for c in cols_orig:
         if not(c in ['nodes','ntasks']):
           cols = cols + [c]
-      print cols
-      print l.groupby(cols).size()
+      self.log_debug('parameter combinations:\n%s' % l.groupby(cols).size(),\
+                     4, trace='PARAMETRIC_DETAIL')
     #sys.exit(1)
 
     self.parameters = l
@@ -3426,7 +3447,9 @@ class decimate(engine):
 
 
     l = prefix0 + "\n\n# Starting user job\n" + \
-        "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + l\
+        "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + \
+        l.replace('#DECIM PROCESS_TEMPLATE_FILE',
+                  'echo Should replace templates here\n%s --process-templates' % l0) \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """
@@ -3479,6 +3502,7 @@ class decimate(engine):
       output = output.replace('__job_error__',stream['error'])
       output = output.replace('__NB_JOBS__',str(len(RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__',job['submit_dir'])
+      
       if self.args.debug:
         output = output.replace('__DEBUG__','debug')
       else:
