@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import copy
 from engine import *
 from env import TMPDIR
+import itertools
 import math
 import os
 import pandas as pd
@@ -1871,7 +1872,17 @@ class decimate(engine):
     value = locals()[tag]
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
                    4,trace='PARAMETRIC_DETAIL')
-    return value 
+    return value
+
+  
+  #########################################################################
+  # compute a cartesian product of two dataframe
+  #########################################################################
+  def cartesian(self,df1, df2):
+    rows = itertools.product(df1.iterrows(), df2.iterrows())
+
+    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
+    return df.reset_index(drop=True)
   
   #########################################################################
   # evaluate tags from a formula
@@ -1879,26 +1890,26 @@ class decimate(engine):
   def eval_tags(self,formula,already_set_variables):
     eval_expr = already_set_variables + "\n%s" % (formula)
     self.log_debug('expression to be evaluated : %s  '  % (eval_expr), \
-                       4,trace='PARAMETRIC_PROG_DETAIL')
+                   4,trace='PARAMETRIC_PROG_DETAIL')
     try:
       exec(eval_expr)
     except Exception:
       self.error('error in evaluation of the parameters (eval_tags): expression to be evaluted : %s ' % \
-                 (eval_expr), where="eval_tags",  exception=True,exit=True)
+                 (eval_expr), where="eval_tags",exception=True,exit=True)
     values = {}
     variables = locals()
     del variables['formula']
     del variables['already_set_variables']
     del variables['eval_expr']
     del variables['values']
-    
+
     for tag,value in variables.items():
-      if tag.find('__')==-1 and ("%s" % value).find('<')==-1:
-        values[tag] = value 
-        self.log_debug('value of %s = %s'  % (tag,value), \
+      if tag.find('__') == -1 and ("%s" % value).find('<') == -1:
+        values[tag] = value
+        self.log_debug('value of %s = %s' % (tag,value), \
                        4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
-    return values 
-  
+    return values
+
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
   #########################################################################
@@ -1915,8 +1926,8 @@ class decimate(engine):
 
     # warning message is sent to the user if filter is applied on the combination to consider
 
-    if not(self.args.parameter_filter==None) or \
-       not(self.args.parameter_range==None):
+    if not(self.args.parameter_filter == None) or \
+       not(self.args.parameter_range == None):
       if self.args.parameter_filter:
         self.log_info("the filter %s will be applied... Only following lines will be taken into account : " % \
                       (self.args.parameter_filter))
@@ -1932,12 +1943,12 @@ class decimate(engine):
         line = clean_line(line)
         if self.additional_tag(line):
           continue
-        if len(line)>0  and not (line[0]=='#'):
+        if len(line) > 0 and not (line[0] == '#'):
           if not(tags_ok):
-            tags_ok=True
+            tags_ok = True
             continue
           for k in self.direct_tag.keys():
-            line = line+" "+self.direct_tag[k]
+            line = line + " " + self.direct_tag[k]
           self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
           matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line)
           # prints all the tests that will be selected
@@ -2120,9 +2131,20 @@ class decimate(engine):
                          4,trace='PARAMETRIC_DETAIL')
           # output produced is a row of values
           if isinstance(result,list):
-            if len(result)==len(l):
-              ser = pd.Series(result,index=l.index)
-              l[tag] = ser
+            if len(result)==len(l) or len(l)>0 or (t in self.combined_tag):
+              ser = pd.Series(result)
+              if t in self.combined_tag:
+                new_column = pd.DataFrame(pd.Series(result))
+                self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
+                   4, trace='PARAMETRIC_DETAIL')
+                self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
+                   4, trace='PARAMETRIC_DETAIL')
+                l = self.cartesian(l,new_column)
+                self.log_debug('after cartesian product %d combinations : \n %s' % (len(l),l),\
+                   4, trace='PARAMETRIC_DETAIL')
+
+              else:
+                l[tag] = ser
             else:
               self.error(('parameters number mistmatch for expression' +\
                           '\n\t %s = %s \n\t --> ' +\
@@ -2158,7 +2180,7 @@ class decimate(engine):
                            4,trace='PARAMETRIC_DETAIL')
             # output produced is a row of values
             if isinstance(result,list):
-              if len(result)==len(l):
+              if len(result)==len(l) or len(l)==0 or (t in self.combined_tag):
                 result_as_column[tag] = result
                 ser = pd.Series(result,index=l.index)
                 l[tag] = ser
