@@ -1874,7 +1874,6 @@ class decimate(engine):
                    4,trace='PARAMETRIC_DETAIL')
     return value
 
-  
   #########################################################################
   # compute a cartesian product of two dataframe
   #########################################################################
@@ -1883,13 +1882,13 @@ class decimate(engine):
 
     df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
     return df.reset_index(drop=True)
-  
+
   #########################################################################
   # evaluate tags from a formula
   #########################################################################
   def eval_tags(self,formula,already_set_variables):
     eval_expr = already_set_variables + "\n%s" % (formula)
-    self.log_debug('expression to be evaluated : %s  '  % (eval_expr), \
+    self.log_debug('expression to be evaluated : %s  ' % (eval_expr), \
                    4,trace='PARAMETRIC_PROG_DETAIL')
     try:
       exec(eval_expr)
@@ -1950,10 +1949,10 @@ class decimate(engine):
           for k in self.direct_tag.keys():
             line = line + " " + self.direct_tag[k]
           self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
-          matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line)
+          matchObj = re.match("^.*" + self.args.parameter_filter + ".*$",line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
-            if nb_case==1:
+            if nb_case == 1:
               for k in self.direct_tag.keys():
                 print "%6s" % k,
               print
@@ -2131,28 +2130,27 @@ class decimate(engine):
                          4,trace='PARAMETRIC_DETAIL')
           # output produced is a row of values
           if isinstance(result,list):
-            if len(result)==len(l) or len(l)>0 or (t in self.combined_tag):
-              ser = pd.Series(result)
-              if t in self.combined_tag:
-                new_column = []
-                for r in results:
-                  new_column = new_column = + r * len(l))
-                  pd.DataFrame(pd.Series(result))
-                self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
-                   4, trace='PARAMETRIC_DETAIL')
-                self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
-                   4, trace='PARAMETRIC_DETAIL')
-                u = self.cartesian(l,new_column)
-                self.log_debug('after cartesian product \n u %d combinations : \n %s' % (len(u),u),\
-                   4, trace='PARAMETRIC_DETAIL')
-
-              else:
-                l[tag] = ser
+            if  len(l)>0 and (t in self.combined_tag):
+              new_column = pd.DataFrame(pd.Series(result),columns=[t])
+              self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
+                             4, trace='PARAMETRIC_DETAIL')
+              self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
+                             4, trace='PARAMETRIC_DETAIL')
+              l = self.cartesian(l,new_column)
+              self.log_debug('after cartesian product %d combinations : \n %s' % (len(l),l),\
+                             4, trace='PARAMETRIC_DETAIL')
             else:
-              self.error(('parameters number mistmatch for expression' +\
-                          '\n\t %s = %s \n\t --> ' +\
-                          'expected %d and got %d parameters...') % \
-                         (tag,formula,len(l),len(result)))
+              if len(result)==len(l) or len(l) == 0:
+                if len(l)>0:
+                  ser = pd.Series(result,index=l.index)
+                else:
+                  ser = pd.Series(result)
+                l[t] = ser
+              else:
+                self.error(('parameters number mistmatch for expression' +\
+                            '\n\t %s = %s \n\t --> ' +\
+                            'expected %d and got %d parameters...') % \
+                           (tag,formula,len(l),len(result)))
           else:
             # output produced is only one value -> computing it for all combination
             results = [result]
@@ -2228,13 +2226,20 @@ class decimate(engine):
     self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
-    
-    job_per_node_number = l.groupby(['nodes']).size()
-    print job_per_node_number
-    for j in job_per_node_number.keys():
-      print j,':',job_per_node_number[j]
-    print l.groupby(['nodes']).size()
-    print l.groupby(['nodes','ntasks','k']).size()
+
+    if 'nodes' in l.columns:
+      job_per_node_number = l.groupby(['nodes']).size()
+      # print job_per_node_number
+      # for j in job_per_node_number.keys():
+      #   print j,':',job_per_node_number[j]
+      #print l.groupby(['nodes']).size()
+      cols_orig = l.columns
+      cols = ['nodes','ntasks']
+      for c in cols_orig:
+        if not(c in ['nodes','ntasks']):
+          cols = cols + [c]
+      print cols
+      print l.groupby(cols).size()
     sys.exit(1)
 
     return self.parameters

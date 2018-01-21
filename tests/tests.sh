@@ -120,6 +120,7 @@ db  -a 1-2 -P tests/loop_params_error.txt tests/my_job_params.sh
 db  -f PARAMETRIC_PROG,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
 db  -f PARAMETRIC_PROG_DETAIL,PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
 db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
+db  -a 1-2 -P tests/prog_params.txt tests/my_job_params.sh
 
 db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params_error.txt tests/my_job_params.sh
 db  -f PARAMETRIC_SUMMARY -a 1-2 -P tests/prog_params_error2.txt tests/my_job_params.sh
