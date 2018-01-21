@@ -11,9 +11,9 @@ x  y z   nodes   ntasks_per_node
 1  1 1   4        32
 
 
-#YALLA t = range(6)
-#YALLA z = range(5)
-#YALLA tasks = nodes*ntasks_per_node
+#DECIM t = range(6)
+#DECIM z = range(5)
+#DECIM tasks = nodes*ntasks_per_node
 
 
 

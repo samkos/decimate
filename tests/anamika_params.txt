@@ -11,138 +11,138 @@ x  y z   nodes   ntasks_per_node
 1  1 1   4        32
 
 
-#YALLA t = 10
-#YALLA k = range(6)
-#YALLA ntasks = nodes * ntasks_per_node
+#DECIM t = 10
+#DECIM k = range(6)
+#DECIM ntasks = nodes * ntasks_per_node
 
 ##################
 #Mod_Par_file.txt
 ##################
 
-#YALLA NPROC = 2; #Number of processors
+#DECIM NPROC = 2; #Number of processors
 #k = 2; #level [0,1,2,3,4,5,6,7];
 
-#YALLA n = int(2*(2**(k)));
-#YALLA T = 15;
-#YALLA y = 5.0e-03;  
-#YALLA WidthPML=5000;
+#DECIM n = int(2*(2**(k)));
+#DECIM T = 15;
+#DECIM y = 5.0e-03;  
+#DECIM WidthPML=5000;
 
-#YALLA DT    = y*5/n;
-#YALLA NSTEP = T/DT;
+#DECIM DT    = y*5/n;
+#DECIM NSTEP = T/DT;
 
-#YALLA NSOURCES = 1
+#DECIM NSOURCES = 1
 
-#YALLA nreceiversets = 4
+#DECIM nreceiversets = 4
 
-#YALLA nrec1 = 11
-#YALLA xdeb1 = 5500+WidthPML
-#YALLA xfin1 = 29500+WidthPML
+#DECIM nrec1 = 11
+#DECIM xdeb1 = 5500+WidthPML
+#DECIM xfin1 = 29500+WidthPML
 
-#YALLA nrec2 = 11            
-#YALLA xdeb2 = 30000+WidthPML         
-#YALLA xfin2 = 54500+WidthPML          
+#DECIM nrec2 = 11            
+#DECIM xdeb2 = 30000+WidthPML         
+#DECIM xfin2 = 54500+WidthPML          
 
-#YALLA nrec3 = 2              
-#YALLA xdeb3 = 27742+WidthPML       
-#YALLA xfin3 = 40349+WidthPML          
+#DECIM nrec3 = 2              
+#DECIM xdeb3 = 27742+WidthPML       
+#DECIM xfin3 = 40349+WidthPML          
 
-#YALLA nrec4 = 1              
-#YALLA xdeb4 = 49224+WidthPML       
+#DECIM nrec4 = 1              
+#DECIM xdeb4 = 49224+WidthPML       
 
-#YALLA NELEM_PML_THICKNESS = WidthPML/60000*(n*12);
+#DECIM NELEM_PML_THICKNESS = WidthPML/60000*(n*12);
 
-#YALLA rho1 = 2500 
-#YALLA Vp1  = 6000
-#YALLA Vs1   = Vp1/math.sqrt(2)
-#YALLA Qmu1 = 300
+#DECIM rho1 = 2500 
+#DECIM Vp1  = 6000
+#DECIM Vs1   = Vp1/math.sqrt(2)
+#DECIM Qmu1 = 300
 
-#YALLA rho2  = 2500
-#YALLA Vp2  = 6300
-#YALLA Vs2   = Vp2/math.sqrt(2)
-#YALLA Qmu2 = 300
+#DECIM rho2  = 2500
+#DECIM Vp2  = 6300
+#DECIM Vs2   = Vp2/math.sqrt(2)
+#DECIM Qmu2 = 300
 
-#YALLA rho3  = 2500
-#YALLA Vp3  = 6600
-#YALLA Vs3   = Vp3/math.sqrt(2)
-#YALLA Qmu3 = 800
+#DECIM rho3  = 2500
+#DECIM Vp3  = 6600
+#DECIM Vs3   = Vp3/math.sqrt(2)
+#DECIM Qmu3 = 800
 
-#YALLA rho4  = 2500
-#YALLA Vp4  = 6650
-#YALLA Vs4   = Vp4/math.sqrt(2)
-#YALLA Qmu4 = 800
+#DECIM rho4  = 2500
+#DECIM Vp4  = 6650
+#DECIM Vs4   = Vp4/math.sqrt(2)
+#DECIM Qmu4 = 800
 
-#YALLA rho5  = 2500
-#YALLA Vp5  = 8000
-#YALLA Vs5   = Vp5/math.sqrt(2)
-#YALLA Qmu5 = 800
+#DECIM rho5  = 2500
+#DECIM Vp5  = 8000
+#DECIM Vs5   = Vp5/math.sqrt(2)
+#DECIM Qmu5 = 800
 
-#YALLA rho6  = 2500
-#YALLA Vp6  = 8150
-#YALLA Vs6   = Vp6/math.sqrt(2)
-#YALLA Qmu6 = 600
+#DECIM rho6  = 2500
+#DECIM Vp6  = 8150
+#DECIM Vs6   = Vp6/math.sqrt(2)
+#DECIM Qmu6 = 600
 
-#YALLA rho7  = 2500
-#YALLA Vp7  = 8200
-#YALLA Vs7   = Vp7/math.sqrt(2)
-#YALLA Qmu7 = 600
+#DECIM rho7  = 2500
+#DECIM Vp7  = 8200
+#DECIM Vs7   = Vp7/math.sqrt(2)
+#DECIM Qmu7 = 600
 
-#YALLA xmax = 60000+WidthPML
-#YALLA nx = 12*n+2*NELEM_PML_THICKNESS
+#DECIM xmax = 60000+WidthPML
+#DECIM nx = 12*n+2*NELEM_PML_THICKNESS
 
-#YALLA nz1 = 2*n+NELEM_PML_THICKNESS
-#YALLA nz11= nz1+1
+#DECIM nz1 = 2*n+NELEM_PML_THICKNESS
+#DECIM nz11= nz1+1
 
-#YALLA nz2 = nz1+n
-#YALLA nz22= nz2+1
+#DECIM nz2 = nz1+n
+#DECIM nz22= nz2+1
 
-#YALLA nz3 = nz2+n
-#YALLA nz33= nz3+1
+#DECIM nz3 = nz2+n
+#DECIM nz33= nz3+1
 
-#YALLA nz4 = nz3+2*n
-#YALLA nz44= nz4+1
+#DECIM nz4 = nz3+2*n
+#DECIM nz44= nz4+1
 
-#YALLA nz5 = nz4+2*n
-#YALLA nz55= nz5+1
+#DECIM nz5 = nz4+2*n
+#DECIM nz55= nz5+1
 
-#YALLA nz6 = nz5+2*n
-#YALLA nz66= nz6+1
+#DECIM nz6 = nz5+2*n
+#DECIM nz66= nz6+1
 
-#YALLA nz7 = nz6+2*n
+#DECIM nz7 = nz6+2*n
 
 
 #################
 #Mod_interfaces.dat
 #################
 
-#YALLA xmax = 60000+WidthPML
+#DECIM xmax = 60000+WidthPML
 
-#YALLA Interface1 = 10000 + WidthPML 
-#YALLA Interface2 = 20000 + WidthPML 
-#YALLA Interface3 = 25000 + WidthPML
-#YALLA Interface4 = 30000 + WidthPML
-#YALLA Interface5 = 40000 + WidthPML 
-#YALLA Interface6 = 50000 + WidthPML
-#YALLA Interface7 = 60000 + WidthPML
+#DECIM Interface1 = 10000 + WidthPML 
+#DECIM Interface2 = 20000 + WidthPML 
+#DECIM Interface3 = 25000 + WidthPML
+#DECIM Interface4 = 30000 + WidthPML
+#DECIM Interface5 = 40000 + WidthPML 
+#DECIM Interface6 = 50000 + WidthPML
+#DECIM Interface7 = 60000 + WidthPML
 
-#YALLA NbElementsLayer1 = 2*n + NELEM_PML_THICKNESS
-#YALLA NbElementsLayer2 = 2*n
-#YALLA NbElementsLayer3 = n
-#YALLA NbElementsLayer4 = n
-#YALLA NbElementsLayer5 = 2*n
-#YALLA NbElementsLayer6 = 2*n
-#YALLA NbElementsLayer7 = 2*n
+#DECIM NbElementsLayer1 = 2*n + NELEM_PML_THICKNESS
+#DECIM NbElementsLayer2 = 2*n
+#DECIM NbElementsLayer3 = n
+#DECIM NbElementsLayer4 = n
+#DECIM NbElementsLayer5 = 2*n
+#DECIM NbElementsLayer6 = 2*n
+#DECIM NbElementsLayer7 = 2*n
 
 #################
 #Mod_SOURCE
 #################
 
-#YALLA xs = 12750 + WidthPML
-#YALLA zs = 33250 + WidthPML
+#DECIM xs = 12750 + WidthPML
+#DECIM zs = 33250 + WidthPML
 
-#YALLA f0 = 2
+#DECIM f0 = 2
 
-#YALLA Mxx = 5.5895 #5.5895d13
-#YALLA Mzz = -2.5698 #-2.5698d14
-#YALLA Mxz = 7.9762 #7.9762d13
+#DECIM Mxx = 5.5895 #5.5895d13
+#DECIM Mzz = -2.5698 #-2.5698d14
+#DECIM Mxz = 7.9762 #7.9762d13
  
 

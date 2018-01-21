@@ -2,8 +2,8 @@
 x  y z   nodes   ntasks_per_node
 
 
-#YALLA t = 10
-#YALLA ntasks = nodes * ntasks_per_node
+#DECIM t = 10
+#DECIM ntasks = nodes * ntasks_per_node
 
 
 

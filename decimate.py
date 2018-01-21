@@ -1839,7 +1839,7 @@ class decimate(engine):
   # parse an additional tags from the yalla parameter file
   #########################################################################
   def additional_tag(self,line):
-    matchObj = re.match(r'^#YALLA\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$',line)
     if (matchObj):
       (t,v) = (matchObj.group(1), matchObj.group(2))
       self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
@@ -1949,7 +1949,7 @@ class decimate(engine):
 
       tags_ok = False
           
-    # direct_tag contains the tags set through #YALLA tag = value
+    # direct_tag contains the tags set through #DECIM tag = value
     # it needs to be evaluated on the fly to apply right tag value at a given job
     self.direct_tag = {}
     self.direct_tag_ordered = []
@@ -1971,7 +1971,7 @@ class decimate(engine):
       line_nb = line_nb + 1
       line = clean_line(line)
       # while scanning a python section storing it...
-      if ((line.find("#YALLA") >-1) or (line_nb == nb_lines)) and in_prog:
+      if ((line.find("#DECIM") >-1) or (line_nb == nb_lines)) and in_prog:
         t = "YALLA_prog_%d" % nb_prog
         self.direct_tag[t] = prog 
         self.direct_tag_ordered = self.direct_tag_ordered + [t]
@@ -1979,8 +1979,8 @@ class decimate(engine):
         self.log_debug("prog python found in parametric file:\n%s" % prog, \
                        4, trace='PARAMETRIC_PROG,PARAMETRIC_PROG_DETAIL')
         in_prog = False
-      # is it a program  enforced by #YALLA PYTHON directive?
-      matchObj = re.match(r'^#YALLA\s*PYTHON\s*$',line)
+      # is it a program  enforced by #DECIM PYTHON directive?
+      matchObj = re.match(r'^#DECIM\s*PYTHON\s*$',line)
       if (matchObj):
         in_prog = True
         prog = ""
@@ -1988,7 +1988,7 @@ class decimate(engine):
       elif in_prog:
         prog = prog + line + "\n"
         continue
-      # is it a tag enforced by #YALLA directive?
+      # is it a tag enforced by #DECIM directive?
       if self.additional_tag(line):
         continue
       
@@ -1996,7 +1996,7 @@ class decimate(engine):
       if len(line)==0 or (line[0]=='#'):
         continue
 
-      # parsing other line than #YALLA directive
+      # parsing other line than #DECIM directive
       if not(tags_ok):
         # first line ever -> Containaing tag names
         tags_names = line.split(" ")
@@ -2081,7 +2081,7 @@ class decimate(engine):
       self.log_debug('self.direct_tag_ordered %s ' % \
                    (pprint.pformat(self.direct_tag_ordered)),\
                    4,trace='PARAMETRIC_DETAIL')
-      # adding the tags enforced by a #YALLA directive
+      # adding the tags enforced by a #DECIM directive
       # evaluating them first
 
       # first path of evaluation for every computed tag
