@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import copy
 from engine import *
 from env import TMPDIR
+import fnmatch
 import itertools
 import math
 import os
@@ -526,10 +527,6 @@ class decimate(engine):
     if self.args.parameter_file:
           self.read_parameter_file()
             
-    # process template file
-    if self.args.process_templates:
-          self.process_templates()
-            
     if self.args.taskid:
       try:
         args = self.args.taskid.split(',')
@@ -543,6 +540,10 @@ class decimate(engine):
         self.TASK_ID = 0
         self.TASK_IDS = '1-1'
 
+    # process template file
+    if self.args.process_templates:
+          self.process_templates()
+            
     if self.args.array_first:
       self.MY_ARRAY_CURRENT_FIRST = int(self.args.array_first)
 
@@ -1919,16 +1920,26 @@ class decimate(engine):
   #########################################################################
   # apply parameters to template files
   #########################################################################
-  def process_templates(self):
-      for f in  glob.glob('DATA/*.template'):
-          print('processing template file %s' % f)
-          content = "".join(open(f).readlines())
-          for k,v in self.variables.items():
-               content = content.replace('__%s__' % k, "%s" % v)
-          processed_file = open(f.replace('.template',""),'w')
-          processed_file.write(content)
-          processed_file.close()
+  def process_templates(self,from_dir='.'):
 
+    pattern = "*.template"
+    matches = []
+    params = self.parameters.iloc[self.TASK_ID]
+    for root, dirnames, filenames in os.walk(from_dir):
+	for filename in fnmatch.filter(filenames, pattern):
+            f = os.path.join(root, filename)
+	    matches.append(f)
+            print('processing template file %s' % f)
+            content = "".join(open(f).readlines())
+            for k in self.parameters.columns:
+                v = params[k]
+                content = content.replace('__%s__' % k, "%s" % v)
+            processed_file = open(f.replace('.template',""),'w')
+            processed_file.write(content)
+            processed_file.close()
+
+    return matches
+          
  
 
   #########################################################################
