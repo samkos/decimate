@@ -13,6 +13,7 @@ Welcome to Decimate's documentation!
    what_is_decimate
    use
    workflows
+   parameters
    options
    
 .. _dev-docs:

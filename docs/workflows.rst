@@ -71,3 +71,20 @@ Then submission of jobs follows the same syntax than with the **sbatch** command
    [MSG  ] step job_2-0:1-1                  SUCCESS   SUCCESS:  100% 	FAILURE:   0% -> [] 
 
 
+parametric job workflow
+-----------------------
+.. _parametric:
+
+Then submission of parametric jobs follows the same syntax than with
+the **sbatch** command adding a reference to a text file describing the
+set of parameters to be tested:
+
+::
+    
+   dbatch --job-name=job_1 -P parameters.txt my_job.sh
+
+How to build the file *parameters.txt* is described at `Parameters combination`_.
+
+.. _Parameters combination: http:parameters.html
+
+

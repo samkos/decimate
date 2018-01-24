@@ -22,6 +22,8 @@ Features
   scheduling policy on the maximum number of jobs authorized per user.
 - Manage all the submitted jobs as a single workflow easing their
   submission, monitoring, deletion or reconfiguration.
+- Ease the definition, submission and management of jobs
+  run on a large set of combinations of parameters.
 - Benefit from a centralized log file,  a unique point of
   capture of relevant information about the behavior of the workflow.
   From Python or shell, at any time and from any jobs,
