@@ -196,6 +196,18 @@ class slurm_frontend(decimate):
 
     (job_id, cmd) = self.submit_job(new_job)
 
+    final_checking_job = copy.deepcopy(new_job)
+    for n in ['job_name','error','output']:
+      final_checking_job[n] = 'chk_'+new_job[n]
+    final_checking_job['ntasks'] = 1
+    final_checking_job['time'] = "05:00"
+    final_checking_job['script'] = "%s/bin/end_job.sh" % self.DECIMATE_DIR
+    final_checking_job['array'] = "1-1"
+
+    self.log_info('final_checking_job=%s' % pprint.pformat(final_checking_job))
+    (job_id, cmd) = self.submit_job(final_checking_job)
+    
+    
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
