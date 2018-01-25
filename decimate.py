@@ -2369,7 +2369,7 @@ class decimate(engine):
     (job,job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines,job)
 
     self.log_debug('after reading job script file job %s=%s' % \
-                   (job['script'],self.print_job(job,print_only=job.keys())),
+                   (job['script'],self.print_job(job,print_only=job.keys())),\
                    4,trace='WRAP,PARSE')
 
     # if no time is given, rejecting the job...

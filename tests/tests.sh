@@ -74,6 +74,8 @@ gC; db -f SUBMIT_JOB,JOBS,WRAP,ACTIVATE,SUBMIT,SUBMITTED -o 1.%j.out -e 1.%j.err
 gC; db -f PARSE,SUBMIT_JOB,JOBS,WRAP,ACTIVATE,SUBMIT,SUBMITTED -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
 gC; db -f PARSE,CHECK_FINAL -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
 
+gC; db -o 1.%j.out -e 1.%j.err -J 1 tests/my_job_fail.sh ; dl
+
 # working on moving job parsing
 ml dart_mitgcm/decimate_only
 gC

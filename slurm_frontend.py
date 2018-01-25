@@ -210,7 +210,7 @@ class slurm_frontend(decimate):
     self.slurm_args.error = final_checking_job['error'] 
     self.slurm_args.output = final_checking_job['output'] 
     self.slurm_args.job_name = final_checking_job['job_name'] 
-    self.log_debug('*********** final_checking_job **********' ,
+    self.log_debug('*********** final_checking_job **********' ,\
                    4,trace='SUBMIT,CHECK_FINAL')
     self.log_debug('final_checking_job=%s' % pprint.pformat(final_checking_job),\
                    4,trace='CHECK,FINAL_DETAIL')
