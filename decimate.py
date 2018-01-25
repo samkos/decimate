@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import copy
 from engine import *
 from env import TMPDIR
+import fnmatch
 import itertools
 import math
 import os
@@ -188,7 +189,8 @@ class decimate(engine):
 
     if not(hasattr(self, 'FILES_TO_COPY')):
         self.FILES_TO_COPY = []
-    for f in ['decimate.py', 'engine.py', 'env.py', 'decimate.pyc', 'engine.pyc', 'env.pyc', ]:
+    for f in ['decimate.py', 'engine.py', 'env.py', 'slurm_frontend.py',
+              'decimate.pyc', 'engine.pyc', 'env.pyc', 'slurm_frontend.pyc']:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR, f)]
 
     # checking
@@ -363,6 +365,8 @@ class decimate(engine):
     # ease of use of decimate
     self.parser.add_argument("--template", action="store_true",
                              help='create template files')
+    self.parser.add_argument("--process-templates", action="store_true",
+                             help=argparse.SUPPRESS)
     if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
         self.parser.add_argument("--create-template", action="store_true",
@@ -536,6 +540,10 @@ class decimate(engine):
         self.TASK_ID = 0
         self.TASK_IDS = '1-1'
 
+    # process template file
+    if self.args.process_templates:
+          self.process_templates()
+            
     if self.args.array_first:
       self.MY_ARRAY_CURRENT_FIRST = int(self.args.array_first)
 
@@ -614,11 +622,11 @@ class decimate(engine):
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
       param_file = '/tmp/parameters.%s' % self.TASK_ID
       task_parameter_file = open(param_file,"w")
-      params = self.parameters[int(self.TASK_ID)]
+      params = self.parameters.iloc[self.TASK_ID]
       task_parameter_file.write('# set parameter from file %s for task %s' %\
                                 (self.args.parameter_file, self.TASK_ID))
       s = ""
-      for p in params.keys():
+      for p in self.parameters.columns:
         task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
         s = s + "%s=>%s< " % (p,params[p])
         
@@ -1859,6 +1867,15 @@ class decimate(engine):
       return True
     return False
 
+ #########################################################################
+  # compute a cartesian product of two dataframe
+  #########################################################################
+  def cartesian(self,df1, df2):
+    rows = itertools.product(df1.iterrows(), df2.iterrows())
+
+    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
+    return df.reset_index(drop=True)
+
   #########################################################################
   # evaluate a tag from a formula
   #########################################################################
@@ -1873,15 +1890,6 @@ class decimate(engine):
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
                    4,trace='PARAMETRIC_DETAIL')
     return value
-
-  #########################################################################
-  # compute a cartesian product of two dataframe
-  #########################################################################
-  def cartesian(self,df1, df2):
-    rows = itertools.product(df1.iterrows(), df2.iterrows())
-
-    df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
-    return df.reset_index(drop=True)
 
   #########################################################################
   # evaluate tags from a formula
@@ -1908,6 +1916,31 @@ class decimate(engine):
         self.log_debug('value of %s = %s' % (tag,value), \
                        4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
     return values
+
+  #########################################################################
+  # apply parameters to template files
+  #########################################################################
+  def process_templates(self,from_dir='.'):
+
+    pattern = "*.template"
+    matches = []
+    params = self.parameters.iloc[self.TASK_ID]
+    for root, dirnames, filenames in os.walk(from_dir):
+	for filename in fnmatch.filter(filenames, pattern):
+            f = os.path.join(root, filename)
+	    matches.append(f)
+            print('processing template file %s' % f)
+            content = "".join(open(f).readlines())
+            for k in self.parameters.columns:
+                v = params[k]
+                content = content.replace('__%s__' % k, "%s" % v)
+            processed_file = open(f.replace('.template',""),'w')
+            processed_file.write(content)
+            processed_file.close()
+
+    return matches
+          
+ 
 
   #########################################################################
   # read the yalla parameter file in order to submit a pool of jobs
@@ -2223,7 +2256,7 @@ class decimate(engine):
               ser = pd.Series(results_per_var[v],index=l.index)
               l[v] = ser
     
-    self.log_debug('%d combination of %d parameters  : \n %s' % (len(l),len(l.columns),l),\
+    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l),len(l.columns),l),\
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
 
@@ -2238,10 +2271,11 @@ class decimate(engine):
       for c in cols_orig:
         if not(c in ['nodes','ntasks']):
           cols = cols + [c]
-      print cols
-      print l.groupby(cols).size()
-    sys.exit(1)
+      self.log_debug('parameter combinations:\n%s' % l.groupby(cols).size(),\
+                     4, trace='PARAMETRIC_DETAIL')
+    #sys.exit(1)
 
+    self.parameters = l
     return self.parameters
       
 
@@ -3410,15 +3444,24 @@ class decimate(engine):
     else:
       prefix0 = check_previous
       if self.args.parameter_file:
-        prefix0 = prefix0 + '\n# Sourcing parameters taken from file: %s ' % \
+        prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
+        # prefix0 = prefix0 + '\necho Sourcing parameters taken from file: %s ' % \
+        #           self.args.parameter_file
+        # prefix0 = prefix0 + '\necho --- parameters set here --------------'
+        # prefix0 = prefix0 + '\ncat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        # prefix0 = prefix0 + '\necho --------------------------------------'
+        
+        
         prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
         #prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       
 
 
     l = prefix0 + "\n\n# Starting user job\n" + \
-        "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + l\
+        "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + \
+        l.replace('#DECIM PROCESS_TEMPLATE_FILE',
+                  'echo Should replace templates here\n%s --process-templates' % l0) \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """
@@ -3471,6 +3514,7 @@ class decimate(engine):
       output = output.replace('__job_error__',stream['error'])
       output = output.replace('__NB_JOBS__',str(len(RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__',job['submit_dir'])
+      
       if self.args.debug:
         output = output.replace('__DEBUG__','debug')
       else:

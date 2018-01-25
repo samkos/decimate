@@ -116,7 +116,7 @@ class slurm_frontend(decimate):
 
     if self.slurm_args.parameter_file:
       decimate_extra_config = decimate_extra_config + \
-                              ['--parameter-file', "%s" % self.slurm_args.parameter_file]
+                              ['--parameter-file', "%s" % os.path.abspath(self.slurm_args.parameter_file) ]
 
     if self.slurm_args.parameter_filter:
       decimate_extra_config = decimate_extra_config + \
