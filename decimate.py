@@ -2346,9 +2346,9 @@ class decimate(engine):
 
     lock_file = self.take_lock(self.LOCK_FILE)
 
-    self.log_debug('submit_job submitting job: %s ' % self.print_job(job),2,trace='SUBMIT_JOB')
+    self.log_debug('submit_job submitting job: %s ' % self.print_job(job,print_all=True),2,trace='SUBMIT_JOB')
 
-    self.log_debug('in submit JOBS start: %s', ','.join(map(str, self.JOBS.keys())),2,trace='JOBS')
+    self.log_debug('in submit JOBS start: %s' % (','.join(map(str, self.JOBS.keys()))),2,trace='JOBS')
 
     job_default_value = {'array': '1-1', \
                          'attempt': 0, \
@@ -2368,8 +2368,9 @@ class decimate(engine):
     original_script_content_lines = open(job['script'],'r').readlines()
     (job,job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines,job)
 
-    self.log_debug('after reading job script file job=%s' % \
-                   self.print_job(job,print_only=job.keys()),4,trace='WRAP,PARSE')
+    self.log_debug('after reading job script file job %s=%s' % \
+                   (job['script'],self.print_job(job,print_only=job.keys())),
+                   4,trace='WRAP,PARSE')
 
     # if no time is given, rejecting the job...
     if not(job['time']):

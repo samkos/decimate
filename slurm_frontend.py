@@ -200,11 +200,20 @@ class slurm_frontend(decimate):
     for n in ['job_name','error','output']:
       final_checking_job[n] = 'chk_'+new_job[n]
     final_checking_job['ntasks'] = 1
+    final_checking_job['dependency'] = job_id
     final_checking_job['time'] = "05:00"
     final_checking_job['script'] = "%s/bin/end_job.sh" % self.DECIMATE_DIR
+    del final_checking_job['script_file']
     final_checking_job['array'] = "1-1"
 
-    self.log_info('final_checking_job=%s' % pprint.pformat(final_checking_job))
+    self.slurm_args.script = self.args.script = final_checking_job['script']
+    self.slurm_args.error = final_checking_job['error'] 
+    self.slurm_args.output = final_checking_job['output'] 
+    self.slurm_args.job_name = final_checking_job['job_name'] 
+    self.log_debug('*********** final_checking_job **********' ,
+                   4,trace='SUBMIT,CHECK_FINAL')
+    self.log_debug('final_checking_job=%s' % pprint.pformat(final_checking_job),\
+                   4,trace='CHECK,FINAL_DETAIL')
     (job_id, cmd) = self.submit_job(final_checking_job)
     
     

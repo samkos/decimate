@@ -68,6 +68,12 @@ db tests/es_no_time.sh
 db -o 5.%j.out -e 5.%j.err -J 5 --dependency 4 tests/my_job.sh 
 b
 
+# debugging final checking job
+gC; db -f SUBMIT -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
+gC; db -f SUBMIT_JOB,JOBS,WRAP,ACTIVATE,SUBMIT,SUBMITTED -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
+gC; db -f PARSE,SUBMIT_JOB,JOBS,WRAP,ACTIVATE,SUBMIT,SUBMITTED -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
+gC; db -f PARSE,CHECK_FINAL -o 1.%j.out -e 1.%j.err -J 1 tests/my_job.sh
+
 # working on moving job parsing
 ml dart_mitgcm/decimate_only
 gC
