@@ -583,7 +583,7 @@ class engine(object):
         self.FILES_TO_COPY = []
       for f in self.FILES_TO_COPY:
         if not(os.path.exists(f)):
-          self.log_info('File %s does not exist... skipping its copy to safe dir' % f)
+          self.log_debug('File %s does not exist... skipping its copy to safe dir' % f)
         else:
           # os.system("cp %s %s/" % (f,self.SAVE_DIR))
           self.pre_copy(f,self.SAVE_DIR)

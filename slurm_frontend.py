@@ -196,6 +196,8 @@ class slurm_frontend(decimate):
 
     (job_id, cmd) = self.submit_job(new_job)
 
+    self.log_console('Submitted batch job %s' % job_id)
+
     final_checking_job = copy.deepcopy(new_job)
     for n in ['job_name','error','output']:
       final_checking_job[n] = 'chk_'+new_job[n]
@@ -220,7 +222,7 @@ class slurm_frontend(decimate):
     self.log_debug("Saving Job Ids...",1)
     self.save()
 
-    print('Submitted batch job %s' % job_id)
+
 
   #########################################################################
   # checking job correct completion

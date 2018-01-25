@@ -2741,7 +2741,7 @@ class decimate(engine):
       self.log_debug('submitting job %s [%s] --> Job # %s <-depends-on %s' % \
                      (job['job_name'], RangeSet(job['array']), job_id, \
                       job['dependency']),0,trace='RESTART,RESTART_FAKED')
-      if not(self.args.spawned):
+      if not(self.args.spawned) and not(self.args.decimate):
         self.log_info('submitting job %s [%s] --> Job # %s <-depends-on %s' % \
                       (job['job_name'], RangeSet(job['array']), job_id, \
                        job['dependency']),0,trace='RESTART,RESTART_FAKED')
