@@ -23,7 +23,7 @@ RSYNC_CMD = "timeout 60 bash -c 'until time srun -N ${SLURM_NNODES} --ntasks=${S
 
 SUCCESS = True
 FAILURE = False
-ABORT   = -9999
+ABORT = -9999
 
 HELP_MESSAGE = """
 Usage: dbatch [OPTIONS...] executable [args...]
@@ -218,7 +218,7 @@ class decimate(engine):
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     if not(os.path.exists(self.MAIL_DIR)):
       self.log_info("creating mail directory %s" % self.MAIL_DIR)
-      os.system("mkdir -p %s; chmod 777 %s; chmod o+t %s; chmod o+t %s/.." %
+      os.system("mkdir -p %s; chmod 777 %s; chmod o+t %s; chmod o+t %s/.." % 
                 (self.MAIL_DIR, self.MAIL_DIR, self.MAIL_DIR, self.MAIL_DIR))
     self.MAIL_LOCK_FILE = "%s/lock" % self.MAIL_DIR
 
@@ -236,7 +236,7 @@ class decimate(engine):
       print()
       print("          ########################################")
       print("          #                                      #")
-      print("          # Welcome to %11s v %6s!#" %
+      print("          # Welcome to %11s v %6s!#" % 
             (self.APPLICATION_NAME, self.APPLICATION_VERSION))
       print("          #   (using DECIMATE Framework %3s)     #" % self.DECIMATE_VERSION)
       print("          #                                      #")
@@ -260,7 +260,7 @@ class decimate(engine):
 
   def start(self):
 
-    self.log_debug('[Decimate:start] entering',4,trace='CALL')
+    self.log_debug('[Decimate:start] entering', 4, trace='CALL')
     engine.start(self)
     self.run()
 
@@ -468,7 +468,7 @@ class decimate(engine):
 
   def run(self):
 
-    self.log_debug('[Decimate:run] entering',4,trace='CALL')
+    self.log_debug('[Decimate:run] entering', 4, trace='CALL')
     # self.args.max_retry = 0
     # if not(self.args.spawned):
     #   self.log_console('ZZZZZZZZZ!!!!!!! max_retry is set to 0 ')
@@ -490,12 +490,12 @@ class decimate(engine):
       sys.exit(0)
 
     if self.args.use_burst_buffer_size and not(self.args.burst_buffer_size):
-        self.error('Wanting to use Burst Buffer? please precise which space ' +
+        self.error('Wanting to use Burst Buffer? please precise which space ' + 
                    'with --burst-buffer-size argument',
                    exit=True)
 
     if self.args.use_burst_buffer_space and not(self.args.burst_buffer_space):
-        self.error('Wanting to use Burst Buffer? please precise which space ' +
+        self.error('Wanting to use Burst Buffer? please precise which space ' + 
                    'with --burst-buffer-space argument',
                    exit=True)
 
@@ -512,8 +512,8 @@ class decimate(engine):
 
           # compilation of yalla
           self.log_console('Compiling Yalla...', trace='YALLA')
-          cmd = ("mkdir -p %s/YALLA; cd %s/YALLA; cp %s/yalla.c .; " +
-                 "make -f %s > %s/yalla_compile.out 2>&1") %\
+          cmd = ("mkdir -p %s/YALLA; cd %s/YALLA; cp %s/yalla.c .; " + 
+                 "make -f %s > %s/yalla_compile.out 2>&1") % \
                 (self.SAVE_DIR, self.SAVE_DIR, self.YALLA_DIR, makefile_name, self.LOG_DIR)
           self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
           output = os.system(cmd)
@@ -621,16 +621,16 @@ class decimate(engine):
 
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
       param_file = '/tmp/parameters.%s' % self.TASK_ID
-      task_parameter_file = open(param_file,"w")
+      task_parameter_file = open(param_file, "w")
       params = self.parameters.iloc[self.TASK_ID]
-      task_parameter_file.write('# set parameter from file %s for task %s' %\
+      task_parameter_file.write('# set parameter from file %s for task %s' % \
                                 (self.args.parameter_file, self.TASK_ID))
       s = ""
       for p in self.parameters.columns:
-        task_parameter_file.write('\nexport %s=%s' % (p,params[p]))
-        s = s + "%s=>%s< " % (p,params[p])
+        task_parameter_file.write('\nexport %s=%s' % (p, params[p]))
+        s = s + "%s=>%s< " % (p, params[p])
         
-      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID,s))
+      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
       
       task_parameter_file.write('\n')
       task_parameter_file.close()
@@ -640,16 +640,16 @@ class decimate(engine):
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
       if not(self.args.jobid in self.JOBS.keys()):
-        self.error(('strange, while checking if dependency exists, ' +
-                    'my own job-id %s is not known in self.JOBS... ' +
-                    'self.args.check_previous_step=%s') %
+        self.error(('strange, while checking if dependency exists, ' + 
+                    'my own job-id %s is not known in self.JOBS... ' + 
+                    'self.args.check_previous_step=%s') % 
                    (self.args.jobid, self.args.check_previous_step),
                    exit=False, exception=True)
       else:
         my_job = self.JOBS[self.args.jobid]
         dep_jobid = my_job['dependency']
         step = self.STEPS[my_job['step']]
-        self.log_info('status of the current step %s: %s ' %
+        self.log_info('status of the current step %s: %s ' % 
                       (step['job_name'], self.print_job(step, step.keys())),
                       2, trace='COMPUTE_CHECK,CURRENT')
 
@@ -668,7 +668,7 @@ class decimate(engine):
                          (step_to_check, array_to_check), 4, \
                          trace='HEAL,RESTART,CHECK,COMPUTE_CHECK')
           self.log_debug('self.steps_submitted_attempts=%s' % \
-                         pprint.pformat(self.steps_submitted_attempts), 4,\
+                         pprint.pformat(self.steps_submitted_attempts), 4, \
                          trace='RESTART,HEAL,CHECK,COMPUTE_CHECK')
           step = "-".join(step_to_check.split("-")[:-1])
           if step in self.steps_submitted_attempts.keys():
@@ -676,16 +676,16 @@ class decimate(engine):
             step_to_check = "%s-%s" % (step, attempts_done)
             array_to_check = self.STEPS[step_to_check]['initial_array']
             self.CHECK_ATTEMPT = attempts_done
-            self.log_debug(('should check step %s (%s) attempt %s, ' +\
+            self.log_debug(('should check step %s (%s) attempt %s, ' + \
                            'STEPS.keys=%s self.steps_submitted_attempts=%s') % \
-                           (step_to_check, array_to_check, attempts_done,\
-                            ",".join(self.STEPS.keys()),\
-                            pprint.pformat(self.steps_submitted_attempts)),\
+                           (step_to_check, array_to_check, attempts_done, \
+                            ",".join(self.STEPS.keys()), \
+                            pprint.pformat(self.steps_submitted_attempts)), \
                            4, trace='CHECK_SHORT')
             self.log_console("\n" + self.system('ls -l %s.*-attempt_* ' % step))
             self.log_debug('should check step %s (%s) attempt %s: %s' % \
                            (step_to_check, array_to_check, attempts_done, \
-                            pprint.pformat(self.STEPS[step_to_check])),\
+                            pprint.pformat(self.STEPS[step_to_check])), \
                            4, trace='COMPUTE_CHECK,CHECK,WHAT_CHECK')
             self.check_current_state(step, attempts_done, tasks=RangeSet(array_to_check))
             self.save()
@@ -713,7 +713,7 @@ class decimate(engine):
     if not(self.args.spawned):
       if len(self.jobs_list) > 0 and self.args.cont:
           # self.ask("Adding jobs to the current workflow? ", default='y' )
-          self.log_debug('Workflow has already run in this directory, trying to continue it',\
+          self.log_debug('Workflow has already run in this directory, trying to continue it', \
                          4, trace='WORKFLOW')
       elif len(self.jobs_list) > 0 and self.args.scratch:
           self.ask("Forgetting the previous workflow and starting from scratch? ", default='n')
@@ -754,7 +754,7 @@ class decimate(engine):
                 self.send_mail('Workflow has just completed successfully')
     except Exception:
         self.error("ZZZZZZZZ problem in decimate main loop ", exit=False, exception=True)
-        self.log_info("problem in decimate main loop -> JOBS=\n%s " %
+        self.log_info("problem in decimate main loop -> JOBS=\n%s " % 
                       pprint.pformat(self.JOBS).replace('\\n', '\n'))
 
         pass
@@ -790,16 +790,16 @@ class decimate(engine):
 #
         try:
           g = []
-          for global_stuff in ['global_completion','global_success','global_failure']:
+          for global_stuff in ['global_completion', 'global_success', 'global_failure']:
             i = self.STEPS[s][global_stuff]
             self.log_debug('for step %s global_stuff %s i:%s' % \
-                           (s,global_stuff,pprint.pformat(i)),3,trace='PRINT')
+                           (s, global_stuff, pprint.pformat(i)), 3, trace='PRINT')
             if len(i):
               r = '%s' % RangeSet(i)
             else:
               r = ''
             g = g + [r]
-          self.log_debug('g=%s' % pprint.pformat(g),3,trace='PRINT')
+          self.log_debug('g=%s' % pprint.pformat(g), 3, trace='PRINT')
 
           # global_completion_percent = self.STEPS[s]['global_completion_percent']
           global_success_percent = self.STEPS[s]['global_success_percent']
@@ -819,12 +819,12 @@ class decimate(engine):
                       (global_success_percent, global_failure_percent, g[2])
 
         except Exception:
-          comment = "pb  array_item=%s global_completion=%s global_success=%s global_failure=%s" %\
+          comment = "pb  array_item=%s global_completion=%s global_success=%s global_failure=%s" % \
                     (self.STEPS[s]['global_completion'], self.STEPS[s]['global_success'], \
                      self.STEPS[s]['global_failure'])
           self.dump_exception()
 
-        self.log_console('step %s:%-20s %-8s  %s' % (s, array_item,status, comment))
+        self.log_console('step %s:%-20s %-8s  %s' % (s, array_item, status, comment))
 
   #########################################################################
   # kill job
@@ -844,8 +844,8 @@ class decimate(engine):
     jobs_to_kill = []
     for jid in self.JOBS.keys():
         self.log_debug("%s:self.JOBS[%s]['completion_percent']=%s and self.JOBS[%s]['status']: %s"\
-                       % (self.JOBS[jid]['job_name'],jid,\
-                          self.JOBS[jid]['completion_percent'],jid,self.JOBS[jid]['status']), 3,\
+                       % (self.JOBS[jid]['job_name'], jid, \
+                          self.JOBS[jid]['completion_percent'], jid, self.JOBS[jid]['status']), 3, \
                        trace='KILL')
         if self.JOBS[jid]['completion_percent'] < 100. and \
            not(self.JOBS[jid]['status'] == 'ABORTED'):
@@ -872,7 +872,7 @@ class decimate(engine):
       step = self.JOBS[job_id]['step']
       if not(self.JOBS[job_id]['status'] == 'WAITING'):
           cmd = ' scancel %s ' % job_id
-          self.log_debug('killing step %s with %s' % (step,cmd),4,trace='KILL')
+          self.log_debug('killing step %s with %s' % (step, cmd), 4, trace='KILL')
           self.system(cmd)
       self.JOBS[job_id]['status'] = 'ABORTED'
       self.STEPS[step]['status'] = 'ABORTED'
@@ -930,7 +930,7 @@ class decimate(engine):
         self.load()
         if not(self.JOBS[int(self.args.jobid)]['make_depend']):
             self.log_info('Normal end of this batch', 2)
-            self.log_info('=============== workflow is finishing ==============',timestamp=True)
+            self.log_info('=============== workflow is finishing ==============', timestamp=True)
             if self.args.mail:
                 self.send_mail('Workflow has just completed successfully')
 
@@ -939,7 +939,7 @@ class decimate(engine):
   #########################################################################
 
   def check_current_state(self, what, attempt, tasks=None,
-                          checking_from_console=False,from_heal_workflow=False,
+                          checking_from_console=False, from_heal_workflow=False,
                           from_finalize=False):
 
     if not(checking_from_console):
@@ -950,7 +950,7 @@ class decimate(engine):
     #   tasks='1-5'
 
     state_has_changed = False
-    step = '%s-%s' % (what,attempt)
+    step = '%s-%s' % (what, attempt)
 
     if checking_from_console:
       self.args.info_offset = self.args.info_offset + 1
@@ -959,7 +959,7 @@ class decimate(engine):
       tasks = self.CHECK_TASK_IDS
 
     self.log_info("check_current_state(what=>%s<, attempt=>%s<, tasks=>%s<" % \
-                  (what,attempt,tasks), 4, trace='CHECK_SHORT,COMPUTE_CHECK,CHECK,WHAT_CHECK')
+                  (what, attempt, tasks), 4, trace='CHECK_SHORT,COMPUTE_CHECK,CHECK,WHAT_CHECK')
 
     filename_all_ok = '%s/Done-%s!%s-all' % (self.SAVE_DIR, what, attempt)
     filename_all_nok = '%s/Done-%s!%s-nok' % (self.SAVE_DIR, what, attempt)
@@ -988,17 +988,17 @@ class decimate(engine):
         if (nb_tasks_to_check > 100) and (percent_task_checked % 5 == 0)\
            and not(last_percent_printed == percent_task_checked):
           self.log_console("step %s-%s: checking  task #%s out of %s for   --> %0d%%..." % \
-                           (what,attempt,i,nb_tasks_to_check,percent_task_checked),noCR=True)
+                           (what, attempt, i, nb_tasks_to_check, percent_task_checked), noCR=True)
           last_percent_printed = percent_task_checked
         try:
           if self.TASKS[step][i]['status'] == 'SUCCESS' and not(self.args.force_check):
             # if i in self.STEPS[step]['global_success'] and not(self.args.force_check):
-            self.log_info("task %s-%s (step %s) found successfull " % (what,i,step), \
-                          2,trace='CHECK')
+            self.log_info("task %s-%s (step %s) found successfull " % (what, i, step), \
+                          2, trace='CHECK')
             continue
         except Exception:
-          self.error('missing key for step=%s i=%s from tasks=(%s) self.TASKS=\n%s' %  \
-                     (step,i,tasks,pprint.pformat(self.TASKS)),killall=True,exception=True)
+          self.error('missing key for step=%s i=%s from tasks=(%s) self.TASKS=\n%s' % \
+                     (step, i, tasks, pprint.pformat(self.TASKS)), killall=True, exception=True)
 
         # filename_failure = '%s/FAILURE-%s-%s' % (self.SAVE_DIR, what, i)
         # is_failure = os.path.exists(filename_failure)
@@ -1011,8 +1011,8 @@ class decimate(engine):
         filename_complete = '%s/Complete-%s-%s' % (self.SAVE_DIR, what, i)
         is_complete = os.path.exists(filename_complete)
         if is_complete and not(self.args.force_check):
-            self.log_info("Complete file found for task %s-%s (step=%s) " % (what,i,step),
-                          2,trace='CHECK')
+            self.log_info("Complete file found for task %s-%s (step=%s) " % (what, i, step),
+                          2, trace='CHECK')
             self.TASKS[step][i]['status'] = 'SUCCESS'
             continue
 
@@ -1022,12 +1022,12 @@ class decimate(engine):
 
         user_check = self.prepare_user_defined_check_job(what, i, attempt, is_done,
                                                          checking_from_console)
-        self.log_info("user_check=%s for task %s-%s (step=%s) " % (user_check,what,i,step),
-                      2,trace='CHECK')
+        self.log_info("user_check=%s for task %s-%s (step=%s) " % (user_check, what, i, step),
+                      2, trace='CHECK')
 
-        if user_check==SUCCESS:
+        if user_check == SUCCESS:
             if not(is_done) and user_check:
-                s = ('ZZZZZZZ step %s-%s was not complete but was validated successfully ' +\
+                s = ('ZZZZZZZ step %s-%s was not complete but was validated successfully ' + \
                      '+by a check made by a user defined function') % (what, i)
                 self.log_info(s)
                 self.append_mail(s)
@@ -1035,29 +1035,29 @@ class decimate(engine):
             if self.CanLock:
                 open(filename_complete, 'w')
             task_status = self.TASKS[step][i]['status'] = 'SUCCESS'
-            self.log_info("set status=SUCCESS for task %s-%s (step=%s) " % (what,i,step),
-                          2,trace='CHECK')
+            self.log_info("set status=SUCCESS for task %s-%s (step=%s) " % (what, i, step),
+                          2, trace='CHECK')
             state_has_changed = True
             continue
 
-        if not(is_done) or not(user_check==SUCCESS):
-          self.log_debug('adding task %s to tasks_not_complete' % i,\
-                         4,trace='CHECK')
+        if not(is_done) or not(user_check == SUCCESS):
+          self.log_debug('adding task %s to tasks_not_complete' % i, \
+                         4, trace='CHECK')
           tasks_not_complete = tasks_not_complete + [i]
           all_complete = False
           if is_done:
               os.unlink(filename_done)
-          if not(user_check==SUCCESS):
-            if user_check==FAILURE:
+          if not(user_check == SUCCESS):
+            if user_check == FAILURE:
               task_status = self.TASKS[step][i]['status'] = 'FAILURE'
-            elif user_check==ABORT:
+            elif user_check == ABORT:
               task_status = self.TASKS[step][i]['status'] = 'ABORT'
             state_has_changed = True
-            self.log_info("set status=%s for task %s-%s (step=%s) " % (task_status,what,i,step),
-                          2,trace='CHECK')
+            self.log_info("set status=%s for task %s-%s (step=%s) " % (task_status, what, i, step),
+                          2, trace='CHECK')
 
-        if not(user_check==SUCCESS):
-          self.log_info('task %s_%s rejected by user check' % (what, i),2,trace='CHECK')
+        if not(user_check == SUCCESS):
+          self.log_info('task %s_%s rejected by user check' % (what, i), 2, trace='CHECK')
 
         # self.log.info('all_complete=%s' % all_complete,1)
         # self.log.info('not_complete=%s' %  pprint.pformat(tasks_not_complete),1)
@@ -1067,7 +1067,7 @@ class decimate(engine):
                         '\n\t for step %s  attempt %s' % (what, attempt))
           self.kill_workflow(force=True, exceptMe=True)
 
-        filename_result = '%s/%s-%s-%s' % (self.SAVE_DIR,task_status, what, i)
+        filename_result = '%s/%s-%s-%s' % (self.SAVE_DIR, task_status, what, i)
         open(filename_result, "w")
       
     
@@ -1088,7 +1088,7 @@ class decimate(engine):
           return (False, RangeSet(tasks_not_complete))
         if state_has_changed:
           self.save()
-        self.archive(what,attempt,'restart')
+        self.archive(what, attempt, 'restart')
         self.heal_workflow(what, tasks_not_complete)
         sys.exit(1)
       else:
@@ -1102,30 +1102,30 @@ class decimate(engine):
         self.log_debug('what=%s,step=%s' % (what, self.args.step))
         s = ' \tok everything went fine for the step %s (%s) --> Step %s (%s) is starting...' % \
             (what, tasks, self.args.step, self.TASK_IDS)
-        self.log_info(s,timestamp=True)
-        step_with_attempt = "%s-%s" % (what,attempt)
+        self.log_info(s, timestamp=True)
+        step_with_attempt = "%s-%s" % (what, attempt)
         step_content = self.STEPS[step_with_attempt]
         self.log_debug('at this point for step %s: %s' % \
-                       (step_with_attempt,\
-                        self.print_job(step_content,print_only=step_content.keys())),\
-                       3,trace='GLOBAL')
+                       (step_with_attempt, \
+                        self.print_job(step_content, print_only=step_content.keys())), \
+                       3, trace='GLOBAL')
         self.append_mail(s.replace('--> ', '\n'))
         self.send_mail(s)
-        self.archive(what,attempt,'ok')
+        self.archive(what, attempt, 'ok')
 
         self.feed_workflow()
-        self.log_debug('\t\t --> releasing dependent jobs',1,trace='HEAL,RELEASED')
+        self.log_debug('\t\t --> releasing dependent jobs', 1, trace='HEAL,RELEASED')
         job = self.JOBS[self.args.jobid]
         next_job_id = job['make_depend']
         if next_job_id:
           next_job = self.JOBS[next_job_id]
           while not(next_job['check_previous']):
             self.log_info('\t\t --> releasing jobs %s (%s)' % \
-                          (next_job['step'],next_job['array']),
+                          (next_job['step'], next_job['array']),
                           2, trace='RELEASED')
             cmd = 'scontrol update jobid=%s dependency=after:%s' % (next_job_id, self.args.jobid)
-            out = self.system(cmd,force=True)
-            self.log_info('update cmd >%s< -> %s ' % (cmd,out), 1, trace='HEAL,RELEASED')
+            out = self.system(cmd, force=True)
+            self.log_info('update cmd >%s< -> %s ' % (cmd, out), 1, trace='HEAL,RELEASED')
             next_job_id = next_job['make_depend']
             if next_job_id and self.args.all_released:
               next_job = self.JOBS[next_job_id]
@@ -1146,7 +1146,7 @@ class decimate(engine):
       if os.path.exists(filename_all_ok):
           self.log_info('ok done! returning', 1, trace='CHECK_WAIT')
           if (checking_from_console):
-            return (True,[])
+            return (True, [])
           else:
             return 0
 
@@ -1157,7 +1157,7 @@ class decimate(engine):
       s = 'something went wrong when checking last step...giving it up!'
       self.log_info(s)
       self.send_mail(s, 4)
-      self.archive(what,attempt,'failed')
+      self.archive(what, attempt, 'failed')
       sys.exit(1)
 
   #########################################################################
@@ -1172,9 +1172,9 @@ class decimate(engine):
     if job_id == 'UNKNOWN':
       # poor workaround
       return False
-      self.error('UNKNOWN key found in self.TASKS[%s][%s][job] \n self.TASKS[%s]=\n%s' %\
-                 (step,task_id,step,pprint.pformat(self.TASKS[step])),\
-                 exit=False,exception=False)  # ,exit=True,exception=True)
+      self.error('UNKNOWN key found in self.TASKS[%s][%s][job] \n self.TASKS[%s]=\n%s' % \
+                 (step, task_id, step, pprint.pformat(self.TASKS[step])), \
+                 exit=False, exception=False)  # ,exit=True,exception=True)
       return False
 
     # poor workaround
@@ -1223,9 +1223,9 @@ class decimate(engine):
                          (output_file, ",".join(output_file_candidates)), 2)
       else:
           self.log_debug('ZZZZZZ weird... no output file produced of actual pattern %s' % \
-                         output_file_pattern, 3,trace='CHECK_PATTERN')
-          self.error_add('ZZZZZZ weird... no output file produced of pattern %s' %\
-                         original_output_pattern,task_id)
+                         output_file_pattern, 3, trace='CHECK_PATTERN')
+          self.error_add('ZZZZZZ weird... no output file produced of pattern %s' % \
+                         original_output_pattern, task_id)
           output_file = 'No_output_file_found'
           return False
 
@@ -1233,13 +1233,13 @@ class decimate(engine):
       if len(error_file_candidates):
           error_file_candidates.sort()
           error_file = error_file_candidates[-1]
-          self.log_info('error_file to be scanned : >%s< chosen from [%s]' %\
+          self.log_info('error_file to be scanned : >%s< chosen from [%s]' % \
                         (error_file, ",".join(error_file_candidates)), 2)
       else:
           self.log_debug('ZZZZZZ weird... no error file produced of pattern %s' % \
-                         error_file_pattern, 3,trace='CHECK_PATTERN')
+                         error_file_pattern, 3, trace='CHECK_PATTERN')
           self.error_add('ZZZZZZ weird... no error file produced of pattern %s' % \
-                         original_error_pattern,task_id)
+                         original_error_pattern, task_id)
           error_file = 'No_error_file_found'
 
     s = "CHECKING step : %s task %s " % (step, task_id)
@@ -1253,24 +1253,24 @@ class decimate(engine):
       # if a user check procedure was given as a script file
       # executing it
       cmd = "%s %s %s %s %s %s %s %s" % \
-            (self.args.check,what, attempt, task_id, running_dir, output_file, error_file, is_done)
-      self.log_debug('checking via user_script with cmd/%s/' % cmd,\
-                     4,trace='USER_CHECK')
-      (return_code,result) = self.system(cmd,return_code=True)
+            (self.args.check, what, attempt, task_id, running_dir, output_file, error_file, is_done)
+      self.log_debug('checking via user_script with cmd/%s/' % cmd, \
+                     4, trace='USER_CHECK')
+      (return_code, result) = self.system(cmd, return_code=True)
       user_check = FAILURE
       self.log_debug('return_code=/%s/' % return_code, 4, trace='USER_CHECK')
       try:
         return_code = int(return_code)
       except:
         self.log_info('Aborting workflow because\nreturn_code=/%s/ not integer code while checking via user_script with cmd/%s/' % \
-                      (return_code,cmd))
+                      (return_code, cmd))
         user_check = ABORT
       if return_code == 0:
         user_check = SUCCESS
       elif return_code == -9999 or return_code == 'ABORT':
         user_check = ABORT
-      self.log_debug('user_check=/%s/\nresult=/%s/' % (user_check,result), \
-                     4,trace='USER_CHECK')
+      self.log_debug('user_check=/%s/\nresult=/%s/' % (user_check, result), \
+                     4, trace='USER_CHECK')
 
     else:
       # else calling either default python method, either user overload python method    
@@ -1278,15 +1278,15 @@ class decimate(engine):
       try:
         user_check = self.check_job(what, attempt, task_id, running_dir, output_file, error_file,
                                     is_done, fix=not(checking_from_console),
-                                    job_tasks=job_tasks,step_tasks=step_tasks)
+                                    job_tasks=job_tasks, step_tasks=step_tasks)
       except Exception:
         # something went wrong during user_check
-        s = "User defined function check_job had a problem while CHECKING step: %s Task: %s " %\
+        s = "User defined function check_job had a problem while CHECKING step: %s Task: %s " % \
             (step, task_id)
         self.error(s, exit=False, exception=True)
         user_check = FAILURE
 
-    s = "%s found while CHECKING step: %s   Task: %s " % (user_check,step, task_id) + " " + \
+    s = "%s found while CHECKING step: %s   Task: %s " % (user_check, step, task_id) + " " + \
         "running_dir : %s" % (running_dir) + " " + \
         "output_file : %s" % (output_file) + " " + \
         "error_file : %s" % (error_file) + " " + \
@@ -1298,17 +1298,17 @@ class decimate(engine):
 
     return user_check
 
-  def error_add(self,msg,params):
+  def error_add(self, msg, params):
     if not(msg in self.errors):
       self.errors[msg] = []
     self.errors[msg] = self.errors[msg] + [params]
 
   def errors_print(self):
     if len(self.errors):
-      self.log_debug('self.errors=\n%s' % pprint.pformat(self.errors),4,trace='ERRORS')
+      self.log_debug('self.errors=\n%s' % pprint.pformat(self.errors), 4, trace='ERRORS')
       msg_all = []
       for k in self.errors.keys():
-        msg = '%s : (%s)' % (k,RangeSet(self.errors[k]))
+        msg = '%s : (%s)' % (k, RangeSet(self.errors[k]))
         self.log_info(msg)
         msg_all = msg_all + [msg]
       self.append_mail("\n".join(msg_all))
@@ -1334,13 +1334,13 @@ class decimate(engine):
     steps = self.steps_critical_path_with_attempt
     first_step_not_done = False
     last_step_completed = False
-    self.log_debug('in print_wokflow steps=[%s] ' % ",".join(steps),2,trace='ROLLBACK')
+    self.log_debug('in print_wokflow steps=[%s] ' % ",".join(steps), 2, trace='ROLLBACK')
     # self.log_info('in print_wokflow self.STEPS[2]=\n%s ' % pprint.pformat(self.STEPS[steps[1]]))
     for s in steps:
         status = self.STEPS[s]['status']
         step_only = "-".join(s.split("-")[:-1])
         self.log_info('for step %s -> %s  %s%% success %s%% failure' % \
-                      (s,status,self.STEPS[s]['success_percent'],self.STEPS[s]['failure_percent']))
+                      (s, status, self.STEPS[s]['success_percent'], self.STEPS[s]['failure_percent']))
         # poor
         # if status in ['SUCCESS','RUNNING','PENDING']:
         if abs(self.STEPS[s]['global_success_percent'] - 100.) < 1.e-6:
@@ -1397,13 +1397,13 @@ class decimate(engine):
     for s in next_steps:
         self.STEPS_RESTART_STATUS[s] = 'TO_RERUN'
         self.STEPS_RESTART_ATTEMPT[s] = int(self.steps_submitted_attempts[s]) + 1
-    return (step_to_check,next_steps)
+    return (step_to_check, next_steps)
 
   #########################################################################
   # checking initial state of the workflow and restart it
   #########################################################################
 
-  def check_workflow_and_start(self,no_restart=False,from_heal_workflow=False):
+  def check_workflow_and_start(self, no_restart=False, from_heal_workflow=False):
 
     # check if a workflow is still running
 
@@ -1413,13 +1413,13 @@ class decimate(engine):
       self.log_info('Brand new directory, Starting simulation from scratch...')
       return
 
-    (step_to_check,next_steps) = to_be_restarted
+    (step_to_check, next_steps) = to_be_restarted
 
     self.log_info("Job is believed to be restarted at step %s  " % step_to_check)
-    self.log_debug("next_steps=[%s]" % ",".join(next_steps),2,trace="RESTART")
+    self.log_debug("next_steps=[%s]" % ",".join(next_steps), 2, trace="RESTART")
 
     step = self.STEPS[step_to_check]
-    self.log_info('step to launch %s' % pprint.pformat(step),1)
+    self.log_info('step to launch %s' % pprint.pformat(step), 1)
 
     tasks_todo = []
     self.log_info("ZZZZZZZZ should adapt it to multiple breakit jobs??????")
@@ -1434,8 +1434,8 @@ class decimate(engine):
       items = step_to_check.split('-')
       what = "-".join(items[:-1])
       attempt = items[-1]
-      (res,tasks_uncomplete) = self.check_current_state(what,attempt,'%s' % task_id,\
-                                                        checking_from_console=True,\
+      (res, tasks_uncomplete) = self.check_current_state(what, attempt, '%s' % task_id, \
+                                                        checking_from_console=True, \
                                                         from_heal_workflow=from_heal_workflow)
       if not(res):
         tasks_todo = tasks_todo + [task_id]
@@ -1450,12 +1450,12 @@ class decimate(engine):
       while len(next_steps):
         step = next_steps.pop(0)
         attempt = self.steps_submitted_attempts[step]
-        tasks = self.STEPS["%s-%s" % (step,attempt)]['initial_array']
+        tasks = self.STEPS["%s-%s" % (step, attempt)]['initial_array']
         self.log_info(" Checking actual status of step %s-%s [%s] ..." % \
-                      (step,attempt,tasks))
-        ret = self.check_current_state(step,attempt,tasks,checking_from_console=True,\
+                      (step, attempt, tasks))
+        ret = self.check_current_state(step, attempt, tasks, checking_from_console=True, \
                                        from_heal_workflow=from_heal_workflow)
-        (res,tasks_todo) = ret
+        (res, tasks_todo) = ret
         if res:
           self.log_info('for step %s job is OK, checking next step' % (step))
           last_step_completed = step
@@ -1471,9 +1471,9 @@ class decimate(engine):
 
     if last_step_uncompleted:
       self.log_info("should restart from step %s and do tasks [%s] next_steps=[%s]" % \
-                    (last_step_uncompleted,RangeSet(tasks_todo),",".join(next_steps)))
+                    (last_step_uncompleted, RangeSet(tasks_todo), ",".join(next_steps)))
       self.log_debug("self.steps_submitted=[%s]" % \
-                     (",".join(self.steps_submitted)),trace='RESTART')
+                     (",".join(self.steps_submitted)), trace='RESTART')
       self.steps_to_restart_anyway = next_steps
 
       self.STEPS_RESTART_STATUS[last_step_uncompleted] = 'TO_RERUN'
@@ -1499,22 +1499,22 @@ class decimate(engine):
     #                 (",".join(self.steps_submitted)))
 
     self.ask("Do you want to resubmit workflow starting with step %s [%s] ? " % \
-             (last_step_uncompleted,RangeSet(tasks_todo)),default='y')
+             (last_step_uncompleted, RangeSet(tasks_todo)), default='y')
     self.tag_value['restart_from_step'] = int(last_step_uncompleted.split('-')[0])
 
-    self.log_debug('STEPS a restart (%s)' % ",".join(self.STEPS.keys()),\
+    self.log_debug('STEPS a restart (%s)' % ",".join(self.STEPS.keys()), \
                    4, trace='RESTART')
 
     # resubmit failed job
     for step_name in [last_step_uncompleted]:  # + next_steps:
       attempt = self.steps_submitted_attempts[step_name]
-      last_step_uncompleted_with_attempt = "%s-%s" % (step_name,attempt)
+      last_step_uncompleted_with_attempt = "%s-%s" % (step_name, attempt)
       # WRONG IDEA TO FORCE self.STEPS[last_step_uncompleted_with_attempt]['jobs'] = tasks_todo
       self.STEPS[last_step_uncompleted_with_attempt]['status'] = 'FAILURE'
       step2print = self.STEPS[last_step_uncompleted_with_attempt]
       self.log_debug('STEPS to restart (%s) = %s ' % \
-                     (last_step_uncompleted_with_attempt,\
-                      self.print_job(step2print, print_only=step2print.keys())),\
+                     (last_step_uncompleted_with_attempt, \
+                      self.print_job(step2print, print_only=step2print.keys())), \
                      4, trace='RESTART')
       previous_jobs = self.STEPS[last_step_uncompleted_with_attempt]['jobs']
       if len(previous_jobs) == 0:
@@ -1531,19 +1531,19 @@ class decimate(engine):
         previous_job['dependency'] = None
         previous_job['check_previous'] = None
         self.args.attempt_inital = previous_job['attempt']
-        (job_id, cmd_previous_new) = self.submit_job(previous_job,resubmit=True)
+        (job_id, cmd_previous_new) = self.submit_job(previous_job, resubmit=True)
       else:
         previous_job['array'] = previous_job['initial_array']
         previous_job['dependency'] = job_id
         previous_job['check_previous'] = job_id
 
-    self.log_debug('STEPS after restart (%s)' % ",".join(self.STEPS.keys()),\
+    self.log_debug('STEPS after restart (%s)' % ",".join(self.STEPS.keys()), \
                    4, trace='RESTART')
 
-    self.log_debug('self.STEPS_RESTART_STATUS=\n%s' % pprint.pformat(self.STEPS_RESTART_STATUS),\
-                   4,trace='RESTART_FAKED')
-    self.log_debug('self.STEPS_RESTART_ATTEMPT=\n%s' % pprint.pformat(self.STEPS_RESTART_ATTEMPT),\
-                   4,trace='RESTART_FAKED')
+    self.log_debug('self.STEPS_RESTART_STATUS=\n%s' % pprint.pformat(self.STEPS_RESTART_STATUS), \
+                   4, trace='RESTART_FAKED')
+    self.log_debug('self.STEPS_RESTART_ATTEMPT=\n%s' % pprint.pformat(self.STEPS_RESTART_ATTEMPT), \
+                   4, trace='RESTART_FAKED')
     # last_step_uncompleted = last_step_uncompleted_new
 
   #########################################################################
@@ -1552,24 +1552,24 @@ class decimate(engine):
 
   def heal_workflow(self, what, not_present, from_resubmit=False):
 
-    self.log_debug('heal_workflow: Taking the lock',4,trace='SAVE,LOCK')
+    self.log_debug('heal_workflow: Taking the lock', 4, trace='SAVE,LOCK')
     lock_file = self.take_lock(self.LOCK_FILE)
 
-    self.get_current_jobs_status(from_heal_workflow=True,from_resubmit=from_resubmit)
+    self.get_current_jobs_status(from_heal_workflow=True, from_resubmit=from_resubmit)
     self.compute_critical_path()
 
     current_attempt = self.steps_submitted_attempts[what]
-    previous_step = "%s-%s" % (what,current_attempt)
+    previous_step = "%s-%s" % (what, current_attempt)
     previous_initial_attempt = self.STEPS[previous_step]['initial_attempt']
 
     s = ("RESTARTING THE WRONG PART PREVIOUS JOB : %s (%s). current_attempt=%s" + \
          " initial_attempt=%s Extra attempt #%s ( %s out of %s)") % \
         (what, \
          RangeSet(",".join(map(lambda x: str(x), not_present))), \
-         int(current_attempt),int(previous_initial_attempt), \
+         int(current_attempt), int(previous_initial_attempt), \
          int(current_attempt) - int(previous_initial_attempt) + 1, \
          int(current_attempt) - int(previous_initial_attempt) + 1, self.args.max_retry)
-    self.log_info(s,timestamp=True)
+    self.log_info(s, timestamp=True)
     self.append_mail(s)
     # print(self.JOBS.keys())
     # self.log_debug("heal workflow begin -> JOBS=\n%s " % self.print_jobs(),2,trace='JOBS')
@@ -1586,7 +1586,7 @@ class decimate(engine):
         # killing everything, too much failed attempts occurred
         # ===============================================================================
         s = 'Too much failed attempt for step %s my_joid is %s' % (what, self.args.jobid)
-        self.log_info(s,timestamp=True)
+        self.log_info(s, timestamp=True)
         self.append_mail(s)
         self.log_info('killing all the dependent jobs...')
         self.send_mail('killing all the dependent jobs...')
@@ -1601,7 +1601,7 @@ class decimate(engine):
         self.log_info('Abnormal end of this batch... waiting 15 s for remaining job to be killed')
         time.sleep(15)
         s = '=============== workflow is aborting =============='
-        self.log_info(s,timestamp=True)
+        self.log_info(s, timestamp=True)
         self.send_mail(s)
         time.sleep(5)
         self.release_lock(lock_file)
@@ -1611,10 +1611,10 @@ class decimate(engine):
       # launching next attempt
       # ===============================================================================
 
-      self.log_info('job that found the failure: %s ' % self.print_job(job),2,trace='HEAL')
+      self.log_info('job that found the failure: %s ' % self.print_job(job), 2, trace='HEAL')
       step = self.STEPS[job['step']]
       self.log_info('status of the step %s that found the failure: %s ' % \
-                    (step['job_name'],self.print_job(step)),2,trace='HEAL')
+                    (step['job_name'], self.print_job(step)), 2, trace='HEAL')
 
       next_job_id = job['make_depend']
       previous_job_id = job['dependency']
@@ -1625,7 +1625,7 @@ class decimate(engine):
       previous_job['dependency'] = None
 
       self.args.attempt = int(self.args.attempt) + 1
-      self.log_info('resubmitting previous_job %s ' % self.print_job(previous_job),2,trace='HEAL')
+      self.log_info('resubmitting previous_job %s ' % self.print_job(previous_job), 2, trace='HEAL')
       (job_previous_id_new, cmd_previous_new) = self.submit_and_activate_job(previous_job)
 
       job['dependency'] = job_previous_id_new
@@ -1634,19 +1634,19 @@ class decimate(engine):
       job['array'] = '1-1'  # resubmit the whole job as other part will be suicided
       # job['array'] = job['initial_array'] # resubmit the whole job as other part will be suicided
       self.log_info('resubmitting same myself job %s for same attempt' % \
-                    self.print_job(job),2,trace='HEAL')
+                    self.print_job(job), 2, trace='HEAL')
       (job_id_new, cmd_new) = self.submit_and_activate_job(job)
       job = self.JOBS[job_id_new]
       previous_job = self.JOBS[job_previous_id_new]
       self.log_info('resubmitted previous_job %s final:  %s' % \
-                    (previous_job_id,self.print_job(previous_job)),2,trace='HEAL')
+                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL')
       resubmitted_step = self.STEPS[job['step']]
       job_ids = resubmitted_step['jobs']
       self.log_info('resubmitted current job  %s: jobs: %s' % \
-                    (job_id_new,pprint.pformat(job_ids)),2,trace='HEAL,HEAL_CURRENT')
+                    (job_id_new, pprint.pformat(job_ids)), 2, trace='HEAL,HEAL_CURRENT')
       for jid in job_ids:
         self.log_info('resubmitted current job  %s final:  %s' % \
-                      (jid,self.print_job(self.JOBS[jid])),2,trace='HEAL,HEAL_CURRENT')
+                      (jid, self.print_job(self.JOBS[jid])), 2, trace='HEAL,HEAL_CURRENT')
 
       job['job_id'] = job_id_new
       job['submit_cmd'] = cmd_new
@@ -1655,40 +1655,40 @@ class decimate(engine):
       # fixing dependencies...
       previous_job['make_depend'] = job_id_new
       self.log_info('resubmitted previous_job %s fixed make_depend????:  %s' % \
-                    (previous_job_id,self.print_job(previous_job)),2,trace='HEAL,,HEAL_DEPEND')
+                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL,,HEAL_DEPEND')
       if next_job_id:
         job['make_depend'] = next_job_id
         job['dependency'] = job_previous_id_new
         # self.log_debug('fixing new dependency for step %s  job_id %s' % \
         #                (self.JOBS[next_job_id]['job_name'],next_job_id),4,trace='HEAL')
         cmd = 'scontrol update jobid=%s dependency=afterany:%s' % (next_job_id, job_id_new)
-        out = self.system(cmd,force=True)
-        self.log_info('update cmd >%s< -> %s ' % (cmd,out), 1, trace='HEAL')
+        out = self.system(cmd, force=True)
+        self.log_info('update cmd >%s< -> %s ' % (cmd, out), 1, trace='HEAL')
         cmd = 'scontrol show job %s ' % (next_job_id)
-        out = self.system(cmd,force=True)
-        self.log_info('update cmd >%s< -> %s ' % (cmd,out), 1, trace='HEAL')
+        out = self.system(cmd, force=True)
+        self.log_info('update cmd >%s< -> %s ' % (cmd, out), 1, trace='HEAL')
         self.currently_healing_workflow = True
 
       self.JOBS[job_previous_id_new] = previous_job
       self.JOBS[job_id_new] = job
 
       self.log_info('ZZZZZZZZZz before save: job_id_new=%s : %s' % \
-                    (job_id_new,self.print_job(job)),2,trace='HEAL,HEAL_CURRENT')
+                    (job_id_new, self.print_job(job)), 2, trace='HEAL,HEAL_CURRENT')
     else:
       self.log_info('strange... for job %s no dependency recorded??? \n ' % \
-                    (self.args.jobid),0)
+                    (self.args.jobid), 0)
       self.log_debug(('strange... for job %s no dependency recorded???' + \
                       '\n heal workflow ends -> self.JOBS=%s') % \
-                     (self.args.jobid,self.print_jobs()),4,trace='STRANGE')
+                     (self.args.jobid, self.print_jobs()), 4, trace='STRANGE')
 
     self.log_info('end of heal_workflow', 1, trace='HEAL')
-    self.log_info('committing suicide in 5 seconds....',1, trace='HEAL')
+    self.log_info('committing suicide in 5 seconds....', 1, trace='HEAL')
 
     if from_resubmit:
       self.release_lock(lock_file)
       return
 
-    self.log_info('Job has been fixed and is restarting',timestamp=True)
+    self.log_info('Job has been fixed and is restarting', timestamp=True)
     self.flush_mail('Job has been fixed and is restarting')
 
     self.feed_workflow()
@@ -1698,7 +1698,7 @@ class decimate(engine):
     # self.close_save()
 
     self.log_info('status of the step %s that found the failure: %s ' % \
-                  (step['job_name'],self.print_job(step)),2,trace='HEAL')
+                  (step['job_name'], self.print_job(step)), 2, trace='HEAL')
 
     time.sleep(5)
     sys.exit(1)
@@ -1716,9 +1716,9 @@ class decimate(engine):
       self.steps_position = {}
       self.steps_critical_path = []
       # computation of the critical path
-      #self.log_info("self.steps_submitted=[%s]" % ",".join(self.steps_submitted))
+      # self.log_info("self.steps_submitted=[%s]" % ",".join(self.steps_submitted))
       self.log_debug('computing critical path: self.steps_submitted=[%s]' % \
-                     ','.join(self.steps_submitted),4,trace="CRITICAL,RESTART")
+                     ','.join(self.steps_submitted), 4, trace="CRITICAL,RESTART")
       self.steps_addressed = []
 
       if len(self.steps_submitted):
@@ -1726,7 +1726,7 @@ class decimate(engine):
           step_alone = "-".join(current_step.split('-')[:-1])
           if not(step_alone in self.steps_addressed):
             self.steps_addressed = self.steps_addressed + [step_alone]
-        self.log_debug(' steps_addressed=%s' % (",".join(self.steps_addressed)),trace='CRITICAL')
+        self.log_debug(' steps_addressed=%s' % (",".join(self.steps_addressed)), trace='CRITICAL')
 
       self.steps_in_order = []
       for s in self.steps_addressed:
@@ -1735,7 +1735,7 @@ class decimate(engine):
             if not(ss in self.steps_in_order):
               self.steps_in_order = self.steps_in_order + [ss]
 
-      self.log_debug(' steps_in_order=%s' % (",".join(self.steps_in_order)),trace='CRITICAL')
+      self.log_debug(' steps_in_order=%s' % (",".join(self.steps_in_order)), trace='CRITICAL')
       for s in self.steps_in_order:
         if s.find('finish') > -1:
             continue
@@ -1757,19 +1757,19 @@ class decimate(engine):
         self.steps_critical_path_with_attempt = self.steps_critical_path_with_attempt + \
                                               ["%s-%s" % (step, attempt)]
 
-      self.log_debug(' steps_critical_path=(%s)' % (",".join(self.steps_critical_path)),\
+      self.log_debug(' steps_critical_path=(%s)' % (",".join(self.steps_critical_path)), \
                      trace='CRITICAL')
       self.log_debug(' steps_critical_path_with_attempt=(%s)' % \
-                     (",".join(self.steps_critical_path_with_attempt)),trace='CRITICAL')
+                     (",".join(self.steps_critical_path_with_attempt)), trace='CRITICAL')
 
   #########################################################################
   # resubmit step
   #########################################################################
 
   def resubmit_step(self, step_name, step_array=False, dep=False,
-                    clear_dependency=False,return_all_job_ids=False):
+                    clear_dependency=False, return_all_job_ids=False):
 
-    self.log_info('resubmitting step %s depending on %s ' % (step_name,dep))
+    self.log_info('resubmitting step %s depending on %s ' % (step_name, dep))
 
     step = self.STEPS["%s-%s" % (step_name, self.steps_submitted_attempts[step_name])]
     self.log_info('step to launch %s' % pprint.pformat(step), 1)
@@ -1788,7 +1788,7 @@ class decimate(engine):
 
     self.log_info('new_job : %s' % pprint.pformat(new_job), 1)
 
-    return self.submit_job(new_job,resubmit=True)
+    return self.submit_job(new_job, resubmit=True)
 
   #########################################################################
   # fake computation in order to test
@@ -1815,16 +1815,16 @@ class decimate(engine):
   # faking a job to run some test case
   #########################################################################
 
-  def fake_job(self,step,task,attempt):
+  def fake_job(self, step, task, attempt):
 
-    s = 'faking step %s task %s attempt %s' % (step,task,attempt)
-    self.log_info(s,1,trace='FAKE')
+    s = 'faking step %s task %s attempt %s' % (step, task, attempt)
+    self.log_info(s, 1, trace='FAKE')
     if self.args.fake_pause:
       print('pausing for %s seconds' % self.args.fake_pause)
-      self.log_info('pausing for %s seconds...' % self.args.fake_pause,1,trace='FAKE')
+      self.log_info('pausing for %s seconds...' % self.args.fake_pause, 1, trace='FAKE')
       time.sleep(self.args.fake_pause)
     print('job DONE')
-    self.log_info('job DONE',1,trace='FAKE')
+    self.log_info('job DONE', 1, trace='FAKE')
 
   #########################################################################
   # read the scenario file in order to fake a behavior
@@ -1847,20 +1847,20 @@ class decimate(engine):
   #########################################################################
   # parse an additional tags from the yalla parameter file
   #########################################################################
-  def additional_tag(self,line):
+  def additional_tag(self, line):
     # direct sweeping of parameter
-    matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
-      (t,v) = (matchObj.group(1), matchObj.group(2))
+      (t, v) = (matchObj.group(1), matchObj.group(2))
       self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
       self.combined_tag[t] = v
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
       return True
     # direct setting of parameter
-    matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$',line)
+    matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
-      (t,v) = (matchObj.group(1), matchObj.group(2))
+      (t, v) = (matchObj.group(1), matchObj.group(2))
       self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
@@ -1870,7 +1870,7 @@ class decimate(engine):
  #########################################################################
   # compute a cartesian product of two dataframe
   #########################################################################
-  def cartesian(self,df1, df2):
+  def cartesian(self, df1, df2):
     rows = itertools.product(df1.iterrows(), df2.iterrows())
 
     df = pd.DataFrame(left.append(right) for (_, left), (_, right) in rows)
@@ -1879,30 +1879,30 @@ class decimate(engine):
   #########################################################################
   # evaluate a tag from a formula
   #########################################################################
-  def eval_tag(self,tag,formula,already_set_variables):
-    expr = already_set_variables + "\n%s = %s" % (tag,formula)
+  def eval_tag(self, tag, formula, already_set_variables):
+    expr = already_set_variables + "\n%s = %s" % (tag, formula)
     try:
       exec(expr)
     except Exception:
-      self.error('error in evalution of the parameters: expression to be evaluted : %s=%s '  % (tag,formula), \
-                 exception=True,exit=True, where="eval_tag")
+      self.error('error in evalution of the parameters: expression to be evaluted : %s=%s ' % (tag, formula), \
+                 exception=True, exit=True, where="eval_tag")
     value = locals()[tag]
-    self.log_debug('expression to be evaluted : %s  -> value of %s = %s'  % (expr,tag,value), \
-                   4,trace='PARAMETRIC_DETAIL')
+    self.log_debug('expression to be evaluted : %s  -> value of %s = %s' % (expr, tag, value), \
+                   4, trace='PARAMETRIC_DETAIL')
     return value
 
   #########################################################################
   # evaluate tags from a formula
   #########################################################################
-  def eval_tags(self,formula,already_set_variables):
+  def eval_tags(self, formula, already_set_variables):
     eval_expr = already_set_variables + "\n%s" % (formula)
     self.log_debug('expression to be evaluated : %s  ' % (eval_expr), \
-                   4,trace='PARAMETRIC_PROG_DETAIL')
+                   4, trace='PARAMETRIC_PROG_DETAIL')
     try:
       exec(eval_expr)
     except Exception:
       self.error('error in evaluation of the parameters (eval_tags): expression to be evaluted : %s ' % \
-                 (eval_expr), where="eval_tags",exception=True,exit=True)
+                 (eval_expr), where="eval_tags", exception=True, exit=True)
     values = {}
     variables = locals()
     del variables['formula']
@@ -1910,17 +1910,17 @@ class decimate(engine):
     del variables['eval_expr']
     del variables['values']
 
-    for tag,value in variables.items():
+    for tag, value in variables.items():
       if tag.find('__') == -1 and ("%s" % value).find('<') == -1:
         values[tag] = value
-        self.log_debug('value of %s = %s' % (tag,value), \
-                       4,trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
+        self.log_debug('value of %s = %s' % (tag, value), \
+                       4, trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
     return values
 
   #########################################################################
   # apply parameters to template files
   #########################################################################
-  def process_templates(self,from_dir='.'):
+  def process_templates(self, from_dir='.'):
 
     pattern = "*.template"
     matches = []
@@ -1934,7 +1934,7 @@ class decimate(engine):
             for k in self.parameters.columns:
                 v = params[k]
                 content = content.replace('__%s__' % k, "%s" % v)
-            processed_file = open(f.replace('.template',""),'w')
+            processed_file = open(f.replace('.template', ""), 'w')
             processed_file.write(content)
             processed_file.close()
 
@@ -1947,7 +1947,7 @@ class decimate(engine):
   #########################################################################
 
   def read_parameter_file(self):
-    self.log_debug('reading yalla parameter files %s' % self.args.parameter_file,\
+    self.log_debug('reading yalla parameter files %s' % self.args.parameter_file, \
                    2, trace='YALLA,PARAMETRIC_DETAIL')
 
     if not(os.path.exists(self.args.parameter_file)):
@@ -1982,7 +1982,7 @@ class decimate(engine):
           for k in self.direct_tag.keys():
             line = line + " " + self.direct_tag[k]
           self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
-          matchObj = re.match("^.*" + self.args.parameter_filter + ".*$",line)
+          matchObj = re.match("^.*" + self.args.parameter_filter + ".*$", line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
             if nb_case == 1:
@@ -1990,7 +1990,7 @@ class decimate(engine):
                 print "%6s" % k,
               print
 
-            if not(self.args.parameter_range) or self.args.parameter_range==nb_case:
+            if not(self.args.parameter_range) or self.args.parameter_range == nb_case:
               print "%3d: " % (nb_case),
               for k in line.split(" "):
                 print "%6s " % k[:20],
@@ -2016,7 +2016,7 @@ class decimate(engine):
 
 
     full_text = "\n".join(lines)
-    in_prog=False
+    in_prog = False
     prog = ""
     nb_prog = 0
     line_nb = 0
@@ -2026,7 +2026,7 @@ class decimate(engine):
       line_nb = line_nb + 1
       line = clean_line(line)
       # while scanning a python section storing it...
-      if ((line.find("#DECIM") >-1) or (line_nb == nb_lines)) and in_prog:
+      if ((line.find("#DECIM") > -1) or (line_nb == nb_lines)) and in_prog:
         t = "YALLA_prog_%d" % nb_prog
         self.direct_tag[t] = prog 
         self.direct_tag_ordered = self.direct_tag_ordered + [t]
@@ -2035,7 +2035,7 @@ class decimate(engine):
                        4, trace='PARAMETRIC_PROG,PARAMETRIC_PROG_DETAIL')
         in_prog = False
       # is it a program  enforced by #DECIM PYTHON directive?
-      matchObj = re.match(r'^#DECIM\s*PYTHON\s*$',line)
+      matchObj = re.match(r'^#DECIM\s*PYTHON\s*$', line)
       if (matchObj):
         in_prog = True
         prog = ""
@@ -2048,7 +2048,7 @@ class decimate(engine):
         continue
       
       # if line void or starting with '#', go to the next line
-      if len(line)==0 or (line[0]=='#'):
+      if len(line) == 0 or (line[0] == '#'):
         continue
 
       # parsing other line than #DECIM directive
@@ -2060,53 +2060,53 @@ class decimate(engine):
 
       line2scan = line
       for k in self.direct_tag.keys():
-        line2scan = line2scan+" "+self.direct_tag[k]
+        line2scan = line2scan + " " + self.direct_tag[k]
         
-      nb_case = nb_case+1
+      nb_case = nb_case + 1
 
       # if job case are filtered, apply it, jumping to next line if filter not match
       if self.args.parameter_filter:
-        matchObj = re.match("^.*"+self.args.parameter_filter+".*$",line2scan)
+        matchObj = re.match("^.*" + self.args.parameter_filter + ".*$", line2scan)
         if not(matchObj):
           continue
 
-      if self.args.parameter_range and not(self.args.parameter_range==nb_case-1):
+      if self.args.parameter_range and not(self.args.parameter_range == nb_case - 1):
         continue
 
-      self.log_debug("testing : %s\ntags_names:%s" % (line,tags_names),\
+      self.log_debug("testing : %s\ntags_names:%s" % (line, tags_names), \
                      4, trace='PARAMETRIC_DETAIL')
     
       tags = shlex.split(line)
 
-      if not(len(tags)==len(tags_names)):
+      if not(len(tags) == len(tags_names)):
         self.error("\tError : pb encountered in reading the test matrix file : %s " % self.args.parameter_file + \
                    "at  line \n\t\t!%s" % line + \
                    "\n\t\tless parameters to read than expected... Those expected are\n" + \
-                   "\n\t\t\t %s " % ",".join(tags_names) +\
-                   "\n\t\tand so far, we read" +\
+                   "\n\t\t\t %s " % ",".join(tags_names) + \
+                   "\n\t\tand so far, we read" + \
                    "\n\t\t\t %s" % tag, exception=True, exit=True)
       
       ts = copy.deepcopy(tags_names)
       tag = {}
-      self.log_debug("ts:%s\ntags:%s" % (pprint.pformat(ts),pprint.pformat(tags))\
-                     ,4,trace='PARAMETRIC_DETAIL')
+      self.log_debug("ts:%s\ntags:%s" % (pprint.pformat(ts), pprint.pformat(tags))\
+                     , 4, trace='PARAMETRIC_DETAIL')
       
       while(len(ts)):
         t = ts.pop(0)
         tag["%s" % t] = tags.pop(0)
-        self.log_debug("tag %s : !%s! " % (t,tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
-      self.log_debug('tag:%s' % pprint.pformat(tag),4,trace='PARAMETRIC_DETAIL')
+        self.log_debug("tag %s : !%s! " % (t, tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
+      self.log_debug('tag:%s' % pprint.pformat(tag), 4, trace='PARAMETRIC_DETAIL')
 
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
-                     4,trace='PARAMETRIC_DETAIL,PARAMETRIC')
+                     4, trace='PARAMETRIC_DETAIL,PARAMETRIC')
 
     pd.options.display.max_rows = 999
     pd.options.display.max_columns = 999
-    #pd.options.display.width = 3000
-    pd.options.display.expand_frame_repr=True
+    # pd.options.display.width = 3000
+    pd.options.display.expand_frame_repr = True
     pd.options.display.max_columns = None
 
     
@@ -2115,9 +2115,9 @@ class decimate(engine):
       tag = l.iloc[[0]]
     else:
       tag = {}
-    self.log_debug('%d parameters before functional_tags : \n %s' % (len(l),l),\
+    self.log_debug('%d parameters before functional_tags : \n %s' % (len(l), l), \
                    4, trace='PARAMETRIC_DETAIL')
-    self.log_debug('tag before functional_tags : \n %s' % l.columns,\
+    self.log_debug('tag before functional_tags : \n %s' % l.columns, \
                    4, trace='PARAMETRIC_DETAIL')
 
     # evaluating parameter computed...
@@ -2134,11 +2134,11 @@ class decimate(engine):
 
       
       self.log_debug('self.direct_tag %s tag:%s' % \
-                   (pprint.pformat(self.direct_tag),pprint.pformat(tag)),\
-                   4,trace='PARAMETRIC_DETAIL')
+                   (pprint.pformat(self.direct_tag), pprint.pformat(tag)), \
+                   4, trace='PARAMETRIC_DETAIL')
       self.log_debug('self.direct_tag_ordered %s ' % \
-                   (pprint.pformat(self.direct_tag_ordered)),\
-                   4,trace='PARAMETRIC_DETAIL')
+                   (pprint.pformat(self.direct_tag_ordered)), \
+                   4, trace='PARAMETRIC_DETAIL')
       # adding the tags enforced by a #DECIM directive
       # evaluating them first
 
@@ -2146,82 +2146,82 @@ class decimate(engine):
       
       for t in self.direct_tag_ordered:
         already_set_variables = ""
-        if len(l)>1:
+        if len(l) > 1:
           values = l.iloc[[1]]
-          self.log_debug('values on first line : \n %s' % values,\
+          self.log_debug('values on first line : \n %s' % values, \
                          4, trace='PARAMETRIC_DETAIL')
           for c in l.columns:
-            already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[0][c])
-        self.log_debug('already_set_variables : \n %s' % already_set_variables,\
+            already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[0][c])
+        self.log_debug('already_set_variables : \n %s' % already_set_variables, \
                        4, trace='PARAMETRIC_DETAIL')
 
         formula = self.direct_tag[t]
-        if t.find("YALLA_prog")==-1:
-          results = { t:  self.eval_tag(t,formula,already_set_variables)}
-          tag,result = t,results[t]
-          self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
-                         4,trace='PARAMETRIC_DETAIL')
+        if t.find("YALLA_prog") == -1:
+          results = { t:  self.eval_tag(t, formula, already_set_variables)}
+          tag, result = t, results[t]
+          self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
+                         4, trace='PARAMETRIC_DETAIL')
           # output produced is a row of values
-          if isinstance(result,list):
-            if  len(l)>0 and (t in self.combined_tag):
-              new_column = pd.DataFrame(pd.Series(result),columns=[t])
-              self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l),l),\
+          if isinstance(result, list):
+            if  len(l) > 0 and (t in self.combined_tag):
+              new_column = pd.DataFrame(pd.Series(result), columns=[t])
+              self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l), l), \
                              4, trace='PARAMETRIC_DETAIL')
-              self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column),new_column),\
+              self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column), new_column), \
                              4, trace='PARAMETRIC_DETAIL')
-              l = self.cartesian(l,new_column)
-              self.log_debug('after cartesian product %d combinations : \n %s' % (len(l),l),\
+              l = self.cartesian(l, new_column)
+              self.log_debug('after cartesian product %d combinations : \n %s' % (len(l), l), \
                              4, trace='PARAMETRIC_DETAIL')
             else:
-              if len(result)==len(l) or len(l) == 0:
-                if len(l)>0:
-                  ser = pd.Series(result,index=l.index)
+              if len(result) == len(l) or len(l) == 0:
+                if len(l) > 0:
+                  ser = pd.Series(result, index=l.index)
                 else:
                   ser = pd.Series(result)
                 l[t] = ser
               else:
-                self.error(('parameters number mistmatch for expression' +\
-                            '\n\t %s = %s \n\t --> ' +\
+                self.error(('parameters number mistmatch for expression' + \
+                            '\n\t %s = %s \n\t --> ' + \
                             'expected %d and got %d parameters...') % \
-                           (tag,formula,len(l),len(result)))
+                           (tag, formula, len(l), len(result)))
           else:
             # output produced is only one value -> computing it for all combination
             results = [result]
-            for row in range(1,len(l)):
+            for row in range(1, len(l)):
               values = l.iloc[[row]]
-              self.log_debug('values on row %s: \n %s' % (row,values),\
+              self.log_debug('values on row %s: \n %s' % (row, values), \
                              4, trace='PARAMETRIC_DETAIL')
               already_set_variables = ""
               for c in l.columns:
-                already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
-              self.log_debug('about to be revaluated! t=%s results=%s' % (t,results),\
-                             4,trace='PARAMETRIC_DETAIL')
-              result = self.eval_tag(t,formula,already_set_variables)
+                already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[row][c])
+              self.log_debug('about to be revaluated! t=%s results=%s' % (t, results), \
+                             4, trace='PARAMETRIC_DETAIL')
+              result = self.eval_tag(t, formula, already_set_variables)
               results = results + [result]
-            self.log_debug('evaluated! %s = %s = %s' % (t,formula,results),\
-                          4,trace='PARAMETRIC_DETAIL')
+            self.log_debug('evaluated! %s = %s = %s' % (t, formula, results), \
+                          4, trace='PARAMETRIC_DETAIL')
 
-            ser = pd.Series(results,index=l.index)
+            ser = pd.Series(results, index=l.index)
             l[t] = ser
         else:
-          results = self.eval_tags(formula,already_set_variables)
+          results = self.eval_tags(formula, already_set_variables)
           del self.direct_tag[t]
 
           # first updating all parameter that produces a vector
           result_as_column = {}
-          for tag,result in results.items():  
-            self.log_debug('evaluated! %s = %s = %s' % (tag,formula,result),\
-                           4,trace='PARAMETRIC_DETAIL')
+          for tag, result in results.items():  
+            self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
+                           4, trace='PARAMETRIC_DETAIL')
             # output produced is a row of values
-            if isinstance(result,list):
-              if len(result)==len(l) or len(l)==0 or (t in self.combined_tag):
+            if isinstance(result, list):
+              if len(result) == len(l) or len(l) == 0 or (t in self.combined_tag):
                 result_as_column[tag] = result
-                ser = pd.Series(result,index=l.index)
+                ser = pd.Series(result, index=l.index)
                 l[tag] = ser
               else:
-                self.error(('parameters number mistmatch for parameter %s computed from a python section' +\
+                self.error(('parameters number mistmatch for parameter %s computed from a python section' + \
                             '\n\t expected %d and got %d parameters...') % \
-                           (tag,len(l),len(result)))
+                           (tag, len(l), len(result)))
 
           # second applying formula for all other variables and check that
           # row as column remains constant
@@ -2229,34 +2229,34 @@ class decimate(engine):
           for v in results.keys():
             results_per_var[v] = [results[v]]
             
-          for row in range(1,len(l)):
+          for row in range(1, len(l)):
             
             values = l.iloc[[row]]
-            self.log_debug('values on row %s: \n %s' % (row,values),\
+            self.log_debug('values on row %s: \n %s' % (row, values), \
                            4, trace='PARAMETRIC_PROG_DETAIL')
             already_set_variables = ""
             for c in l.columns:
-              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c,l.iloc[row][c])
-            results_for_this_row = self.eval_tags(formula,already_set_variables)
+              already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[row][c])
+            results_for_this_row = self.eval_tags(formula, already_set_variables)
             for v in results.keys():
               results_per_var[v] = results_per_var[v] + [results_for_this_row[v]]
               if (v in result_as_column.keys()):
-                if not(cmp(result_as_column[v],results_for_this_row[v])==0):
+                if not(cmp(result_as_column[v], results_for_this_row[v]) == 0):
                   self.error('mismatch in parameter list  computed from file %s \n\tfor parameter %s: ' % \
-                             (self.args.parameter_file,v) +\
-                             '\n\t    returned %s for first combination ' % result_as_column[v] +\
-                             '\n\tbut returned %s for %dth combination ' % (results_for_this_row[v],row),
-                             exit=True,where='read_parameter_file',exception=False)
+                             (self.args.parameter_file, v) + \
+                             '\n\t    returned %s for first combination ' % result_as_column[v] + \
+                             '\n\tbut returned %s for %dth combination ' % (results_for_this_row[v], row),
+                             exit=True, where='read_parameter_file', exception=False)
 
-            self.log_debug('evaluated! for row %s = %s' % (row,pprint.pformat(results_for_this_row)),\
-                           4,trace='PARAMETRIC_PROG_DETAIL')
+            self.log_debug('evaluated! for row %s = %s' % (row, pprint.pformat(results_for_this_row)), \
+                           4, trace='PARAMETRIC_PROG_DETAIL')
 
           for v in results.keys():
             if not(v in result_as_column.keys()):
-              ser = pd.Series(results_per_var[v],index=l.index)
+              ser = pd.Series(results_per_var[v], index=l.index)
               l[v] = ser
     
-    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l),len(l.columns),l),\
+    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l), \
                    4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
 
@@ -2265,15 +2265,15 @@ class decimate(engine):
       # print job_per_node_number
       # for j in job_per_node_number.keys():
       #   print j,':',job_per_node_number[j]
-      #print l.groupby(['nodes']).size()
+      # print l.groupby(['nodes']).size()
       cols_orig = l.columns
-      cols = ['nodes','ntasks']
+      cols = ['nodes', 'ntasks']
       for c in cols_orig:
-        if not(c in ['nodes','ntasks']):
+        if not(c in ['nodes', 'ntasks']):
           cols = cols + [c]
-      self.log_debug('parameter combinations:\n%s' % l.groupby(cols).size(),\
+      self.log_debug('parameter combinations:\n%s' % l.groupby(cols).size(), \
                      4, trace='PARAMETRIC_DETAIL')
-    #sys.exit(1)
+    # sys.exit(1)
 
     self.parameters = l
     return self.parameters
@@ -2283,7 +2283,7 @@ class decimate(engine):
   # print job
   #########################################################################
 
-  def print_jobs(self, J=None, short_format=True,print_only=False):
+  def print_jobs(self, J=None, short_format=True, print_only=False):
                      # print_only=['job_id','job_name','status','array','attempt'],filter=['python']):
                      # print_only=['job_name','status','content','job_id','step','dependency','make_depend','attempt'],filter=['python']):
 
@@ -2292,9 +2292,9 @@ class decimate(engine):
     out = ''
     for j in J.keys():
       if print_only:
-          out = out + "%s:%s\n" % (j,self.print_job(J[j],short_format,print_only))
+          out = out + "%s:%s\n" % (j, self.print_job(J[j], short_format, print_only))
       else:
-          out = out + "%s:%s\n" % (j,self.print_job(J[j],short_format))
+          out = out + "%s:%s\n" % (j, self.print_job(J[j], short_format))
     return out
 
   #########################################################################
@@ -2302,14 +2302,14 @@ class decimate(engine):
   #########################################################################
 
   def print_job(self, job, short_format=True,
-                print_only=['check_previous','script_file','array','inital_array',
-                            'job_name','status','content','job_id','step',
-                            'dependency','make_depend','attempt','global_completion'],
-                filter=['python /tmp/dart_mitgcm.py'],filtered=['content'],allkey=True,\
-                print_all = False, except_none = False ):
+                print_only=['check_previous', 'script_file', 'array', 'inital_array',
+                            'job_name', 'status', 'content', 'job_id', 'step',
+                            'dependency', 'make_depend', 'attempt', 'global_completion'],
+                filter=['python /tmp/dart_mitgcm.py'], filtered=['content'], allkey=True, \
+                print_all=False, except_none=False):
 
-    fields_to_compress = ['jobs','success','completion','failure',
-                          'global_success','global_completion','global_failure']
+    fields_to_compress = ['jobs', 'success', 'completion', 'failure',
+                          'global_success', 'global_completion', 'global_failure']
     if print_all:
       print_only = job.keys()
     new_job = copy.deepcopy(job)
@@ -2326,7 +2326,7 @@ class decimate(engine):
           continue
         if k in fields_to_compress:
           if len(new_job[k]) > 1:
-            values = ','.join(map(lambda x:str(x),new_job[k]))
+            values = ','.join(map(lambda x:str(x), new_job[k]))
             try:
               new_job[k] = '[%s] <- *compressed' % RangeSet(values)
             except Exception:
@@ -2353,12 +2353,12 @@ class decimate(engine):
   def submit_and_activate_job(self, job):
 
       self.log_info('in submit_and_activate job to submit  %s ' % \
-                    self.print_job(job),2,trace='SUBMIT_AND_ACTIVATE')
-      (submitted_job_ids, cmd) = self.submit_job(job, registration=False,\
+                    self.print_job(job), 2, trace='SUBMIT_AND_ACTIVATE')
+      (submitted_job_ids, cmd) = self.submit_job(job, registration=False, \
                                                  resubmit=True, return_all_job_ids=True)
       for submitted_job_id in submitted_job_ids:
         submitted_job = self.JOBS[submitted_job_id]
-        self.log_info('in submit_and_activate job %s ' % self.print_job(submitted_job),3)
+        self.log_info('in submit_and_activate job %s ' % self.print_job(submitted_job), 3)
         (job_id, cmd) = self.activate_job(submitted_job, registration=False)
       return (job_id, cmd)
 
@@ -2374,15 +2374,15 @@ class decimate(engine):
       step_only = job['job_name']
       if (self.STEPS_RESTART_STATUS[step_only] in ['DONE']):
         # and not(step_only in self.steps_to_restart_anyway):
-        self.log_debug('step %s not actually submitted but faked for restart' % (job['job_name']),\
-                       4,trace='RESTART_FAKED,SUBMITTED')
-        return (None,'nothing')
+        self.log_debug('step %s not actually submitted but faked for restart' % (job['job_name']), \
+                       4, trace='RESTART_FAKED,SUBMITTED')
+        return (None, 'nothing')
 
     lock_file = self.take_lock(self.LOCK_FILE)
 
-    self.log_debug('submit_job submitting job: %s ' % self.print_job(job,print_all=True),2,trace='SUBMIT_JOB')
+    self.log_debug('submit_job submitting job: %s ' % self.print_job(job, print_all=True), 2, trace='SUBMIT_JOB')
 
-    self.log_debug('in submit JOBS start: %s' % (','.join(map(str, self.JOBS.keys()))),2,trace='JOBS')
+    self.log_debug('in submit JOBS start: %s' % (','.join(map(str, self.JOBS.keys()))), 2, trace='JOBS')
 
     job_default_value = {'array': '1-1', \
                          'attempt': 0, \
@@ -2397,14 +2397,14 @@ class decimate(engine):
                          }
 
     # scanning original script for merging slurm option
-    self.log_debug('Scanning file %s for additional slurm parameters' % job['script'],\
+    self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
-    original_script_content_lines = open(job['script'],'r').readlines()
-    (job,job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines,job)
+    original_script_content_lines = open(job['script'], 'r').readlines()
+    (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
 
     self.log_debug('after reading job script file job %s=%s' % \
-                   (job['script'],self.print_job(job,print_only=job.keys())),\
-                   4,trace='WRAP,PARSE')
+                   (job['script'], self.print_job(job, print_only=job.keys())), \
+                   4, trace='WRAP,PARSE')
 
     # if no time is given, rejecting the job...
     if not(job['time']):
@@ -2423,12 +2423,12 @@ class decimate(engine):
 
     # forcing job output or error filename to be valued
     for n in ['error', 'output']:
-      if job[n]==None:
-        job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
-        self.log_info('empty job %s filename forced to %s' % (n,job[n]), \
+      if job[n] == None:
+        job[n] = '%s.%%j.%s' % (job['job_name'], n[:3])
+        self.log_info('empty job %s filename forced to %s' % (n, job[n]), \
                       4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
       
-    (job_script_content,job) = self.wrap_job_script(job,original_script_content_lines,
+    (job_script_content, job) = self.wrap_job_script(job, original_script_content_lines,
                                                     job_file_args_overloaded)
 
     if not('nodes' in job.keys()):
@@ -2436,29 +2436,29 @@ class decimate(engine):
 
     # forcing job output or error filename to be valued
     for n in ['error', 'output']:
-      if job[n]==None:
-        job[n] = '%s.%%j.%s' % (job['job_name'],n[:3])
-        self.log_info('empty job %s filename forced to %s' % (n,job[n]), \
+      if job[n] == None:
+        job[n] = '%s.%%j.%s' % (job['job_name'], n[:3])
+        self.log_info('empty job %s filename forced to %s' % (n, job[n]), \
                       4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
 
-    self.log_debug('after wrap job=%s' % self.print_job(job),4,trace='WRAP')
+    self.log_debug('after wrap job=%s' % self.print_job(job), 4, trace='WRAP')
 
     if False:
       # calculating the unique identifier
       timestamp = "%s" % time.time()
       unique_identifier = get_checksum_id(job_script_content + timestamp)
-      unique_job_script = "%s/%s_%s" % (self.SAVE_DIR,job['job_name'],unique_identifier)
+      unique_job_script = "%s/%s_%s" % (self.SAVE_DIR, job['job_name'], unique_identifier)
     else:
-      unique_job_script = "%s/%s" % (self.SAVE_DIR,job['job_name'])
+      unique_job_script = "%s/%s" % (self.SAVE_DIR, job['job_name'])
     job_script = job['script'] = unique_job_script
 
     self.compute_critical_path()
 
-    f = open("%s" % job_script,'w')
+    f = open("%s" % job_script, 'w')
     f.write("".join(original_script_content_lines))
     f.close()
 
-    f = open("%s+" % job_script,'w')
+    f = open("%s+" % job_script, 'w')
     f.write(job_script_content)
     f.close()
 
@@ -2475,12 +2475,12 @@ class decimate(engine):
       array_length = len(index_to_submit)
       if not(array_length == parameter_nb):
         msg = "array has %s occurence while there are %d combinations" % \
-              (array_length,parameter_nb)
-        self.error(msg,exit=True)
+              (array_length, parameter_nb)
+        self.error(msg, exit=True)
     
 
     if job['job_name'] in self.STEPS_RESTART_STATUS.keys():
-      if self.STEPS_RESTART_STATUS[job['job_name']] in ['TO_RERUN','TO_RESTART']:
+      if self.STEPS_RESTART_STATUS[job['job_name']] in ['TO_RERUN', 'TO_RESTART']:
         if not(job['job_name'] in self.STEPS_RESTART_ATTEMPT.keys()):
             self.STEPS_RESTART_ATTEMPT[job['job_name']] = 0
         job['attempt'] = self.STEPS_RESTART_ATTEMPT[job['job_name']]
@@ -2495,7 +2495,7 @@ class decimate(engine):
 
     previously_registred_step = None
     self.log_debug('self.steps_submitted_attempts=%s' % \
-                   pprint.pformat(self.steps_submitted_attempts),4,trace='GLOBAL')
+                   pprint.pformat(self.steps_submitted_attempts), 4, trace='GLOBAL')
     if step_only in self.steps_submitted_attempts.keys():
       # returning last job id of the step
       previously_registred_step = "%s-%s" % (job['job_name'],
@@ -2504,31 +2504,31 @@ class decimate(engine):
       completion = self.STEPS[previously_registred_step]['completion']
       self.log_info(('step already launched before as %s found ' + \
                      'with status %s and completion %s%%') % \
-                    (previously_registred_step,status,completion),1,trace='RESTART')
+                    (previously_registred_step, status, completion), 1, trace='RESTART')
 
     if not(resubmit) and not(step_only in self.steps_to_restart_anyway) \
        and step_only in self.steps_submitted_attempts.keys():
-      if status in ['SUBMITTED','WAITING','PENDING','RUNNING','SUCCESS']:
+      if status in ['SUBMITTED', 'WAITING', 'PENDING', 'RUNNING', 'SUCCESS']:
           job_id = self.STEPS[previously_registred_step]['jobs'][-1]
           cmd = self.JOBS[job_id]['cmd']
           if not((previously_registred_step in self.steps_submitted)):
               self.steps_submitted = self.steps_submitted + [previously_registred_step, ]
-              self.log_debug("submitted_jobs= [%s]" % ','.join(self.steps_submitted),\
-                             4,trace='JOBS')
+              self.log_debug("submitted_jobs= [%s]" % ','.join(self.steps_submitted), \
+                             4, trace='JOBS')
               self.save(take_lock=False)
-          self.log_debug('returning an already submitted job %s' % job_id,\
-                         4,trace='RESTART,HEAL,RESTART_FAKED')
+          self.log_debug('returning an already submitted job %s' % job_id, \
+                         4, trace='RESTART,HEAL,RESTART_FAKED')
           self.release_lock(lock_file)
-          return (job_id,cmd)
+          return (job_id, cmd)
       resubmitted_job = True
 
     if resubmit or not(step in self.STEPS.keys()) or (step_only in self.steps_to_restart_anyway):
       if (resubmit) or (step_only in self.steps_to_restart_anyway):
         self.log_info('in resubmitting step %s previously_registred_step=%s' % \
-                      (step, previously_registred_step),\
-                      4,trace='RESTART,HEAL')
+                      (step, previously_registred_step), \
+                      4, trace='RESTART,HEAL')
         self.steps_submitted = self.steps_submitted + [previously_registred_step, ]
-        self.add_step_to_history(step,previously_registred_step)
+        self.add_step_to_history(step, previously_registred_step)
       if not(previously_registred_step == step):
         self.STEPS[step] = my_dict(name='STEPS_%s' % step)  # {}
       if previously_registred_step is None:
@@ -2547,11 +2547,11 @@ class decimate(engine):
       else:
         previous_step = self.STEPS[previously_registred_step]
         self.log_debug('previous step of this kind was step %s:%s' % \
-                       (previously_registred_step,\
-                        self.print_job(previous_step,short_format=False)),\
-                       4,trace='GLOBAL,GLOBAL_JOBS')
+                       (previously_registred_step, \
+                        self.print_job(previous_step, short_format=False)), \
+                       4, trace='GLOBAL,GLOBAL_JOBS')
         self.log_debug('current_job to be submitted:%s' % \
-                       (self.print_job(job)), 4,trace='GLOBAL,GLOBAL_JOBS')
+                       (self.print_job(job)), 4, trace='GLOBAL,GLOBAL_JOBS')
 
         # transmitting global accouting from an attempt to another
         self.STEPS[step]['global_status'] = 'WAITING'
@@ -2568,29 +2568,29 @@ class decimate(engine):
 
         # removing previous job from the set of jobs in the current step
         if (previously_registred_step == step):
-          previous_jobs = ",%s," % (",".join(map(lambda x:str(x),previous_step['jobs'])))
+          previous_jobs = ",%s," % (",".join(map(lambda x:str(x), previous_step['jobs'])))
           jobs_to_remove = []
           self.log_debug('filtering resubmitted previous jobs %s : tasks (%s) to be removed' % \
-                         (previous_jobs,job['array']),\
-                         4,trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS')
+                         (previous_jobs, job['array']), \
+                         4, trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS')
           for task_to_remove in RangeSet(job['array']):
             jid = self.TASKS[step][task_to_remove]['job']
             if not (jid in jobs_to_remove):
               jobs_to_remove = jobs_to_remove + [str(jid)]
               # self.STEPS[step]['jobs']                      =
             self.log_debug('filtering resubmitted previous jobs %s : jobs (%s) to be removed' % \
-                           (previous_jobs,",".join(jobs_to_remove)),\
-                           4,trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS,GLOBAL_TASKS')
+                           (previous_jobs, ",".join(jobs_to_remove)), \
+                           4, trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS,GLOBAL_TASKS')
 
             for jid in jobs_to_remove:
               if previous_jobs.find(",%s," % jid) > -1:
-                previous_jobs = previous_jobs.replace(",%s," % jid,",")
-            if previous_jobs in ["",",",",,"]:
+                previous_jobs = previous_jobs.replace(",%s," % jid, ",")
+            if previous_jobs in ["", ",", ",,"]:
               self.STEPS[step]['jobs'] = []
             else:
               self.log_debug('previous_jobs final %s ' % \
                              (previous_jobs), \
-                             4,trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS,GLOBAL_TASKS')
+                             4, trace='GLOBAL,GLOBAL_REDUCTION,GLOBAL_JOBS,GLOBAL_TASKS')
               new_jobs = []
               for jid in previous_jobs[1:-1].split(","):
                 try:
@@ -2604,26 +2604,26 @@ class decimate(engine):
           self.STEPS[step]['array'] = job['array']
 
         # removing failed job resubmitted from job completed
-        global_completion = ",%s," % (",".join(map(lambda x:str(x),\
+        global_completion = ",%s," % (",".join(map(lambda x:str(x), \
                                                    self.STEPS[step]['global_completion'])))
         self.log_debug('global_completion initial %s : (%s) to be removed' % \
-                       (global_completion,job['array']),\
-                       4,trace='GLOBAL,GLOBAL_REDUCTION')
+                       (global_completion, job['array']), \
+                       4, trace='GLOBAL,GLOBAL_REDUCTION')
         for task in RangeSet(job['array']):
           if global_completion.find(",%s," % task) > -1:
-            global_completion = global_completion.replace(",%s," % task,",")
+            global_completion = global_completion.replace(",%s," % task, ",")
             self.STEPS[step]['global_completion_percent'] \
               -= 100. / self.STEPS[step]['global_items']
-        if global_completion in ["",",",",,"]:
+        if global_completion in ["", ",", ",,"]:
           self.STEPS[step]['global_completion'] = []
         else:
           self.log_debug('global_completion final %s ' % \
-                         (global_completion), 4,trace='GLOBAL,GLOBAL_REDUCTION')
-          self.STEPS[step]['global_completion'] = map(lambda x:int(x),\
+                         (global_completion), 4, trace='GLOBAL,GLOBAL_REDUCTION')
+          self.STEPS[step]['global_completion'] = map(lambda x:int(x), \
                                                       global_completion[1:-1].split(","))
 
     self.log_debug('self.STEPS[step][global_completion] %s ' % \
-                   (self.STEPS[step]['global_completion']), 4,trace='GLOBAL,GLOBAL_REDUCTION')
+                   (self.STEPS[step]['global_completion']), 4, trace='GLOBAL,GLOBAL_REDUCTION')
 
     self.STEPS[step]['job_name'] = step
     self.STEPS[step]['initial_array'] = job['initial_array']
@@ -2641,9 +2641,9 @@ class decimate(engine):
       else:
         self.TASKS[step] = my_dict(name='TASKS_%s' % step)  # {}
       for task_id in RangeSet(job['array']):
-        self.TASKS[step][task_id] = my_dict(name='TASKS_%s_%s' % (step,task_id))  # {}
+        self.TASKS[step][task_id] = my_dict(name='TASKS_%s_%s' % (step, task_id))  # {}
         if task_id in self.STEPS[step]['global_completion']:
-          for item in ['job','status','counted']:
+          for item in ['job', 'status', 'counted']:
             self.TASKS[step][task_id][item] = self.TASKS[previously_registred_step][task_id][item]
         else:
           self.TASKS[step][task_id]['job'] = 'UNKNOWN'
@@ -2651,14 +2651,14 @@ class decimate(engine):
           self.TASKS[step][task_id]['counted'] = False
 
     self.log_debug('just before submitting step %s:%s' % \
-                   (step,self.print_job(self.STEPS[step],short_format=False)),\
-                   4,trace='GLOBAL')
+                   (step, self.print_job(self.STEPS[step], short_format=False)), \
+                   4, trace='GLOBAL')
     self.log_debug('just before submitting job to be submitted:%s' % \
-                   (self.print_job(job)), 4,trace='GLOBAL')
+                   (self.print_job(job)), 4, trace='GLOBAL')
 
     self.log_debug('just before submitting step %s : TASKS: \n%s' % \
-                   (step,pprint.pformat(self.TASKS[step])),\
-                   4,trace='GLOBAL,GLOBAL_JOBS,GLOBAL_TASKS')
+                   (step, pprint.pformat(self.TASKS[step])), \
+                   4, trace='GLOBAL,GLOBAL_JOBS,GLOBAL_TASKS')
 
     dep = job['dependency']
     step_dep = None
@@ -2666,7 +2666,7 @@ class decimate(engine):
       step_dep = self.JOBS[dep]['step']
 
     # updating list of submitted steps and their history
-    self.add_step_to_history(step,step_dep)
+    self.add_step_to_history(step, step_dep)
 
     job_ids = []
 
@@ -2678,23 +2678,23 @@ class decimate(engine):
     starting_indices = range(0, len(index_to_submit), chunk_splitted)
     self.log_debug(('starting_indices=[%s], index_to_submit=%s, ' + \
                     'len(index_to_submit)=%s chunk_size=%s, job=%s') % \
-                   (",".join(map(lambda x: str(x),starting_indices)),index_to_submit,\
-                    len(index_to_submit),chunk_splitted,self.print_job(job)),\
-                   4,trace='SUBMIT,CHUNK')
+                   (",".join(map(lambda x: str(x), starting_indices)), index_to_submit, \
+                    len(index_to_submit), chunk_splitted, self.print_job(job)), \
+                   4, trace='SUBMIT,CHUNK')
 
     first_one_in_step = True
     dep_init = dep
     for i in starting_indices:
       chunk_size = RangeSet(index_to_submit[i:(i + chunk_splitted)])
       if dep and len(chunk_size) > 1 and first_one_in_step and not(resubmit) and not(job['yalla']):
-        array_items = [RangeSet('%s-%s' % (index_to_submit[i],index_to_submit[i])),
+        array_items = [RangeSet('%s-%s' % (index_to_submit[i], index_to_submit[i])),
                        RangeSet(index_to_submit[i + 1:(i + chunk_splitted)])]
       else:
         array_items = [RangeSet(index_to_submit[i:(i + chunk_splitted)])]
 
       self.log_debug('starting indice %s : array_items %s' % \
-                     (i,pprint.pformat(array_items)),\
-                     4,trace='GLOBAL,GLOBAL_JOBS,GLOBAL_TASKS')
+                     (i, pprint.pformat(array_items)), \
+                     4, trace='GLOBAL,GLOBAL_JOBS,GLOBAL_TASKS')
       for array_item in array_items:
         new_job = copy.deepcopy(job)
         new_job['dependency'] = dep
@@ -2711,20 +2711,20 @@ class decimate(engine):
                        (dep, array_item, job_id), 1, trace='SUBMIT,CHUNK')
 
         for task in array_item:
-          self.TASKS[step][task] = my_dict(name='TASKS_%s_%s' % (step,task))  # {}
+          self.TASKS[step][task] = my_dict(name='TASKS_%s_%s' % (step, task))  # {}
           self.TASKS[step][task]['job'] = job_id
           self.TASKS[step][task]['status'] = 'WAITING'
           self.TASKS[step][task]['counted'] = False
 
         current_job = self.JOBS[job_id]
         self.log_debug('index_to_submit = >%s< job = %s' % \
-                       (pprint.pformat(index_to_submit), self.print_job(current_job)),2)
+                       (pprint.pformat(index_to_submit), self.print_job(current_job)), 2)
         first_one_in_step = False
 
     self.STEPS[step]['jobs'] = self.STEPS[step]['jobs'] + job_ids
 
-    self.log_debug('submit_job self.TASKS[%s]: %s ' % (step,pprint.pformat(self.TASKS[step])),\
-                   2,trace='GLOBAL_TASKS')
+    self.log_debug('submit_job self.TASKS[%s]: %s ' % (step, pprint.pformat(self.TASKS[step])), \
+                   2, trace='GLOBAL_TASKS')
 
     if not(self.args.quick_launch):
         self.save(take_lock=take_lock)
@@ -2735,16 +2735,16 @@ class decimate(engine):
     if resubmitted_job:
         status = self.JOBS[job_id]['status']
         self.log_debug('resubmitting job %s [%s]-->Job # %s <-depends-on %s, current_status=%s' % \
-                       (job['job_name'], RangeSet(job['array']), job_id, job['dependency'],status),\
-                       0,trace='RESTART,RESTART_FAKED')
+                       (job['job_name'], RangeSet(job['array']), job_id, job['dependency'], status), \
+                       0, trace='RESTART,RESTART_FAKED')
     else:
       self.log_debug('submitting job %s [%s] --> Job # %s <-depends-on %s' % \
                      (job['job_name'], RangeSet(job['array']), job_id, \
-                      job['dependency']),0,trace='RESTART,RESTART_FAKED')
+                      job['dependency']), 0, trace='RESTART,RESTART_FAKED')
       if not(self.args.spawned) and not(self.args.decimate):
         self.log_info('submitting job %s [%s] --> Job # %s <-depends-on %s' % \
                       (job['job_name'], RangeSet(job['array']), job_id, \
-                       job['dependency']),0,trace='RESTART,RESTART_FAKED')
+                       job['dependency']), 0, trace='RESTART,RESTART_FAKED')
 
     self.release_lock(lock_file)
 
@@ -2759,8 +2759,8 @@ class decimate(engine):
 
   def submit_chunk_job(self, job, registration=True):
 
-    self.log_debug('in submit_chunk JOBS start: %s' % ','.join(map(str, self.JOBS.keys())),\
-                   4,trace='CHUNK')
+    self.log_debug('in submit_chunk JOBS start: %s' % ','.join(map(str, self.JOBS.keys())), \
+                   4, trace='CHUNK')
 
     # self.log_debug('submit_chunk_job/begining submitting job: %s ' % \
     #               self.print_job(job),2,trace='SUBMIT_CHUNK_JOB')
@@ -2776,7 +2776,7 @@ class decimate(engine):
     else:
         attempt = self.args.attempt
 
-    cmd = ["cd %s ; " % job['submit_dir'],self.SCHED_SUB]
+    cmd = ["cd %s ; " % job['submit_dir'], self.SCHED_SUB]
     prolog = []
 
     if (job['dependency']):
@@ -2811,26 +2811,26 @@ class decimate(engine):
                    exit=True)
 
       nb_jobs = len(RangeSet(job['array']))
-      job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'],nb_jobs)
+      job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
       # compute new time for yalla container
-      (d,h,m,s) = ([0,0,0,0,0] + map(lambda x:int(x),job['time'].split(':')))[-4:]
+      (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
       print job['yalla_parallel_runs']
       factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
-      whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor     # NOQA
-      (h,m,s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
-      job['time'] = '%d:%02d:%02d' % (h,m,s)
+      whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
+      (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
+      job['time'] = '%d:%02d:%02d' % (h, m, s)
       self.log_debug('yalla related parameters in job:%s' % \
-                     self.print_job(job,print_only=['time','ntasks','nodes','array',\
-                                                    'yalla','output','error']), 4, trace='YALLA')
+                     self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
+                                                    'yalla', 'output', 'error']), 4, trace='YALLA')
 
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % (job['nodes'] * job['yalla_parallel_runs']),
                 '--error=%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a',job['array'][0:20]), attempt),
+                (job['error'].replace('%a', job['array'][0:20]), attempt),
                 '--output=%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a',job['array'][0:20]), attempt)]
+                (job['output'].replace('%a', job['array'][0:20]), attempt)]
     else:
       prolog = prolog + \
                ['--time=%s' % job['time'],
@@ -2839,7 +2839,7 @@ class decimate(engine):
                 '--output=%s.task_%%04a-attempt_%s' % (job['output'], attempt)]
 
     cmd = cmd + ['%s_%s' % (job['script_file'], attempt)]
-    self.log_debug("submitting cmd prolog : %s " % prolog,4,trace='SUBMIT')
+    self.log_debug("submitting cmd prolog : %s " % prolog, 4, trace='SUBMIT')
 
     job_content_template = "#!/bin/bash\n"
     for p in prolog:
@@ -2869,7 +2869,7 @@ class decimate(engine):
     job_script_updated.close()
 
     self.log_debug("for step %s self.args.attempt_initial=%s" % \
-                   (job['step'], job['initial_attempt']),4,trace='ATTEMPT_INITIAL')
+                   (job['step'], job['initial_attempt']), 4, trace='ATTEMPT_INITIAL')
 
     step = job['step']
     job['cmd'] = cmd
@@ -2883,18 +2883,18 @@ class decimate(engine):
     job['success_percent'] = 0
     job['failure_percent'] = 0
 
-    self.log_debug("submitting cmd: " + " ".join(cmd),4,trace='SUBMIT')
+    self.log_debug("submitting cmd: " + " ".join(cmd), 4, trace='SUBMIT')
     # unique jid building
     job_id = '%s-%s-%s' % (step, array_range, time.strftime('%Y-%b-%d-%H:%M:%S'))
     job_id = '%s-%s' % (step, array_range[:20])
     self.log_debug("job submitted : %s depends on %s" % (job_id, job['dependency']), 1)
 
     job_script_updated = open('%s_%s_%s_waiting' % \
-                              (job['script_file'], self.args.attempt,job_id), "w")
-    job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}','%s' % job_id))
+                              (job['script_file'], self.args.attempt, job_id), "w")
+    job_script_updated.write(job_content_updated.replace('${SLURM_ARRAY_JOB_ID}', '%s' % job_id))
     job_script_updated.close()
 
-    job['script_file'] = '%s_%s_%s_waiting' % (job['script_file'], self.args.attempt,job_id)
+    job['script_file'] = '%s_%s_%s_waiting' % (job['script_file'], self.args.attempt, job_id)
     job['content'] = job_content_updated
 
     job_before = job['dependency']
@@ -2905,7 +2905,7 @@ class decimate(engine):
     self.JOBS[job_id] = job
     # self.JOB_ID[job['job_name']] = job_id
 
-    self.log_info('--------\nin submit_job_chunk \n%s\n-------------\n' % self.print_job(job),2)
+    self.log_info('--------\nin submit_job_chunk \n%s\n-------------\n' % self.print_job(job), 2)
 
     if (registration):
         self.jobs_list = self.jobs_list + [job_id]
@@ -2914,33 +2914,37 @@ class decimate(engine):
 
     self.log_debug('in submit_chunk_job ends job=%s' % pprint.pformat(job).replace('\\n', '\n'))
 
-    self.log_debug("Saving Job Ids...", 1,trace='QUICK')
-    self.log_debug("quich_launch flag=%s" % self.args.quick_launch, 1,trace='QUICK')
+    self.log_debug("Saving Job Ids...", 1, trace='QUICK')
+    self.log_debug("quich_launch flag=%s" % self.args.quick_launch, 1, trace='QUICK')
 
     if not(self.args.quick_launch):
         self.save()
 
-    self.log_debug('submit_chunk_job/end submitting job: %s ' % self.print_job(job),\
-                   2,trace='SUBMIT_CHUNK_JOB')
+    self.log_debug('submit_chunk_job/end submitting job: %s ' % self.print_job(job), \
+                   2, trace='SUBMIT_CHUNK_JOB')
 
     s = 'submitting job %s (for %s) --> Job # %s <-depends-on %s' % \
         (job['job_name'], job['array'], job_id, job['dependency'])
-    self.log_debug(s,4,trace='SUBMITTED')
-    self.log_console(s,noCR=True)
-
+    self.log_debug(s, 4, trace='SUBMITTED')
+    if not(self.args.decimate):
+      self.log_console(s, noCR=True)
+    else:
+      self.log_info(s)
+    # self.error('here',exception=True,exit=False)
+      
     return (job_id, cmd)
 
   #########################################################################
   # activate job taking constraints into account
   #########################################################################
 
-  def activate_job(self, job, registration=True,take_lock=True):
+  def activate_job(self, job, registration=True, take_lock=True):
 
     #
     lock_file = self.take_lock(self.LOCK_FILE)
 
     self.log_debug('in activate_job self.waiting_job_final_id=%s' % \
-                   (self.waiting_job_final_id),4,trace='ACTIVATE_DETAIL')
+                   (self.waiting_job_final_id), 4, trace='ACTIVATE_DETAIL')
     # self.log_debug('in activate_job job=%s' % self.print_job(job).replace('\\n', '\n'),\
     #                4,trace='ACTIVATE_DETAIL')
     # self.log_debug('beginning of activate_job job=%s' % self.print_jobs(),\
@@ -2954,22 +2958,22 @@ class decimate(engine):
     job_script_final_file = open(job_script_final, 'w')
 
     self.log_debug("job_content_updated=\n===============\n%s\n================" % \
-                   (job_content_updated),4,trace='REPLACE')
-    self.log_debug("waiting_job_final_id : \n%s " % pprint.pformat(self.waiting_job_final_id),\
-                   4,trace='REPLACE,ACTIVATE_DETAIL,CMD,RESTART')
+                   (job_content_updated), 4, trace='REPLACE')
+    self.log_debug("waiting_job_final_id : \n%s " % pprint.pformat(self.waiting_job_final_id), \
+                   4, trace='REPLACE,ACTIVATE_DETAIL,CMD,RESTART')
     for jid in self.waiting_job_final_id.keys():
         new_job_id = self.waiting_job_final_id[jid]
-        self.log_debug('replace %s by %s' % (jid, new_job_id),4,trace='REPLACE')
+        self.log_debug('replace %s by %s' % (jid, new_job_id), 4, trace='REPLACE')
         job_content_updated = job_content_updated.replace(':%s #' % jid, ':%s #' % new_job_id)
     job_script_final_file.write(job_content_updated)
     job_script_final_file.close()
     self.log_debug("job_content_updated after=\n===============\n%s\n================" % \
-                   (job_content_updated),4,trace='REPLACE')
+                   (job_content_updated), 4, trace='REPLACE')
 
     if not self.args.dry:
-      self.log_debug("cmd before: %s" % " ".join(cmd),4,trace='ACTIVATE_DETAIL')
+      self.log_debug("cmd before: %s" % " ".join(cmd), 4, trace='ACTIVATE_DETAIL')
       self.log_debug("job['script_file']=>%s<, attempt=>%s<" % \
-                     (job['script_file'], self.args.attempt),4,trace='ACTIVATE_DETAIL')
+                     (job['script_file'], self.args.attempt), 4, trace='ACTIVATE_DETAIL')
 
       # creating directory if output and error files directory does not exists yet
       self.log_debug('job=%s' % (pprint.pformat(job)), 4, trace='ACTIVATE_DETAIL,JOB_OUTERR')
@@ -2980,7 +2984,7 @@ class decimate(engine):
         if not(os.path.exists(n_directory)):
           os.makedirs(n_directory)
           if self.args.stripe_count:
-              os.system("lfs setstripe -c %s %s " % (self.args.stripe_count,n_directory))
+              os.system("lfs setstripe -c %s %s " % (self.args.stripe_count, n_directory))
         if n == 'output':
           f = open('%s/%s.job' % (n_directory, job['job_name']), 'w')
           f.write(job_content_updated)
@@ -2989,28 +2993,28 @@ class decimate(engine):
 
       # cmd = re.sub('%s.*$' % (job['script_file']),  '%s_%s_final' % (job['script_file'], step),
       #     'xxx__xxxx_xxxx'.join(cmd)).split('xxx__xxxx_xxxx')
-      self.log_debug("cmd after: %s" % " ".join(cmd),4,trace='ACTIVATE_DETAIL')
-      self.log_debug("submitting : " + " ".join(cmd),4,trace='ACTIVATE_DETAIL,CMD,RESTART')
+      self.log_debug("cmd after: %s" % " ".join(cmd), 4, trace='ACTIVATE_DETAIL')
+      self.log_debug("submitting : " + " ".join(cmd), 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
       try:
         if not(self.args.dry):
           output = subprocess.check_output(cmd)
         else:
           output = 'Job_%s' % job['job_name']
-        self.log_debug("result of submission:\n%s" % output,4,trace='ACTIVATE_DETAIL,CMD,RESTART')
+        self.log_debug("result of submission:\n%s" % output, 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
       # except subprocess.CalledProcessError as exc:
       #      print(exc.output))
       # else:
       except Exception:
-        self.system('cp %s %s_XXXXX' % (job_script_final,job_script_final),force=True)
-        still_depends = self.system('grep dependency %s' % job_script_final,force=True)
+        self.system('cp %s %s_XXXXX' % (job_script_final, job_script_final), force=True)
+        still_depends = self.system('grep dependency %s' % job_script_final, force=True)
         if len(still_depends):
           job_still_to_be_activated = still_depends.split('--dependency=afterany:')[1].\
                                     split(" #")[0]
           self.log_debug(('problem in activating job=%s\n script %s   content still contains' + \
                           ' unsolved _waiting dependency: %s \n putting it back on the pile ') \
                          % \
-                         (self.print_job(job),\
-                          job_script_final,\
+                         (self.print_job(job), \
+                          job_script_final, \
                           job_still_to_be_activated))
           self.log_info(('problem in activating job script %s   content still contains ' + \
                         'unsolved _waiting dependency: %s \n putting it back on the pile ') \
@@ -3018,10 +3022,10 @@ class decimate(engine):
                         (job_script_final,
                          job_still_to_be_activated))
           self.release_lock(lock_file)
-          return (job_still_to_be_activated,"UNKNOWN_DEPENDENCY")
+          return (job_still_to_be_activated, "UNKNOWN_DEPENDENCY")
         else:
           job_still_to_be_activated = 'All dependent jobs activated'
-          self.error(('problem in activating job=%s\n script %s content still contains unsolved' +\
+          self.error(('problem in activating job=%s\n script %s content still contains unsolved' + \
                       '_waiting dependency: \n  -------------------------  \n %s' + \
                       '\n ----------------------------\nwaiting_job_final_id : ' + \
                       '\n%s \njobs_queued: \n%s\njobs_waiting: \n%s') % \
@@ -3031,7 +3035,7 @@ class decimate(engine):
                       pprint.pformat(self.waiting_job_final_id),
                       pprint.pformat(self.jobs_queued),
                       pprint.pformat(self.jobs_waiting)),
-                     killall=10,exit=True, exception=True)
+                     killall=10, exit=True, exception=True)
 
       if self.args.pbs:
         # print(output.split("\n"))
@@ -3056,7 +3060,7 @@ class decimate(engine):
       job_id = "%s" % job['job_name']
 
     job_script_updated = open('%s_%s_%s_%s' % \
-                              (job['script_file'], job['array'][0:20],\
+                              (job['script_file'], job['array'][0:20], \
                                self.args.attempt, job_id), "w")
     for jid in self.waiting_job_final_id.keys():
         new_job_id = self.waiting_job_final_id[jid]
@@ -3080,10 +3084,10 @@ class decimate(engine):
           self.JOBS[job_after]['dependency'] = job_id
       else:
           self.log_info('strange... job_after %s does not exists in self.JOBS!!! EXITING......' % \
-                        (job_after),0)
+                        (job_after), 0)
           self.log_debug(('strange... job_after %s does not exists in self.JOBS!!! ' + \
                           'EXITING......\n self.JOBS=%s') % \
-                         (job_after,self.print_jobs()),4,trace='STRANGE')
+                         (job_after, self.print_jobs()), 4, trace='STRANGE')
           sys.exit(1)
 
     self.JOBS[job_id] = job
@@ -3123,7 +3127,7 @@ class decimate(engine):
     if self.STEPS[step]['status'] == 'WAITING':
         self.STEPS[step]['status'] = 'SUBMITTED'
 
-    self.log_debug('ZZZZZZZZZ job activated:\n%s' % self.print_job(self.JOBS[job_id]),2)
+    self.log_debug('ZZZZZZZZZ job activated:\n%s' % self.print_job(self.JOBS[job_id]), 2)
 
     self.log_debug("Saving Job Ids...", 1)
     if not(self.args.quick_launch):
@@ -3131,13 +3135,13 @@ class decimate(engine):
 
     self.log_info(('step %s [%s] activating job %s (for %s) --> ' + \
                    'Job # %s (was %s) <-depends-on %s\njobs_waiting=%s') % \
-                  (self.args.step,self.args.taskid,job['job_name'], job['array'], \
-                   job_id, waiting_job_id, job['dependency'],self.jobs_waiting),\
-                  4,trace='ACTIVATE_DETAIL,ACTIVATE,ACTIVATE_NOTE')
+                  (self.args.step, self.args.taskid, job['job_name'], job['array'], \
+                   job_id, waiting_job_id, job['dependency'], self.jobs_waiting), \
+                  4, trace='ACTIVATE_DETAIL,ACTIVATE,ACTIVATE_NOTE')
 
     self.release_lock(lock_file)
 
-    self.log_debug('end of activate_job.',4,trace='ACTIVATE_DETAIL')
+    self.log_debug('end of activate_job.', 4, trace='ACTIVATE_DETAIL')
     # self.log_debug('end of activate_job job=%s' % self.print_jobs(),4,trace='ACTIVATE_DETAIL')
 
     return (job_id, cmd)
@@ -3146,7 +3150,7 @@ class decimate(engine):
   # add to self.slurm_args new value coming from a job script file
   #########################################################################
 
-  def create_slurm_parser(self,DEBUG=False):
+  def create_slurm_parser(self, DEBUG=False):
 
     self.slurm_parser = argparse.ArgumentParser(description='Slurm parser',
                                                 conflict_handler='resolve')
@@ -3204,7 +3208,7 @@ class decimate(engine):
 
   def complete_slurm_args(self, original_script_content_lines, job):
 
-    self.log_debug('[Decimate:complete_slurm_args] entering',4,trace='CALL')
+    self.log_debug('[Decimate:complete_slurm_args] entering', 4, trace='CALL')
 
     if not(self.slurm_parser):
       self.create_slurm_parser()
@@ -3217,40 +3221,40 @@ class decimate(engine):
         self.log_debug('from job_file: %s' % to_be_parsed, 1, trace='PARSE')
         job_file_args = to_be_parsed.split(' ') + job_file_args
 
-    self.log_debug('slurm_args before completion: %s' % pprint.pformat(self.slurm_args),\
+    self.log_debug('slurm_args before completion: %s' % pprint.pformat(self.slurm_args), \
                    4, trace='PARSE')
 
-    job_file_slurm_args,job_file_extra_args = self.slurm_parser.parse_known_args(job_file_args)
-    self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args),\
+    job_file_slurm_args, job_file_extra_args = self.slurm_parser.parse_known_args(job_file_args)
+    self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args), \
                    4, trace='PARSE')
 
     p_slurm_args = vars(self.slurm_args)
     p_job_file_slurm_args = vars(job_file_slurm_args)
 
     job_file_args_overloaded = []
-    for k,v in p_job_file_slurm_args.items():
+    for k, v in p_job_file_slurm_args.items():
       if p_job_file_slurm_args[k]:
         # option present in file is not known yet in slurm_args
         if not(p_slurm_args[k]):
           p_slurm_args[k] = v
-          self.log_debug('adding from job_file to slurm_args : --%s=%s' % (k,v),\
+          self.log_debug('adding from job_file to slurm_args : --%s=%s' % (k, v), \
                          4, trace='PARSE')
         else:
           job_file_args_overloaded = job_file_args_overloaded + [k]
 
-    for k,v in p_slurm_args.items():
+    for k, v in p_slurm_args.items():
       if p_slurm_args[k]:
         job[k] = v
 
-    return (job,job_file_args_overloaded)
+    return (job, job_file_args_overloaded)
 
   #########################################################################
   # wrapping job to put control over it
   #########################################################################
 
   def wrap_job_script(self, job, original_script_content_lines, job_file_args_overloaded):
-    self.log_debug("adding prefix and suffix to job %s [%s] : " % (job['script'],job['array']),\
-                   4,trace='WRAP')
+    self.log_debug("adding prefix and suffix to job %s [%s] : " % (job['script'], job['array']), \
+                   4, trace='WRAP')
 
     l0 = ""
 
@@ -3265,25 +3269,25 @@ class decimate(engine):
         to_be_parsed = clean_line(li[7:][:-1])
         job_file_arg = to_be_parsed.split(' ')[0]
         job_file_arg = job_file_arg.split('=')[0]
-        slurm_option = self.slurm_options[job_file_arg].replace('-','_')
+        slurm_option = self.slurm_options[job_file_arg].replace('-', '_')
         self.log_debug('from job_file: /%s/ job_file_arg:/%s/ slurm_option:/%s/' % \
                        (to_be_parsed, job_file_arg, slurm_option), 1, trace='PARSE')
         if slurm_option in job_file_args_overloaded:
           self.log_debug('option %s overloaded' % to_be_parsed, 4, trace='PARSE')
           l = l + '###DECIM###' + li[:-1] + \
-              ' ### <-- now OVERLOADED by -%s=%s ###\n' % (slurm_option,args[slurm_option])
+              ' ### <-- now OVERLOADED by -%s=%s ###\n' % (slurm_option, args[slurm_option])
         else:
           l = l + '###DECIM###' + li
       else:
         l = l + li
       
 
-    self.log_info('after merging job and command line l=\n%s' % l,2)
+    self.log_info('after merging job and command line l=\n%s' % l, 2)
 
     environment_variables = ""
-    for env_var in ['PATH','LD_LIBRARY_PATH','DECIMATE_PATH']:
+    for env_var in ['PATH', 'LD_LIBRARY_PATH', 'DECIMATE_PATH']:
         environment_variables = environment_variables + "export %s=%s \n" % \
-                                (env_var,os.getenv(env_var))
+                                (env_var, os.getenv(env_var))
 
     for env_var in ['PYTHONPATH']:
         environment_variables = environment_variables + "export %s=/tmp:%s:%s \n" % \
@@ -3294,10 +3298,10 @@ class decimate(engine):
 
     if self.args.print_environment:
       environment_variables = environment_variables + "\n# Environment settings \n\n"
-      for env_var in ['PATH','LD_LIBRARY_PATH','PYTHONPATH',
-                      'SLURM_ARRAY_TASK_ID','SLURM_ARRAY_JOB_ID']:
+      for env_var in ['PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH',
+                      'SLURM_ARRAY_TASK_ID', 'SLURM_ARRAY_JOB_ID']:
         environment_variables = environment_variables + \
-                                "echo export %s=$%s \n" % (env_var,env_var)
+                                "echo export %s=$%s \n" % (env_var, env_var)
 
     environment_variables = environment_variables + "\n# Starting from the right directory \n\n"
     environment_variables = environment_variables + "cd %s \n" % (job['submit_dir'])
@@ -3373,18 +3377,18 @@ class decimate(engine):
       # in last resort checking if the dependency corresponds to
       # a step name... if yes --> replacing it
       if not(job['dependency'] in self.JOBS.keys()):
-        step_names = map(lambda k: k[0].split('-')[:-1][0],self.STEPS.items())
+        step_names = map(lambda k: k[0].split('-')[:-1][0], self.STEPS.items())
         step_names.sort()
         if not(job['dependency'] in step_names):
           # dependency isn't even a job name --> sending an error
-          self.error(('jobs depends on unknown job id or name : %s' +\
-                      '\n   dependency required was not even found in job names' +\
+          self.error(('jobs depends on unknown job id or name : %s' + \
+                      '\n   dependency required was not even found in job names' + \
                       '\n    ---> (%s)     ') % \
                      (initial_dependency, ",".join(step_names)), exit=True)
         # job name exists matching this dependency
         # trying to gather the last attempt of it
         job_found = None
-        for k,step in self.STEPS.items():
+        for k, step in self.STEPS.items():
           if k.split('-')[:-1][0] == job['dependency']:
              job_found = k
         if not(job_found):
@@ -3392,10 +3396,10 @@ class decimate(engine):
                       'it was found exisiting in job_names though... \n    ---> (%s)') % \
                      (initial_dependency, ",".join(self.STEPS.keys())), exit=True)
         else:
-          self.log_info(('Dependency %s was found in job names.' +\
+          self.log_info(('Dependency %s was found in job names.' + \
                          '\n\tConcerned step is %s \n\t  with jobs (%s)') % \
-                        (initial_dependency,job_found,",".\
-                         join(map(lambda x:str(x),self.STEPS[job_found]['jobs']))),1)
+                        (initial_dependency, job_found, ",".\
+                         join(map(lambda x:str(x), self.STEPS[job_found]['jobs']))), 1)
           job['dependency'] = self.STEPS[job_found]['jobs'][-1]
 
       if job['dependency'] in self.waiting_job_final_id.keys():
@@ -3416,13 +3420,13 @@ class decimate(engine):
 
     check_previous = \
                      '\n# Setting Environment variables and preparing node\n\n%s\n' % \
-                     environment_variables +\
-                     '# Checking the status of previous Jobs\n' +\
-                     '\n%s  --check-previous-step \n' % (l0) +\
-                     "if [ $? -ne 0 ] ; then\n" +\
-                     '   echo "[ERROR] FAILED in precedent step : ' +\
-                     'stopping current job and reconnecting..."\n' +\
-                     "    exit 1\n" +\
+                     environment_variables + \
+                     '# Checking the status of previous Jobs\n' + \
+                     '\n%s  --check-previous-step \n' % (l0) + \
+                     "if [ $? -ne 0 ] ; then\n" + \
+                     '   echo "[ERROR] FAILED in precedent step : ' + \
+                     'stopping current job and reconnecting..."\n' + \
+                     "    exit 1\n" + \
                      "fi\n\n"
 
     if job['yalla']:
@@ -3430,13 +3434,13 @@ class decimate(engine):
       for t in RangeSet(job['array']):
           tasks = tasks + [t]
       prefix = prefix + \
-               check_previous.replace('${SLURM_ARRAY_TASK_ID}','%s' % tasks[0]).\
-               replace('${SLURM_ARRAY_JOB_ID}','${SLURM_JOB_ID}').\
-               replace('--check-previous-step',\
+               check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
+               replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
+               replace('--check-previous-step', \
                        '--check-previous-step > %s.checking.out 2> %s.checking.err' % \
-                       (job['job_name'],job['job_name']))
-      prefix = prefix +\
-               '\n# Defining main loop of tasks in replacemennt for job_array\n\n' +\
+                       (job['job_name'], job['job_name']))
+      prefix = prefix + \
+               '\n# Defining main loop of tasks in replacemennt for job_array\n\n' + \
                ('cat >> %s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % job['job_name'])
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
@@ -3454,7 +3458,7 @@ class decimate(engine):
         
         
         prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
-        #prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        # prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       
 
 
@@ -3481,17 +3485,17 @@ class decimate(engine):
 
     l = l + "\n          fi       # closing if of successfull job \n"
 
-    self.log_debug('wrap job before yalla filling =%s' % self.print_job(job),\
-                   4,trace='WRAP')
+    self.log_debug('wrap job before yalla filling =%s' % self.print_job(job), \
+                   4, trace='WRAP')
 
     if job['yalla']:
       stream = {}
-      for w in ['output','error']:
-        s = job[w].replace('%J','\$SLURM_JOB_ID').replace('%j','\$SLURM_JOB_ID')\
-            .replace('%a','\${task}')
+      for w in ['output', 'error']:
+        s = job[w].replace('%J', '\$SLURM_JOB_ID').replace('%j', '\$SLURM_JOB_ID')\
+            .replace('%a', '\${task}')
         stream[w] = s + '.task_\${formatted_task}-attempt_%s' % job['attempt']
       
-      l = prefix + (l).replace('$','\$') + 'EOF\n'
+      l = prefix + (l).replace('$', '\$') + 'EOF\n'
 
       # l = l + \
       #     'export SLURM_ARRAY_JOB_ID=$SLURM_JOB_ID \n' +\
@@ -3503,24 +3507,24 @@ class decimate(engine):
       #     "done\n"
 
       input_file = "%s/job.%s" % (self.YALLA_DIR, self.machine)
-      output = "".join(open(input_file,"r").readlines())
-      output = output.replace('__save_dir__',self.SAVE_DIR)
-      output = output.replace('__PARALLEL_RUNS__',str(job['yalla_parallel_runs']))
-      output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__',str(job['nodes']))
-      output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__',str(job['ntasks']))
-      output = output.replace('__job_name__',str(job['job_name']))
-      output = output.replace('__job_array__',str(job['array']))
-      output = output.replace('__job_output__',stream['output'])
-      output = output.replace('__job_error__',stream['error'])
-      output = output.replace('__NB_JOBS__',str(len(RangeSet(job['array']))))
-      output = output.replace('__job_submit_dir__',job['submit_dir'])
+      output = "".join(open(input_file, "r").readlines())
+      output = output.replace('__save_dir__', self.SAVE_DIR)
+      output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
+      output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
+      output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
+      output = output.replace('__job_name__', str(job['job_name']))
+      output = output.replace('__job_array__', str(job['array']))
+      output = output.replace('__job_output__', stream['output'])
+      output = output.replace('__job_error__', stream['error'])
+      output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
+      output = output.replace('__job_submit_dir__', job['submit_dir'])
       
       if self.args.debug:
-        output = output.replace('__DEBUG__','debug')
+        output = output.replace('__DEBUG__', 'debug')
       else:
-        output = output.replace('__DEBUG__','')
+        output = output.replace('__DEBUG__', '')
 
-      f = open('%s/YALLA/%s.yalla_job' % (self.SAVE_DIR,job['job_name']),'w')
+      f = open('%s/YALLA/%s.yalla_job' % (self.SAVE_DIR, job['job_name']), 'w')
       f.write(output)
       f.close()
 
@@ -3531,23 +3535,23 @@ class decimate(engine):
 
       # l = l + '\n\n# Cleaning the node before releasing it\n\n\\rm -rf /tmp/*py'
 
-    self.log_info('end fo =\n%s' % l,2)
-    return (l,job)
+    self.log_info('end fo =\n%s' % l, 2)
+    return (l, job)
 
   #########################################################################
   # submitting all the first jobs
   #########################################################################
 
-  def launch_jobs(self,**optional_parameters):
+  def launch_jobs(self, **optional_parameters):
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
 
       # self.args.quick_launch = True
       if self.args.quick_launch:
           self.args.quick_launch_no_load = True
 
-      self.log_info('=============== New workflow starting ==============',1)
-      self.log_info('ZZZ cleaning workspace before launching ...',2)
-      self.log_info('=============== New workflow starting ==============',2)
+      self.log_info('=============== New workflow starting ==============', 1)
+      self.log_info('ZZZ cleaning workspace before launching ...', 2)
+      self.log_info('=============== New workflow starting ==============', 2)
 
       os.system(('\\rm -rf *.err *.out *.pickle *.pickle.old .%s/SAVE/*.pcy*' + \
                  ' .%s/SAVE/Done* .%s/SAVE/*job+_*') % \
@@ -3576,12 +3580,13 @@ class decimate(engine):
       if not(self.args.quick_launch):
           self.save(take_lock=False)
 
-      self.log_debug("after feed_workflow in launch_jobs, self.STEPS=[%s]" %\
-                     ",".join(self.STEPS.keys()),4,trace='FEED,LAUNCH')
+      self.log_debug("after feed_workflow in launch_jobs, self.STEPS=[%s]" % \
+                     ",".join(self.STEPS.keys()), 4, trace='FEED,LAUNCH')
       self.release_lock(lock_file)
 
-      self.tail_log_file(nb_lines_tailed=1, no_timestamp=True,
-                         stop_tailing=['workflow is finishing', 'workflow is aborting'])
+      if not(self.args.decimate):
+        self.tail_log_file(nb_lines_tailed=1, no_timestamp=True,
+                           stop_tailing=['workflow is finishing', 'workflow is aborting'])
       sys.exit(0)
 
   def user_launch_jobs(self):
@@ -3591,19 +3596,19 @@ class decimate(engine):
   # submitting on the fly additional jobs
   #########################################################################
 
-  def feed_workflow(self,from_finalize=False):
+  def feed_workflow(self, from_finalize=False):
 
     lock_file = self.take_lock(self.LOCK_FILE)
     self.log_debug('entering feed_workflow  TASK_ID=%s  TASK_IDS=%s' % \
-                   (self.TASK_ID,self.TASK_IDS),4,trace='FEED_DETAIL,LOAD')
+                   (self.TASK_ID, self.TASK_IDS), 4, trace='FEED_DETAIL,LOAD')
     self.load()
     # add new jobs
     if self.TASK_ID == RangeSet(self.TASK_IDS)[0] or not(self.args.spawned):
 
-        self.log_debug('feed_workflow: trying to activate jobs',1, trace='FEED_DETAIL')
+        self.log_debug('feed_workflow: trying to activate jobs', 1, trace='FEED_DETAIL')
 
         # count how many jobs are running
-        jobs_queued = self.get_current_jobs_status(in_queue_only=True,take_lock=False)
+        jobs_queued = self.get_current_jobs_status(in_queue_only=True, take_lock=False)
 
         nb_jobs_running_or_queued = len(jobs_queued)
 
@@ -3628,7 +3633,7 @@ class decimate(engine):
                 nb_jobs_running_or_queued_computed += 1
                 jobs_queued_computed = jobs_queued_computed + [j]
 
-        self.log_debug('feed_workflow: %d jobs_queued' % (len(jobs_queued)),\
+        self.log_debug('feed_workflow: %d jobs_queued' % (len(jobs_queued)), \
                        1, trace='FEED_DETAIL')
         self.log_debug('feed_workflow: %d jobs_queued:%s' % \
                        (len(jobs_queued), pprint.pformat(jobs_queued)), \
@@ -3637,26 +3642,26 @@ class decimate(engine):
                        (len(jobs_waiting), ','.join(map(lambda x:str(x), jobs_waiting))), \
                        1, trace='FEED_DETAIL,FEED')
 
-        self.jobs_queued = jobs_queued    # saved for debug reason
+        self.jobs_queued = jobs_queued  # saved for debug reason
         self.jobs_waiting = jobs_waiting  # saved for debug reason
 
         if nb_jobs_waiting > 0:
             self.log_debug("self.args.max_jobs(%d)-nb_jobs_running_or_queued(%d)=%d" % \
                            (self.args.max_jobs, nb_jobs_running_or_queued, \
-                            self.args.max_jobs - nb_jobs_running_or_queued),\
+                            self.args.max_jobs - nb_jobs_running_or_queued), \
                            1, trace='FEED_DETAIL')
 
             if from_finalize:
               # my own job is dying, removing it from running job
               nb_jobs_running_or_queued = nb_jobs_running_or_queued - 1
             nb_jobs_to_add = min(self.args.max_jobs - nb_jobs_running_or_queued, nb_jobs_waiting)
-            self.log_debug('feed_workflow: nb_jobs_to_add=%s' % nb_jobs_to_add,\
+            self.log_debug('feed_workflow: nb_jobs_to_add=%s' % nb_jobs_to_add, \
                            1, trace='FEED_DETAIL,FEED')
             # activate additional jobs if under max_running_jobs threshold
             if nb_jobs_to_add > 0:
                 nb_job_added = 0
                 self.log_debug('feed_workflow: job_waiting=[%s] ' % \
-                               (",".join(map(lambda x:str(x),self.jobs_waiting))), \
+                               (",".join(map(lambda x:str(x), self.jobs_waiting))), \
                                1, trace='FEED_DETAIL,ACTIVATE_NOTE')
                 while nb_job_added < nb_jobs_to_add and len(self.jobs_waiting):
                     job_to_add = self.jobs_waiting[0]
@@ -3665,10 +3670,10 @@ class decimate(engine):
                     self.log_debug('feed_workflow: activating job %s (%s) ' % \
                                    (job_to_add, job['array']), \
                                    1, trace='FEED_DETAIL,ACTIVATE_NOTE')
-                    (job_id, cmd) = self.activate_job(job,take_lock=False)
+                    (job_id, cmd) = self.activate_job(job, take_lock=False)
                     self.log_debug('feed_workflow: activating job %s (%s) (was %s) -> job # %s' % \
-                                   (job['step'], job['array'], job_to_add, job_id),\
-                                   1,trace='FEED_DETAIL,FEED')
+                                   (job['step'], job['array'], job_to_add, job_id), \
+                                   1, trace='FEED_DETAIL,FEED')
                     if cmd == "UNKNOWN_DEPENDENCY":
                       self.jobs_waiting = [job_id] + self.jobs_waiting
                     else:
@@ -3676,7 +3681,7 @@ class decimate(engine):
                       nb_job_added = nb_job_added + len(job_range)
     else:
 
-        self.log_debug('feed_workflow: Not my job!!!',1, trace='FEED_DETAIL')
+        self.log_debug('feed_workflow: Not my job!!!', 1, trace='FEED_DETAIL')
 
     # add new tasks (> breakit)
     self.release_lock(lock_file)
@@ -3705,23 +3710,23 @@ class decimate(engine):
   # save_workspace
   #########################################################################
 
-  def save_console(self,take_lock=True):
+  def save_console(self, take_lock=True):
 
     if not(self.CanLock):
         return
 
-    self.log_debug('entering save()',4,trace='SAVE')
+    self.log_debug('entering save()', 4, trace='SAVE')
     #
     if take_lock or True:
         lock_file = self.take_lock(self.CONSOLE_LOCK_FILE)
-        self.log_debug('save_console: Taking the lock',4,trace='SAVE')
+        self.log_debug('save_console: Taking the lock', 4, trace='SAVE')
 
     # could need to load workspace and merge it
 
     # print("saving variables to file "+workspace_file)
     workspace_file = self.CONSOLE_SAVE_FILE
     self.pickle_file = open(workspace_file + ".new", "wb")
-    pickle.dump(self.console_step_filter,self.pickle_file)
+    pickle.dump(self.console_step_filter, self.pickle_file)
     pickle.dump(self.console_current_step_names, self.pickle_file)
     pickle.dump(self.console_current_step_name, self.pickle_file)
     pickle.dump(self.console_current_tasks, self.pickle_file)
@@ -3731,25 +3736,25 @@ class decimate(engine):
     pickle.dump(self.show_zeroed_files, self.pickle_file)
     self.pickle_file.close()
     if os.path.exists(workspace_file):
-      os.rename(workspace_file,workspace_file + ".old")
-    os.rename(workspace_file + ".new",workspace_file)
+      os.rename(workspace_file, workspace_file + ".old")
+    os.rename(workspace_file + ".new", workspace_file)
 
     if take_lock or True:
-        self.log_debug('save_console: releasing the lock',4,trace='SAVE')
+        self.log_debug('save_console: releasing the lock', 4, trace='SAVE')
         self.release_lock(lock_file)
-    self.log_debug('leaving save_console()',4,trace='SAVE')
+    self.log_debug('leaving save_console()', 4, trace='SAVE')
 
   #########################################################################
   # load_workspace
   #########################################################################
 
-  def load_console(self,take_lock=True):
+  def load_console(self, take_lock=True):
 
     #
-    self.log_debug('entering load_console()',4,trace='SAVE')
+    self.log_debug('entering load_console()', 4, trace='SAVE')
     if take_lock or True:
         lock_file = self.take_lock(self.CONSOLE_LOCK_FILE)
-        self.log_debug('load: Taking the lock',4,trace='SAVE')
+        self.log_debug('load: Taking the lock', 4, trace='SAVE')
 
     try:
       if os.path.exists(self.CONSOLE_SAVE_FILE):
@@ -3783,16 +3788,16 @@ class decimate(engine):
     self.console_current_tasks = step['array']
     self.console_current_task = step['array'][0]
     try:
-      self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x),step['jobs'])))
+      self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x), step['jobs'])))
     except Exception:
       self.console_current_jobs = step['jobs']
     self.console_current_job = step['jobs'][0]
 
     if take_lock or True:
         self.release_lock(lock_file)
-        self.log_debug('load_console():releasing lock',4,trace='SAVE')
+        self.log_debug('load_console():releasing lock', 4, trace='SAVE')
 
-    self.log_debug('leaving load_console()',4,trace='SAVE')
+    self.log_debug('leaving load_console()', 4, trace='SAVE')
 
   #########################################################################
   # explore workflow initialization
@@ -3843,8 +3848,8 @@ class decimate(engine):
     self.save_console()
     sys.exit(0)
 
-  def react_on_key(self,x):
-      if x in ['b','B']:
+  def react_on_key(self, x):
+      if x in ['b', 'B']:
           squeue_base_user = 'squeue -l -o "%.20i %.6P %.15j %.8T %.10M %.9l %.6D %R" '
           squeue_base_all = 'squeue -l -o "%.20i %.6P %.15j %.8u %.8T %.10M %.9l %.6D %R" '
           if x == 'b':
@@ -3863,18 +3868,18 @@ class decimate(engine):
       elif x == 'v':
         if self.file_chosen:
           os.system('EDITOR=vi less %s' % (self.file_chosen))
-      elif x in ["l",'L']:
+      elif x in ["l", 'L']:
         if x == 'L':
           self.print_workflow(all_steps=True)
         else:
           self.print_workflow()
-      elif x in ['p',';',':','P','+','-','*','/',',','.']:
+      elif x in ['p', ';', ':', 'P', '+', '-', '*', '/', ',', '.']:
           self.log_debug(' >%s< hit and last_x=>%s< previous_x=>%s<' % \
-                         (x, self.last_x, self.previous_x),4,trace='KEY')
-          if x in ['+','-','p',';',':','P']:
+                         (x, self.last_x, self.previous_x), 4, trace='KEY')
+          if x in ['+', '-', 'p', ';', ':', 'P']:
             candidates = self.console_current_tasks
             current = self.console_current_task
-          elif x in ['/','*']:
+          elif x in ['/', '*']:
             candidates = self.console_current_step_names
             current = self.console_current_step_name
           else:
@@ -3884,19 +3889,19 @@ class decimate(engine):
           for t in RangeSet(candidates):
             possibles = possibles + [t]
           nb_candidates = len(possibles)
-          self.log_debug('searching %s in possible choice:%s' % (current,possibles),\
+          self.log_debug('searching %s in possible choice:%s' % (current, possibles), \
                          4, trace='KEY')
           previous_possible = possibles[-1]
           possibles = possibles + possibles[0:]
           if len(possibles) > 1:
             item_found = False
-            self.log_debug('possibles=%s' % ",".join(map(lambda x:str(x),possibles)))
+            self.log_debug('possibles=%s' % ",".join(map(lambda x:str(x), possibles)))
             while len(possibles) and not(item_found):
               t = possibles.pop(0)
               next_possible = possibles[0]
               self.log_debug('scanning %s, result=%s next=%s previous=%s' % \
-                             (t,('%s' % current == '%s' % t),next_possible,previous_possible),\
-                             4,trace='KEY')
+                             (t, ('%s' % current == '%s' % t), next_possible, previous_possible), \
+                             4, trace='KEY')
               if ('%s' % current == '%s' % t):
                   if x == '-':
                     self.console_current_task = previous_possible
@@ -3918,31 +3923,31 @@ class decimate(engine):
                     self.console_current_job = next_possible
                   elif x == ',':
                     self.console_current_job = previous_possible
-                  if x in ['*','/']:
+                  if x in ['*', '/']:
                     step = self.STEPS[self.console_current_step_name]
                     self.console_current_tasks = step['array']
                     self.console_current_task = step['array'][0]
                     try:
                       self.console_current_jobs = \
-                              RangeSet(",".join(map(lambda x:str(x),step['jobs'])))
+                              RangeSet(",".join(map(lambda x:str(x), step['jobs'])))
                     except Exception:
                       self.console_current_jobs = step['jobs']
                     try:
                         self.console_current_job = step['jobs'][0]
                     except Exception:
                         self.error('could not get first job for step: %s ' % \
-                                   self.print_job(step,print_only=step.keys()),\
-                                   exit=True,exception=True)
+                                   self.print_job(step, print_only=step.keys()), \
+                                   exit=True, exception=True)
                         self.console_current_job = 0
                   self.log_debug(' >%s< hit and last_x=>%s< previous_x=>%s<' % \
-                                 (x, self.last_x, self.previous_x),4,trace='KEY')
+                                 (x, self.last_x, self.previous_x), 4, trace='KEY')
                   self.args.input = self.previous_x + self.args.input
                   item_found = True
                   self.save_console()
               previous_possible = t
           # print(self.args.input)
           # sys.exit(0)
-      elif x in ["s","S"]:
+      elif x in ["s", "S"]:
           if x == "s":
               steps = self.console_current_step_names = self.steps_critical_path_with_attempt
               self.console_step_filter = 'CRITICAL'
@@ -3957,7 +3962,7 @@ class decimate(engine):
             step = self.STEPS[self.console_current_step_name]
             self.console_current_tasks = step['array']
             try:
-                self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x),step['jobs'])))
+                self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x), step['jobs'])))
             except Exception:
                 self.console_current_jobs = step['jobs']
             self.console_current_job = step['jobs'][0]
@@ -3965,7 +3970,7 @@ class decimate(engine):
             self.save_console()
       elif x in ["j"]:
           step = self.STEPS[self.console_current_step_name]
-          self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x),step['jobs'])))
+          self.console_current_jobs = RangeSet(",".join(map(lambda x:str(x), step['jobs'])))
           self.console_current_job = step['jobs'][0]
           new_job = self.choose_in_set(RangeSet(self.console_current_jobs))
           if new_job:
@@ -3978,31 +3983,31 @@ class decimate(engine):
           if new_task:
             self.console_current_tasks = new_task
             self.save_console()
-      elif x in ["i","I"]:
+      elif x in ["i", "I"]:
         s = self.STEPS[self.console_current_step_name]
-        print('step %s:\n%s' % (self.console_current_step_name,\
-                                self.print_job(s,short_format=(x == "i"),print_only=s.keys())))
-      elif x in ["k","K"]:
+        print('step %s:\n%s' % (self.console_current_step_name, \
+                                self.print_job(s, short_format=(x == "i"), print_only=s.keys())))
+      elif x in ["k", "K"]:
         s = self.STEPS[self.console_current_step_name]
         for task in RangeSet(self.console_current_tasks):
           task_nb = int(task)
           if x == "K" or int(self.console_current_task) == task_nb:
             t = self.TASKS[self.console_current_step_name][task_nb]
-            print('task %s.%s:\n%s' % (self.console_current_step_name,task_nb,\
-                                       self.print_job(t,print_only=t.keys())))
-      elif x in ['m','M']:
+            print('task %s.%s:\n%s' % (self.console_current_step_name, task_nb, \
+                                       self.print_job(t, print_only=t.keys())))
+      elif x in ['m', 'M']:
         # for job_id in RangeSet(self.console_current_jobs):
           # job = self.JOBS[job_id]
           job_id = self.console_current_job
           job = self.JOBS[job_id]
           if x == 'm':
-              print('job %s.%s:\n%s' % (self.console_current_step_name,\
-                                        job_id,\
-                                        self.print_job(job,print_only=job.keys())))
+              print('job %s.%s:\n%s' % (self.console_current_step_name, \
+                                        job_id, \
+                                        self.print_job(job, print_only=job.keys())))
           else:
-              print('job %s.%s:\n%s' % (self.console_current_step_name,\
-                                        job_id,\
-                                        self.print_job(job,filter=None,print_only=job.keys())))
+              print('job %s.%s:\n%s' % (self.console_current_step_name, \
+                                        job_id, \
+                                        self.print_job(job, filter=None, print_only=job.keys())))
       elif "rReEoOdDgG\|".find(x) > -1:
         file_list = []
         if "REO".find(x) > -1:
@@ -4017,21 +4022,21 @@ class decimate(engine):
             job = self.JOBS[job_id]
           except Exception:
             self.error('job_id %s not known in self.JOBS for step %s  task %s' % \
-                       (job_id, self.console_current_step_name,task_nb),exception=True,exit=False)
+                       (job_id, self.console_current_step_name, task_nb), exception=True, exit=False)
             # self.ask("continue ? ", default='y' )
             continue
-          error_mask = job['error'].replace('%j','*').replace('%J','*').replace('%a','*')
-          output_mask = job['output'].replace('%j','*').replace('%J','*').replace('%a','*')
+          error_mask = job['error'].replace('%j', '*').replace('%J', '*').replace('%a', '*')
+          output_mask = job['output'].replace('%j', '*').replace('%J', '*').replace('%a', '*')
           files_error = files_output = ''
-          if x in ['o','O','r','R']:
-            files_output = '%s*.task_%04d*' % (output_mask,task_nb)
-          if x in ['e','E','r','R']:
-            files_error = '%s*.task_%04d*' % (error_mask,task_nb)
-          if x in ['d','D']:
+          if x in ['o', 'O', 'r', 'R']:
+            files_output = '%s*.task_%04d*' % (output_mask, task_nb)
+          if x in ['e', 'E', 'r', 'R']:
+            files_error = '%s*.task_%04d*' % (error_mask, task_nb)
+          if x in ['d', 'D']:
               dir_output = os.path.dirname(job['error'])
               file_list = glob.glob('./%s/*' % dir_output)
               file_list.sort()
-          elif x in ['g','G']:
+          elif x in ['g', 'G']:
               dir_output = 'generate'
               file_list = glob.glob('%s/*' % dir_output)
               file_list.sort()
@@ -4066,18 +4071,18 @@ class decimate(engine):
                 format_beg = colors.BOLD
               format_end = colors.END
               if sz > 0 or self.show_zeroed_files:
-                choices = choices + ["%21s %09s   %s%s%s" % (tm, sz, format_beg,f,format_end)]
+                choices = choices + ["%21s %09s   %s%s%s" % (tm, sz, format_beg, f, format_end)]
             except Exception:
               sz = '?'
               tm = '?'
               choices = choices + ["%21s %09s   %s" % (tm, sz, f)]
-          self.log_debug('list of files : [%s]' % ','.join(file_list),4,trace='KEY')
+          self.log_debug('list of files : [%s]' % ','.join(file_list), 4, trace='KEY')
           if len(choices):
-            (choice,extra_choices,current_choices,offset) = \
-                   self.choose_in_set(choices,get_choices=True)
+            (choice, extra_choices, current_choices, offset) = \
+                   self.choose_in_set(choices, get_choices=True)
             if choice:
               self.file_chosen = file_chosen = \
-                   choice.split(" ")[-1].replace(colors.BOLD,"").replace(colors.END,"")
+                   choice.split(" ")[-1].replace(colors.BOLD, "").replace(colors.END, "")
               more_file_chosen = True
               while more_file_chosen:
                 print()
@@ -4091,7 +4096,7 @@ class decimate(engine):
                     os.system('more %s' % file_chosen)
                     print(more_what)
                 try:
-                    f_lines = open(file_chosen,'r').readlines()
+                    f_lines = open(file_chosen, 'r').readlines()
                 except Exception:
                     f_lines = ["Problem found while opening file %s" % file_chosen]
                     return
@@ -4101,10 +4106,10 @@ class decimate(engine):
                   i = i + 1
                 lines = [more_what] + f_lines + [more_what]
                 self.log_debug('calling more with %s lines...' % len(lines), 4, trace='KEY')
-                self.choose_in_set(lines,line_number=False,extra_choices=extra_choices)
+                self.choose_in_set(lines, line_number=False, extra_choices=extra_choices)
                 self.log_debug(('back from more  self.current_key=%s' + \
                                 ' self.args.inputs=%s extra_choices=%s') % \
-                               (self.current_x, self.args.input,extra_choices),4,trace='KEY')
+                               (self.current_x, self.args.input, extra_choices), 4, trace='KEY')
                 if len(self.args.input):
                   if self.args.input[0] in extra_choices:
                     new_choice = self.args.input[0]
@@ -4112,7 +4117,7 @@ class decimate(engine):
                     position = extra_choices[offset:].index(new_choice) + offset
                     file_chosen = file_list[position]
                     self.log_debug('new_choice=%s, position=%s, file_list=[%s], file_chosen=%s' % \
-                                   (new_choice,position,",".join(file_list),file_chosen), \
+                                   (new_choice, position, ",".join(file_list), file_chosen), \
                                    4, trace='KEY')
                     self.general_info()
                     print(current_choices)
@@ -4136,7 +4141,7 @@ class decimate(engine):
         self.args.input = self.last_x + self.args.input
       else:
         self.args.input = x + self.args.input
-        if not(x in ['p',';',':','P','+','-','*','/','.',',']):
+        if not(x in ['p', ';', ':', 'P', '+', '-', '*', '/', '.', ',']):
           self.last_x = x
         else:
           self.current_x = self.last_x
@@ -4162,11 +4167,11 @@ class decimate(engine):
           print('\rstep %s from [%s]' % \
                 (self.console_current_step_name, self.console_step_filter) + \
                 '- jobs %s from %s (j for more)' % \
-                (self.console_current_job,len(self.console_current_jobs)) + \
+                (self.console_current_job, len(self.console_current_jobs)) + \
                 '- task %s from [%s] ' % (self.console_current_task, self.console_current_tasks) + \
                 '  [0 files %s] ' % zeroed_files)
       self.log_debug('general info last_x=>%s< previous_x=>%s<' % \
-                         (self.last_x, self.previous_x),4,trace='KEY')
+                         (self.last_x, self.previous_x), 4, trace='KEY')
 
   def console_help(self):
 
@@ -4186,12 +4191,12 @@ class decimate(engine):
       print("\t o) print output.log  \t e) print error.logr")
       print("\t h) print this screen \t X) quit\n")
 
-  def choose_in_set(self,choices,on_key_return=None,line_number=True,\
-                    get_choices=False,extra_choices=''):
+  def choose_in_set(self, choices, on_key_return=None, line_number=True, \
+                    get_choices=False, extra_choices=''):
       if on_key_return is None:
           on_key_return = self.menu_keys
       on_key_return = on_key_return + extra_choices
-      possible_indice = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +\
+      possible_indice = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' + \
                         '!@#$%^&*()_+=-[]{};:",./<>`~'
       if len(on_key_return):
          filtered_indice = ''
@@ -4210,7 +4215,7 @@ class decimate(engine):
       indexed_choices = {}
       current_choices_keys = ""
       more_message = False
-      self.log_debug('choice_list=>%s<' % choice_list,4,trace='CHOICE')
+      self.log_debug('choice_list=>%s<' % choice_list, 4, trace='CHOICE')
       choice_made = False
       while not(choice_made):
         j = 0
@@ -4226,13 +4231,13 @@ class decimate(engine):
             offset = offset + len(current_choices_keys)
             current_choices_keys = ""
             i = 0
-        nb_lines = min(max(10, self.rows - 3),len(filtered_indice))
+        nb_lines = min(max(10, self.rows - 3), len(filtered_indice))
         if not(line_number):
             nb_lines = self.rows - 3
         else:
             if nb_lines < 1:
-                self.error('pb: nb_lines<1...', exit=True,exception=False)
-        self.log_debug('nb_lines=%s' % nb_lines,4,trace='TERM')
+                self.error('pb: nb_lines<1...', exit=True, exception=False)
+        self.log_debug('nb_lines=%s' % nb_lines, 4, trace='TERM')
         while len(choice_list) and j < nb_lines:
           c = choice_list.pop(0)
           if len(current_choices) and not(more_message):
@@ -4244,7 +4249,7 @@ class decimate(engine):
             current_choices_keys = current_choices_keys + k
             # current_choices = current_choices+"%s -> %s %s <- %s" % \
             #                        (k,c," "*(int(self.columns)-10-len(c)),k)
-            current_choices = current_choices + "%s -> %s" % (k,c)
+            current_choices = current_choices + "%s -> %s" % (k, c)
           else:
             current_choices = current_choices + "%s" % (c)
           i = i + 1
@@ -4263,8 +4268,8 @@ class decimate(engine):
             space_accepted = ""
           more_message = 2
           sys.stdout.flush()
-          self.log_debug('remaining line in the more session [%s] ' % ','.join(choice_list),\
-                         4,trace='MORE,KEY')
+          self.log_debug('remaining line in the more session [%s] ' % ','.join(choice_list), \
+                         4, trace='MORE,KEY')
           if line_number:
               acceptable_key = space_accepted + current_choices_keys + on_key_return
           else:
@@ -4272,40 +4277,40 @@ class decimate(engine):
           x = '?'
           while (acceptable_key.find(x) == -1):
             x = self.getkey()
-          self.log_debug('while a more session key >%s< was hit... ' % x,4,trace='KEY')
+          self.log_debug('while a more session key >%s< was hit... ' % x, 4, trace='KEY')
           if x in current_choices_keys or x in on_key_return:
              self.current_x = self.last_x
              self.args.input = x + self.args.input
              self.log_debug('Choice picked up or command called... leaving the more session ', \
-                            4,trace='KEY')
+                            4, trace='KEY')
              choice_made = True
 
-      self.log_debug('out of more session ',4,trace='MORE')
+      self.log_debug('out of more session ', 4, trace='MORE')
       while True:
           x = self.getkey()
-          self.log_debug('x = >%s< ' % x,4,trace='KEY')
+          self.log_debug('x = >%s< ' % x, 4, trace='KEY')
           if (x in on_key_return):
               self.log_debug('key %s hit to be taken in account by general menu ' % x, \
                              4, trace='KEY')
               self.current_x = self.last_x
               self.args.input = x + self.args.input
               if get_choices:
-                return (None,current_choices_keys,current_choices,offset)
+                return (None, current_choices_keys, current_choices, offset)
               else:
                 return None
           if x in indexed_choices.keys():
               if get_choices:
-                self.log_debug('return str(indexed_choices[x])=>%s<,current_choices_keys=>%s<)' %\
-                               (str(indexed_choices[x]),current_choices_keys),4,trace='KEY')
-                return (str(indexed_choices[x]),current_choices_keys,current_choices,offset)
+                self.log_debug('return str(indexed_choices[x])=>%s<,current_choices_keys=>%s<)' % \
+                               (str(indexed_choices[x]), current_choices_keys), 4, trace='KEY')
+                return (str(indexed_choices[x]), current_choices_keys, current_choices, offset)
               else:
-                self.log_debug('return str(indexed_choices[x])=>%s<' %\
-                               (str(indexed_choices[x])),4,trace='KEY')
+                self.log_debug('return str(indexed_choices[x])=>%s<' % \
+                               (str(indexed_choices[x])), 4, trace='KEY')
                 return str(indexed_choices[x])
           else:
             print('    Error: choice %s unavalaible' % x)
       if get_choices:
-        return (None,current_choices_keys,current_choices,offset)
+        return (None, current_choices_keys, current_choices, offset)
       else:
         return None
 
@@ -4320,7 +4325,7 @@ class decimate(engine):
       self.args.input = self.args.input[1:]
       self.current_x = x
       self.log_debug('getkey from input x=>%s< args.input=%s last_x=>%s< previous_x=>%s<' % \
-                         (x, self.args.input, self.last_x, self.previous_x),4,trace='KEY')
+                         (x, self.args.input, self.last_x, self.previous_x), 4, trace='KEY')
       return x
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
@@ -4336,7 +4341,7 @@ class decimate(engine):
             termios.tcsetattr(fd, termios.TCSAFLUSH, old)
     self.current_x = c
     self.log_debug('getkey direct x=>%s< args.input=%s last_x=>%s< previous_x=>%s<' % \
-                         (c, self.args.input, self.last_x, self.previous_x),4,trace='KEY')
+                         (c, self.args.input, self.last_x, self.previous_x), 4, trace='KEY')
 
     return c
 
@@ -4345,7 +4350,7 @@ class decimate(engine):
   #########################################################################
 
   def close_save(self):
-    saved_workfile = '%s/%s' % (self.LOG_DIR,os.path.basename(self.WORKSPACE_FILE))
+    saved_workfile = '%s/%s' % (self.LOG_DIR, os.path.basename(self.WORKSPACE_FILE))
     os.system('chmod 444  %s ' % saved_workfile)
     return
 
@@ -4370,13 +4375,13 @@ class decimate(engine):
 
       jobs = self.JOBS.keys()
       # print(jobs)
-      known_jobs = ",%s," % (",".join(map(lambda x:str(x),jobs)))
+      known_jobs = ",%s," % (",".join(map(lambda x:str(x), jobs)))
       # print('known_jobs:',known_jobs)
       for s in self.STEPS.keys():
         for jid in self.STEPS[s]['jobs']:
-          known_jobs = known_jobs.replace(',%s,' % jid,",")
+          known_jobs = known_jobs.replace(',%s,' % jid, ",")
           self.JOBS[jid]['0kept'] = True
-      print('untracked_jobs:',known_jobs)
+      print('untracked_jobs:', known_jobs)
       # for j in known_jobs[1:-1].split(","):
       for j in self.JOBS.keys():
         try:
@@ -4384,7 +4389,7 @@ class decimate(engine):
         except Exception:
           job = self.JOBS[j]
         if job['job_name'] == '2' or True:
-          print('%s' % (self.print_job(job,print_only=['array','job_id','make_depend','0kept'],\
+          print('%s' % (self.print_job(job, print_only=['array', 'job_id', 'make_depend', '0kept'], \
                                        allkey=False)))
       sys.exit(0)
 
@@ -4407,21 +4412,21 @@ class decimate(engine):
 
 #       print(self.steps_submitted)
       l = list(self.steps_submitted)
-      for i in [0,1,2,3,4,5,6,7,8]:
+      for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
         s = '4-mitgcm-%d' % i
         try:
           l.remove(s)
-          print('successfully removed from step_submitted ',s)
+          print('successfully removed from step_submitted ', s)
         except Exception:
           print('try to remove %s from step_submitted but could not ' % s)
         try:
           del self.STEPS[s]
-          print('successfully removed from STEPS ',s)
+          print('successfully removed from STEPS ', s)
         except Exception:
           print('try to remove %s from STEPS but could not ' % s)
         try:
           del self.TASKS[s]
-          print('successfully removed from TASKS ',s)
+          print('successfully removed from TASKS ', s)
         except Exception:
           print('try to remove %s from TASKS but could not ' % s)
       self.steps_submitted = l
@@ -4452,8 +4457,8 @@ class decimate(engine):
         step0 = "%s-0" % step[:-2]
         my_step0 = self.STEPS[step0]
         my_step['array'] = my_step['tasks']
-        my_step['initial_array'] = my_step0['tasks'].replace('-100','-999')
-        print(step,my_step['initial_array'])
+        my_step['initial_array'] = my_step0['tasks'].replace('-100', '-999')
+        print(step, my_step['initial_array'])
         self.STEPS[step] = my_step
 #
 # #       del self.STEPS['4-mitgcm-1']
