@@ -1718,7 +1718,7 @@ class decimate(engine):
       # computation of the critical path
       # self.log_info("self.steps_submitted=[%s]" % ",".join(self.steps_submitted))
       self.log_debug('computing critical path: self.steps_submitted=[%s]' % \
-                     ','.join(self.steps_submitted), 4, trace="CRITICAL,RESTART")
+                     pprint.pformat(self.steps_submitted), 4, trace="CRITICAL,RESTART")
       self.steps_addressed = []
 
       if len(self.steps_submitted):
