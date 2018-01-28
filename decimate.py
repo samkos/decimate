@@ -2261,7 +2261,7 @@ class decimate(engine):
               l[v] = ser
     
     self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l), \
-                   4, trace='PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+                   4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
 
     if 'nodes' in l.columns:
@@ -2477,7 +2477,7 @@ class decimate(engine):
       array_params_coherent = False
       parameter_nb = len(self.parameters)
       array_length = len(index_to_submit)
-      if not(array_length == parameter_nb):
+      if array_length > parameter_nb:
         msg = "array has %s occurence while there are %d combinations" % \
               (array_length, parameter_nb)
         self.error(msg, exit=True)
