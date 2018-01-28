@@ -3,3 +3,7 @@
 #DECIM COMBINE i = [1,2]
 #DECIM COMBINE j = [1,2]
 #DECIM COMBINE k = [1,2]
+
+#DECIM p = i*j*k
+
+#DECIM t = [1,2,4,8,16,32,64,128]

@@ -247,7 +247,7 @@ class engine(object):
     self.timing_results = my_dict(name='timing_results')  # {}
     self.SYSTEM_OUTPUTS = my_dict(name='')  # {}
     self.jobs_list = my_list(name="jobs_list")  # []
-    self.jobs_submitted = my_list(name='jobs_submitted')  # []
+    self.jobs_submitted = [] #  my_list(name='jobs_submitted')  # []
     self.jobs_to_submit = my_list(name='jobs_to_submit')  # []
     self.last_step_submitted = -1
     self.steps_submitted_attempts = my_dict(name='steps_submitted_attempts')  # {}

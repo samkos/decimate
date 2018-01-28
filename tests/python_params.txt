@@ -1,0 +1,18 @@
+# pythonic parameter example file
+
+#DECIM COMBINE nodes = [2,4,8]
+#DECIM COMBINE ntasks_per_node = [32,64]
+#DECIM k = range(1,7)
+
+#DECIM ntasks = nodes*ntasks_per_node
+
+#DECIM PYTHON
+
+import math
+
+nthreads = ntasks * 2
+
+NPROC = 2; #Number of processors
+
+t = int(2**(k))
+T = 15

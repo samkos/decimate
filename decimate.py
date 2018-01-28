@@ -1954,7 +1954,7 @@ class decimate(engine):
       self.error('Parameter file %s does not exist!!!' % self.args.parameter_file)
     else:
       tags_ok = False
-      lines = open(self.args.parameter_file).readlines()
+      lines = open(self.args.parameter_file).readlines()+["\n"]
 
     # warning message is sent to the user if filter is applied on the combination to consider
 
@@ -2119,7 +2119,11 @@ class decimate(engine):
                    4, trace='PARAMETRIC_DETAIL')
     self.log_debug('tag before functional_tags : \n %s' % l.columns, \
                    4, trace='PARAMETRIC_DETAIL')
+    self.log_debug('prog before functional_tags : \n %s' % prog, \
+                   4, trace='PARAMETRIC_DETAIL')
 
+    
+    
     # evaluating parameter computed...
     
     if len(self.direct_tag):
