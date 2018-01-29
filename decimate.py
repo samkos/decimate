@@ -365,7 +365,7 @@ class decimate(engine):
     # ease of use of decimate
     self.parser.add_argument("--template", action="store_true",
                              help='create template files')
-    self.parser.add_argument("--process-templates", action="store_true",
+    self.parser.add_argument("--process-templates", type=str, 
                              help=argparse.SUPPRESS)
     if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
@@ -542,7 +542,8 @@ class decimate(engine):
 
     # process template file
     if self.args.process_templates:
-          self.process_templates()
+          self.process_templates(self.args.process_templates)
+          sys.exit(0)
             
     if self.args.array_first:
       self.MY_ARRAY_CURRENT_FIRST = int(self.args.array_first)
@@ -630,7 +631,7 @@ class decimate(engine):
         task_parameter_file.write('\nexport %s=%s' % (p, params[p]))
         s = s + "%s=>%s< " % (p, params[p])
         
-      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
+      #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
       
       task_parameter_file.write('\n')
       task_parameter_file.close()
@@ -1929,7 +1930,7 @@ class decimate(engine):
 	for filename in fnmatch.filter(filenames, pattern):
             f = os.path.join(root, filename)
 	    matches.append(f)
-            print('processing template file %s' % f)
+            self.log_debug('processing template file %s' % f,4,trace='TEMPLATE')
             content = "".join(open(f).readlines())
             for k in self.parameters.columns:
                 v = params[k]
@@ -3469,7 +3470,9 @@ class decimate(engine):
     l = prefix0 + "\n\n# Starting user job\n" + \
         "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + \
         l.replace('#DECIM PROCESS_TEMPLATE_FILE',
-                  'echo Should replace templates here\n%s --process-templates' % l0) \
+                  '# should replace template here returning in the right directory \n\n' +\
+                  "HERE_TO_PROCESS=$PWD \n (cd %s;" % (job['submit_dir'])  +\
+                  '%s --process-templates $HERE_TO_PROCESS; cd - )' % l0) \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """

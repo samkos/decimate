@@ -196,7 +196,7 @@ class slurm_frontend(decimate):
 
     if self.slurm_args.parameter_file:
       new_job['array'] = '0-%d' % (len(self.parameters)-1)
-      self.log_info('setting array to %s' % new_job['array'])
+      self.log_debug('setting array to %s' % new_job['array'], 4, trace='TEMPLATE')
 
     (job_id, cmd) = self.submit_job(new_job)
 
