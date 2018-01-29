@@ -39,3 +39,8 @@ environment variables:
 
 DPARAM                      options forwarded to Decimate
 
+
+script directives
+
+#DECIM SHOW_PARAMETERS 
+#DECIM PROCESS_TEMPLATE_FILES 

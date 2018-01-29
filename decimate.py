@@ -3469,10 +3469,11 @@ class decimate(engine):
 
     l = prefix0 + "\n\n# Starting user job\n" + \
         "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + \
-        l.replace('#DECIM PROCESS_TEMPLATE_FILE',
+        l.replace('#DECIM PROCESS_TEMPLATE_FILES',
                   '# should replace template here returning in the right directory \n\n' +\
                   "HERE_TO_PROCESS=$PWD \n (cd %s;" % (job['submit_dir'])  +\
-                  '%s --process-templates $HERE_TO_PROCESS; cd - )' % l0) \
+                  '%s --process-templates $HERE_TO_PROCESS; cd - )' % l0)\
+                  .replace('#DECIM SHOW_PARAMETERS','cat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}')  \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """
