@@ -266,7 +266,17 @@ class slurm_frontend(decimate):
     else:
       return SUCCESS
 
-def main():
+def batch():
+    K = slurm_frontend()
+    K.start()
+
+def kill():
+    sys.argv[1:] = ["--decimate", "--kill"] + sys.argv[1:]
+    K = slurm_frontend()
+    K.start()
+
+def stat():
+    sys.argv[1:] = ["--decimate", "--status"] + sys.argv[1:]
     K = slurm_frontend()
     K.start()
 

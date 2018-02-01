@@ -180,6 +180,8 @@ setup(
     entry_points={  # Optional
           'console_scripts': [
              'dbatch=decimate.slurm_frontend:main',
+             'dkill=decimate.slurm_frontend:kill',
+             'dstat=decimate.slurm_frontend:stat',
          ],
      },
 )
