@@ -1,4 +1,4 @@
-7#!/sw/xc40/python/2.7.11/sles11.3_gnu5.1.0/bin/python
+#!/bin/env/python
 
 import argparse
 from decimate import *
@@ -266,6 +266,12 @@ class slurm_frontend(decimate):
     else:
       return SUCCESS
 
+def main():
+    K = slurm_frontend()
+    K.start()
+
+
+  
 if __name__ == "__main__":
     K = slurm_frontend()
     K.start()

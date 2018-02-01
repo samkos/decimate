@@ -4,3 +4,6 @@ docs/_build
 .decimate/SAVE/YALLA
 TAGS
 #tests/anamika_params.txt
+.pypirc
+decimate/docs/_build/
+out

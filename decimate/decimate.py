@@ -183,7 +183,8 @@ class decimate(engine):
 
     self.JOBS_DEPENDS_ON = {}
 
-    self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
+    #self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
+    self.DECIMATE_DIR = os.path.dirname(os.path.abspath(__file__))
     self.TEMPLATE_SOURCE_DIR = "%s/templates" % self.DECIMATE_DIR
     self.YALLA_DIR = "%s/yalla" % self.DECIMATE_DIR
 

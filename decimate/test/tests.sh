@@ -275,3 +275,31 @@ STEPS={'1-0': {'completion': 100.0,
 
 map(lambda k: k[0].split('-')[:-1],STEPS.items())
 
+module purge
+ml python/optim
+
+python setup.py build
+
+virtualenv out
+
+source out/bin/activate
+python setup.py install
+
+pip install -e .
+
+# prepare env
+pip install twine
+pip install wheel
+
+# create ~/.pypirc file
+[pypi]
+username = <username>
+password = <password>
+# remember to chmod 600 ~/.pypirc
+
+# create dist and wheel file
+python setup.py sdist
+python setup.py bdist_wheel
+
+# deploy on pipy
+twine upload dist/*
