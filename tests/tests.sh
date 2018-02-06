@@ -24,6 +24,9 @@ b
 b
 
 
+#error when --error
+db -f API,PS -P tests/error_pb_params.sh tests/error_pb_job.sh
+
 # running a test case with dependency and failure
 ml dart_mitgcm/decimate_only
 gC

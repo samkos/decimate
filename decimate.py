@@ -131,23 +131,27 @@ Help options:
   -f,   --filter=FILTERS      activate traces
                               API, PARSE, USER_CHECK
 
+Parametric Jobs:
   -P,  --parameter-file=PARAM_FILE file listing all parameter
                                           combinations to cover
+  -P,  --parameter-list lists all parameters combination to scan and exit
+
   -Pf, --parameter-filter=FILTER filter while reading parameter file
   -Pa, --parameter-range=range numeric filter while reading parameter file
 
+Containers:
   -xy,  --yalla               Use Yalla Container
   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
                               of parallel runs in a container
 
 
-Burst Buffer
+Burst Buffer:
   -bbz, --use-burst-buffer-size        use a non persistent burst buffer space
   -xz,  --burst-buffer-size=BURST_BUFFER_SIZE
   -bbs, --use-burst-buffer-space      use a persistent burst buffer space
   -xs,  --burst-buffer-space=BURST_BUFFER_SPACE_name
 
-Checking option
+Checking option:
         --check=SCRIPT_FILE      python or shell to check if results are ok
         --max-retry=MAX_RETRY    number of time a step can fail and be
                                  restarted automatically before failing the 
@@ -2260,10 +2264,15 @@ class decimate(engine):
             if not(v in result_as_column.keys()):
               ser = pd.Series(results_per_var[v], index=l.index)
               l[v] = ser
+
+    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
     
-    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l), \
+    self.log_debug(parameter_list,
                    4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
+    if self.args.parameter_list:
+        self.log_console(parameter_list)
+        sys.exit(0)
 
     if 'nodes' in l.columns:
       job_per_node_number = l.groupby(['nodes']).size()
