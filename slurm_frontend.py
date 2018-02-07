@@ -133,6 +133,10 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--parameter-range', "%s" % self.slurm_args.parameter_range]
 
+    if self.slurm_args.parameter_list:
+      decimate_extra_config = decimate_extra_config + \
+                              [ '--parameter-list' ]
+
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
 
