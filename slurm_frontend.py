@@ -34,32 +34,39 @@ class slurm_frontend(decimate):
     decimate_args = []
     is_decimate = False
     is_job_parameter = False
+    is_waiting_param_file= False
     self.job_parameter = []
+    
 
     for f in sys.argv[1:]:
       if DEBUG:
-        print('testing:',f)
-      if os.path.exists(f) and not is_decimate:
-        if self.job_script:
-          args = args + [self.job_script]
-        self.job_script = f
-        if DEBUG:
-          print('job_script found:', f)
-        is_job_parameter = True
+        print('testing:/%s/ (is_waiting_param_file=%s,is_decimate=%s' % (f,is_waiting_param_file,is_decimate))
+      if f=="-P" or f=="--parameter-file" or f=="--check" :
+        args = args + [f]
+        is_waiting_param_file=True
         continue
-      if f == "--decimate":
+      elif os.path.exists(f) and not is_waiting_param_file and not is_decimate:
+        if self.job_script:
+          args = args + [f]
+        else:
+          self.job_script = f
+          if DEBUG:
+            print('job_script found:', f)
+      elif os.path.exists(f) and is_waiting_param_file:
+        args = args + [f]
+        is_waiting_param_file= False
+      elif f == "--decimate":
         is_decimate = True
         continue
-      if is_decimate:
+      elif is_decimate:
         decimate_args = decimate_args + [f]
-      elif is_job_parameter:
-        self.job_parameter = self.job_parameter + [f]
       else:
         args = args + [f]
       index = index + 1
 
     if DEBUG:
       print 'ARGS:',args
+      print 'DECIMATE_ARGS:',decimate_args
       print 'index:',index
 
     self.create_slurm_parser(DEBUG)
