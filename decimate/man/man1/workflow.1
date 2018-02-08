@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "DECIMATE" "1" "Jan 08, 2018" "0.5" "Decimate"
+.TH "DECIMATE" "1" "Jan 29, 2018" "0.5" "Decimate"
 .SH NAME
 decimate \- Decimate Documentation
 .
@@ -53,6 +53,9 @@ scheduling policy on the maximum number of jobs authorized per user.
 .IP \(bu 2
 Manage all the submitted jobs as a single workflow easing their
 submission, monitoring, deletion or reconfiguration.
+.IP \(bu 2
+Ease the definition, submission and management of jobs
+run on a large set of combinations of parameters.
 .IP \(bu 2
 Benefit from a centralized log file,  a unique point of
 capture of relevant information about the behavior of the workflow.
@@ -436,6 +439,275 @@ dstat
 .fi
 .UNINDENT
 .UNINDENT
+.SS parametric job workflow
+.sp
+Then submission of parametric jobs follows the same syntax than with
+the \fBsbatch\fP command adding a reference to a text file describing the
+set of parameters to be tested:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dbatch \-\-job\-name=job_1 \-P parameters.txt my_job.sh
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+How to build the file \fIparameters.txt\fP is described at \fI\%Parameters combination\fP\&.
+.SH PARAMETERS COMBINATION
+.sp
+Then submission of parametric jobs requires to gather in a \fIparameter\fP
+file all the combinations of parameters that one wants to run a job
+against. This list of combination can be described as an explicit
+array of values of programatically via a Python or shell script or
+using simple directives.
+.sp
+While the execution of parametric workflows is described
+\fI\%here\fP, here are detailed four ways of defining parameters. .
+.SS array of values
+.sp
+The simplest way to describe the set of parameter combinations that
+needs to be tested consists in listing them extensively as an array
+of values. The first row of this array is the name of each
+parameters and each row is one possible combination.
+.sp
+Here is a parameters file listing all possible combinations for 3
+parameters (i,j,k), each of them taking the value 1 or 2.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# array\-like description of parameter combinations
+
+i  j  k
+
+1  1  1
+1  1  2
+1  2  1
+1  2  2
+2  1  1
+2  1  2
+2  2  1
+2  2  2
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Notice that:
+.INDENT 0.0
+.IP \(bu 2
+spaces, void lines are ignored.
+.IP \(bu 2
+every thing following a \fI#\fP is considered as a comment and ignored
+.UNINDENT
+.SS Combined parameter sweep
+.sp
+In case of combinations that sweeps all possible set of values based on
+the domain definition of each variable, a more compact declarative syntax
+is also available. The same set of parameters can be generated with the
+following file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# combine\-like description of parameter combinations
+
+#DECIM COMBINE i = [1,2]
+#DECIM COMBINE j = [1,2]
+#DECIM COMBINE k = [1,2]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Every line starting with \fI#DECIM\fP is parsed as a special command.
+.SS Parameters depending on simple formulas
+.sp
+Some parameters can also be computed from others using simple arithmetic formulas.
+Here is a way to declare them:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# combine\-like description of parameter combinations
+
+#DECIM COMBINE i = [1,2]
+#DECIM COMBINE j = [1,2]
+#DECIM COMBINE k = [1,2]
+
+#DECIM p = i*j*k
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+which is a short way to describe the same 8 combinations as expressed in the following
+array\-like parameter file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# array\-like description of parameter combinations
+
+i  j  k  p
+
+1  1  1  1
+1  1  2  2
+1  2  1  2
+1  2  2  4
+2  1  1  2
+2  1  2  4
+2  2  1  4
+2  2  2  8
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+an additional parameter can also be described by a list of values:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# combine\-like description of parameter combinations
+
+#DECIM COMBINE i = [1,2]
+#DECIM COMBINE j = [1,2]
+#DECIM COMBINE k = [1,2]
+
+#DECIM p = i*j*k
+
+#DECIM t = [1,2,4,8,16,32,64,128,256]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+which is a short way to describe the same 8 combinations as expressed in the following
+array\-like parameter file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# array\-like description of parameter combinations
+
+i  j  k  p    t
+
+1  1  1  1    1
+1  1  2  2    2
+1  2  1  2    4
+1  2  2  4    8
+2  1  1  2   16
+2  1  2  4   32
+2  2  1  4   64
+2  2  2  8  128
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+For each parameter added via a list of values, the conformance with the existing
+number of already possible combinations is checked. For example, the following
+parameter file…
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# combine\-like description of parameter combinations
+
+#DECIM COMBINE i = [1,2]
+#DECIM COMBINE j = [1,2]
+#DECIM COMBINE k = [1,2]
+
+#DECIM p = i*j*k
+
+#DECIM t = [1,2,4,8,16,32,64,128,256]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+…produces the error:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[ERROR] parameters number mistmatch for expression
+[ERROR]       t = [1,2,4,8,16,32,64,128,256]
+[ERROR]       \-\-> expected 8 and got 9 parameters...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS More complex Python expressions
+.sp
+For a high number of parameters, a portion of code written in Python can also be embedded
+after a \fI#DECIM PYTHON\fP directive till the end of the file.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# pythonic parameter example file
+
+#DECIM COMBINE nodes = [2,4,8]
+#DECIM COMBINE ntasks_per_node = [16,32]
+
+#DECIM k = range(1,7)
+
+#DECIM PYTHON
+
+import math
+
+ntasks = nodes*ntasks_per_node
+nthreads = ntasks * 2
+
+NPROC = 2; #Number of processors
+
+t = int(2**(k))
+T = 15
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+which is a short way to describe the same 8 combinations as expressed in the following
+array\-like parameter file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# array\-like description of parameter combinations
+
+nodes  ntasks_per_node  k  ntasks  nthreads   t  NPROC    T
+   2               32  1      64       128   2      2    15
+   2               64  2     128       256   4      2    15
+   4               32  3     128       256   8      2    15
+   4               64  4     256       512  16      2    15
+   8               32  5     256       512  32      2    15
+   8               64  6     512      1024  64      2    15
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A python section is always evaluated at the end. Each new variables
+set at the end of the evaluation is added as a new parameter computed
+against each of the already built combinations. The conformance to the
+number of combinations already set is also checked if the variable is
+a set of values.
 .SH SHELL API
 .SS dbatch
 .sp

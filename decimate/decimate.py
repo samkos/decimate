@@ -131,23 +131,27 @@ Help options:
   -f,   --filter=FILTERS      activate traces
                               API, PARSE, USER_CHECK
 
+Parametric Jobs:
   -P,  --parameter-file=PARAM_FILE file listing all parameter
                                           combinations to cover
+  -Pl, --parameter-list lists all parameters combination to scan and exit
+
   -Pf, --parameter-filter=FILTER filter while reading parameter file
   -Pa, --parameter-range=range numeric filter while reading parameter file
 
+Containers:
   -xy,  --yalla               Use Yalla Container
   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
                               of parallel runs in a container
 
 
-Burst Buffer
+Burst Buffer:
   -bbz, --use-burst-buffer-size        use a non persistent burst buffer space
   -xz,  --burst-buffer-size=BURST_BUFFER_SIZE
   -bbs, --use-burst-buffer-space      use a persistent burst buffer space
   -xs,  --burst-buffer-space=BURST_BUFFER_SPACE_name
 
-Checking option
+Checking option:
         --check=SCRIPT_FILE      python or shell to check if results are ok
         --max-retry=MAX_RETRY    number of time a step can fail and be
                                  restarted automatically before failing the 
@@ -366,7 +370,7 @@ class decimate(engine):
     # ease of use of decimate
     self.parser.add_argument("--template", action="store_true",
                              help='create template files')
-    self.parser.add_argument("--process-templates", action="store_true",
+    self.parser.add_argument("--process-templates", type=str, 
                              help=argparse.SUPPRESS)
     if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
@@ -543,7 +547,8 @@ class decimate(engine):
 
     # process template file
     if self.args.process_templates:
-          self.process_templates()
+          self.process_templates(self.args.process_templates)
+          sys.exit(0)
             
     if self.args.array_first:
       self.MY_ARRAY_CURRENT_FIRST = int(self.args.array_first)
@@ -631,7 +636,7 @@ class decimate(engine):
         task_parameter_file.write('\nexport %s=%s' % (p, params[p]))
         s = s + "%s=>%s< " % (p, params[p])
         
-      task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
+      #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
       
       task_parameter_file.write('\n')
       task_parameter_file.close()
@@ -1930,7 +1935,7 @@ class decimate(engine):
 	for filename in fnmatch.filter(filenames, pattern):
             f = os.path.join(root, filename)
 	    matches.append(f)
-            print('processing template file %s' % f)
+            self.log_debug('processing template file %s' % f,4,trace='TEMPLATE')
             content = "".join(open(f).readlines())
             for k in self.parameters.columns:
                 v = params[k]
@@ -2260,10 +2265,15 @@ class decimate(engine):
             if not(v in result_as_column.keys()):
               ser = pd.Series(results_per_var[v], index=l.index)
               l[v] = ser
+
+    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
     
-    self.log_debug('%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l), \
+    self.log_debug(parameter_list,
                    4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
+    if self.args.parameter_list:
+        self.log_console(parameter_list)
+        sys.exit(0)
 
     if 'nodes' in l.columns:
       job_per_node_number = l.groupby(['nodes']).size()
@@ -3469,8 +3479,11 @@ class decimate(engine):
 
     l = prefix0 + "\n\n# Starting user job\n" + \
         "\n# ---------------- START OF ORIGINAL USER SCRIPT  -------------------\n" + \
-        l.replace('#DECIM PROCESS_TEMPLATE_FILE',
-                  'echo Should replace templates here\n%s --process-templates' % l0) \
+        l.replace('#DECIM PROCESS_TEMPLATE_FILES',
+                  '# should replace template here returning in the right directory \n\n' +\
+                  "HERE_TO_PROCESS=$PWD \n (cd %s;" % (job['submit_dir'])  +\
+                  '%s --process-templates $HERE_TO_PROCESS; cd - )' % l0)\
+                  .replace('#DECIM SHOW_PARAMETERS','cat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}')  \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """
