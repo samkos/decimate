@@ -77,8 +77,11 @@ class slurm_frontend(decimate):
                                    help='Use yalla container', default=False)
     self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
                                    help='# of job to run in parallel in a container', default=4)
+
     self.parser.add_argument("-P", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
+    self.parser.add_argument("-Pl", "--parameter-list", action="store_true",
+                                   help='lists all parameters combination to scan and exit', default=False)
     self.parser.add_argument("-PF", "--parameter-filter", type=str,
                              help='filter to apply on combinations to cover')
     self.parser.add_argument("-Pa", "--parameter-range", type=str,
@@ -100,7 +103,7 @@ class slurm_frontend(decimate):
     if (self.slurm_args.decimate_help or decimate_extra_config == ["-h"]):
       return ['-h']
 
-    if not(self.job_script) and len(decimate_args) == 0:
+    if not(self.job_script) and not(self.slurm_args.parameter_list) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
 
     if self.slurm_args.yalla:
