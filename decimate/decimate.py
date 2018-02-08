@@ -2391,8 +2391,8 @@ class decimate(engine):
       step_only = job['job_name']
       if (self.STEPS_RESTART_STATUS[step_only] in ['DONE']):
         # and not(step_only in self.steps_to_restart_anyway):
-        self.log_debug('step %s not actually submitted but faked for restart' % (job['job_name']), \
-                       4, trace='RESTART_FAKED,SUBMITTED')
+        self.log_info('step %s not actually submitted as it was marked as DONE use --resubmit to resubmit it again ' % (job['job_name']), \
+                       0, trace='RESTART_FAKED,SUBMITTED')
         return (None, 'nothing')
 
     lock_file = self.take_lock(self.LOCK_FILE)
