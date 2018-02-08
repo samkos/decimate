@@ -158,7 +158,7 @@ Other options:
 
 environment variables:
   DPARAM                      options forwarded to Decimate
-
+xxxxxxxxxxxx
       """
 
 
@@ -4475,7 +4475,6 @@ class decimate(engine):
 #         self.JOBS[j] =job
 
       self.save()
-
 
 if __name__ == "__main__":
     K = decimate()

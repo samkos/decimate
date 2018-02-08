@@ -1,0 +1,50 @@
+#%Module
+
+module-whatis "decimate"
+
+proc ModulesHelp { } {
+    puts stderr "
+experimental decimate SLURM extension.  try
+    dbatch --help
+or 
+    man decimate
+to know more
+
+version using /home/kortass/DECIMATE-GITHUB/out virtual env
+build by
+
+ml python/optim
+cd /home/kortass/DECIMATE-GITHUB
+
+virtualenv out
+
+source out/bin/activate
+pip install numpy
+pip install pandas
+pip install Clustershell
+
+gC
+python setup.py install
+
+
+"
+}
+
+module load python/optim
+
+set prefix /home/kortass/DECIMATE-GITHUB
+
+
+set-alias de        "dconsole"
+set-alias db        "dbatch"
+set-alias dk        "dkill"
+set-alias dky        "dkill -y"
+set-alias ds       "dstat "
+set-alias dsa       "dstat -sa"
+set-alias dsl       "dstat -sl"
+
+prepend-path PATH $prefix/out/bin
+prepend-path PYTHONPATH $prefix
+prepend-path MANPATH $prefix/docs/_build/man:$prefix/man
+
+

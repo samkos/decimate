@@ -280,6 +280,10 @@ def stat():
     K = slurm_frontend()
     K.start()
 
+def console():
+    sys.argv[1:] = ["--decimate", "--explore"] + sys.argv[1:]
+    K = slurm_frontend()
+    K.start()
 
   
 if __name__ == "__main__":

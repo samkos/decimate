@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [ -a ./slurm_frontend.py ]
-then
-   #echo python ./run_test.py $*
-   python ./slurm_frontend.py  $*
-else
-   python $DECIMATE_PATH/slurm_frontend.py $*
-fi

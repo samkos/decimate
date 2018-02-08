@@ -165,7 +165,7 @@ setup(
     #
     # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
     data_files=[('.', ['LICENSE.txt', 'AUTHORS']),
-                ('bin', ['bin/end_job.sh']),
+#                ('scripts', ['decimate/scripts/end_job.sh']),
                 ('tests', glob.glob('tests/*')),
                 # ('docs', glob.glob('docs/*'))
     ],  # Optional
@@ -179,9 +179,10 @@ setup(
     # executes the function `main` from this package when invoked:
     entry_points={  # Optional
           'console_scripts': [
-             'dbatch=decimate.slurm_frontend:main',
+             'dbatch=decimate.slurm_frontend:batch',
              'dkill=decimate.slurm_frontend:kill',
              'dstat=decimate.slurm_frontend:stat',
+             'dconsole=decimate.decimate:console',
          ],
      },
 )

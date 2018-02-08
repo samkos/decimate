@@ -275,14 +275,21 @@ STEPS={'1-0': {'completion': 100.0,
 
 map(lambda k: k[0].split('-')[:-1],STEPS.items())
 
+
+
+# testing in one environment
 module purge
 ml python/optim
 
-python setup.py build
+gC
+#python setup.py build
 
 virtualenv out
 
 source out/bin/activate
+pip install numpy
+pip install pandas
+
 python setup.py install
 
 pip install -e .

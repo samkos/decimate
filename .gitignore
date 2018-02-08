@@ -7,3 +7,4 @@ TAGS
 .pypirc
 decimate/docs/_build/
 out
+bin
