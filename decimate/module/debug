@@ -30,6 +30,7 @@ python setup.py install
 "
 }
 
+conflict python
 module load python/optim
 
 set prefix /home/kortass/DECIMATE-GITHUB

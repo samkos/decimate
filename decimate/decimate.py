@@ -198,6 +198,8 @@ class decimate(engine):
               'decimate.pyc', 'engine.pyc', 'env.pyc', 'slurm_frontend.pyc']:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR, f)]
 
+        
+
     # checking
     self.check_python_version()
     self.check_decimate_version(decimate_version_required)
@@ -775,7 +777,7 @@ class decimate(engine):
     self.compute_critical_path()
 
     if len(self.STEPS) == 0:
-        self.log_console('No workflow has been submitted yet')
+        self.log_console('No workflow has been submitted yet from this directory')
 
     if self.args.status_long or self.args.status_all or all_steps:
       steps = self.steps_in_order
@@ -1332,7 +1334,7 @@ class decimate(engine):
     self.STEPS_RESTART_ATTEMPT = {}
 
     if len(self.STEPS) == 0:
-        self.log_console('No workflow has been submitted yet')
+        self.log_console('No workflow has been submitted yet from this directory')
         return 'FROM_SCRATCH'
 
     self.compute_critical_path()
@@ -2268,7 +2270,7 @@ class decimate(engine):
 
     parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
     
-    self.log_debug(parameter_list,
+    self.log_debug(parameter_list,\
                    4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
     if self.args.parameter_list:
@@ -3327,6 +3329,10 @@ class decimate(engine):
                 os.path.basename(sys.argv[0]), \
                 job['job_name'], self.LOG_DIR, "-d " * self.args.debug, "-i " * self.args.info,
                 "-m " * self.args.mail_verbosity)
+
+    # taking care of dbatch special case
+    l0 = l0.replace('python /tmp/dbatch ','dbatch ') 
+    
     l0 = l0 + "--taskid ${SLURM_ARRAY_TASK_ID},__ARRAY__ --jobid ${SLURM_ARRAY_JOB_ID}"
     l0 = l0 + " --max-retry=%s" % self.args.max_retry
     l0 = l0 + " --max-jobs=%s" % self.args.max_jobs
@@ -3428,13 +3434,22 @@ class decimate(engine):
     prefix = '#!/bin/bash\n'
 
     prefix = prefix + "\n# Copying often accessed files into node's /tmp directory\n\n"
-    prefix = prefix + RSYNC_CMD % "%s/*py*" % (self.SAVE_DIR)
+    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
+                    " ".join(self.files_to_copy_to_tmp)
 
-    for f in self.files_to_copy_to_tmp:
-        prefix = prefix + RSYNC_CMD % (f)
+    # no need apriory to copy dbatch in /tmp
+    # we are treating python /tmp/dbatch as a special case
+    # when wrapping the job
+    #
+    # for f in ['dbatch','dstat']:
+    #   decimate_cmd=self.system('which %s' % f)[:-1]
+    #   files_to_sync = files_to_sync + " " + decimate_cmd
+
+    prefix = prefix + RSYNC_CMD % files_to_sync 
+
 
     check_previous = \
-                     '\n# Setting Environment variables and preparing node\n\n%s\n' % \
+                     '\nmodule purge\nmodule load decimate/debug\n# Setting Environment variables and preparing node\n\n%s\n' % \
                      environment_variables + \
                      '# Checking the status of previous Jobs\n' + \
                      '\n%s  --check-previous-step \n' % (l0) + \
