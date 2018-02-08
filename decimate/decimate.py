@@ -3447,10 +3447,10 @@ class decimate(engine):
 
     prefix = prefix + RSYNC_CMD % files_to_sync 
 
+                     # '\n# Setting Environment variables and preparing node\n\n%s\n' % 
+                     # environment_variables + 
 
     check_previous = \
-                     '\nmodule purge\nmodule load decimate/debug\n# Setting Environment variables and preparing node\n\n%s\n' % \
-                     environment_variables + \
                      '# Checking the status of previous Jobs\n' + \
                      '\n%s  --check-previous-step \n' % (l0) + \
                      "if [ $? -ne 0 ] ; then\n" + \
