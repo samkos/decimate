@@ -62,7 +62,7 @@ setup(
     #
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
-    url='https://github.com/samkos/decimate',  # Optional
+    url='http://decimate.readthedocs.io',  # Optional
 
     # This should be your name or the name of the organization which owns the
     # project.
@@ -167,6 +167,7 @@ setup(
     data_files=[('.', ['LICENSE.txt', 'AUTHORS']),
 #                ('scripts', ['decimate/scripts/end_job.sh']),
                 ('tests', glob.glob('tests/*')),
+                ('share/man/man1',glob.glob('docs/man/man1/*'))
                 # ('docs', glob.glob('docs/*'))
     ],  # Optional
 

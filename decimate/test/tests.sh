@@ -310,3 +310,49 @@ python setup.py bdist_wheel
 
 # deploy on pipy
 twine upload dist/*
+
+
+
+# deploy on conda
+# from https://docs.anaconda.com/anaconda-cloud/user-guide/getting-started
+cd 
+mkdir -p PUSH_CONDA
+cd ~/PUSH_CONDA
+ml python/miniconda2
+conda install anaconda-client
+conda install conda-build
+conda config --set anaconda_upload no
+conda config --add channels auto
+
+
+conda skeleton pypi decimate
+conda-build decimate
+
+
+#Install Anaconda Client:
+#conda install anaconda-client
+#Log into your Cloud account:
+
+anaconda login
+#At the prompt, enter your Cloud username and password.
+
+#Choose the package you would like to build. For this example, download our public test package:
+
+git clone https://github.com/Anaconda-Platform/anaconda-client
+cd anaconda-client/example-packages/conda/
+#To build your test package, first install conda-build and turn off automatic Client uploading, then run the conda build command:
+
+conda build .
+Find the path to where the newly-built file was placed so you can use it in the next step:
+
+conda build . --output
+Upload your newly-built test package to your Cloud account:
+
+anaconda login
+anaconda upload /your/path/conda-package.tar.bz2
+
+
+
+
+
+

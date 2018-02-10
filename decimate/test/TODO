@@ -1,0 +1,12 @@
+in distrib
+  add man to  share/man/man1
+
+
+there's still something adherent to shaheen as it create mail directory in
+[INFO ] creating mail directory /scratch/tmp//kortass/decimate_buffer/
+
+create an option to upload examples, includes them in distribution
+
+virer la stacktrace en cas d'erreur
+
+db non_existent job

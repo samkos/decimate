@@ -115,7 +115,7 @@ COPYRIGHT
 
 SEE ALSO
 
-       decimate non stable version home page:
-                <https://bitbucket.org/kaust_KSL/decimate>
+       decimate official documentation pages:
+                <http://http://decimate.readthedocs.io>
 		
        KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>

@@ -1,0 +1,24 @@
+package:
+  name: decimate
+  version: "0.9.2"
+
+source:
+  git_rev: v0.9.2
+  git_url: https://github.com/samkos/decimate.git
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - pandas
+    - clustershell
+
+test:
+  imports:
+
+about:
+  home: http://decimate.readthedocs.io
+  license: BSD
+  license_file: LICENSE.txt
