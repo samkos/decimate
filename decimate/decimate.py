@@ -2321,7 +2321,7 @@ class decimate(engine):
   def print_job(self, job, short_format=True,
                 print_only=['check_previous', 'script_file', 'array', 'inital_array',
                             'job_name', 'status', 'content', 'job_id', 'step',
-                            'dependency', 'make_depend', 'attempt', 'global_completion'],
+                            'dependency', 'make_depend', 'attempt', 'global_completion','ntasks','nodes'],
                 filter=['python /tmp/dart_mitgcm.py'], filtered=['content'], allkey=True, \
                 print_all=False, except_none=False):
 
@@ -2409,8 +2409,7 @@ class decimate(engine):
                          'yalla': 0,
                          'burst_buffer_size': 0,
                          'burst_buffer_space': 0,
-                         'submit_dir': os.getcwd(),
-                         'ntasks': 1,
+                         'submit_dir': os.getcwd()
                          }
 
     # scanning original script for merging slurm option
@@ -2430,6 +2429,11 @@ class decimate(engine):
     # if no name is given, rejecting the job...
     if not(job['job_name']):
       self.error('sbatch: error: Invalid name specification', exit=1)
+
+    # if neither ntasks or nodes is valued rejecting the job...
+    job_keys = job.keys()
+    if not('nodes' in job_keys) and not('ntasks' in job_keys):
+      self.error('sbatch: error: should at least specify nodes or ntasks value', exit=1)
 
     for field in job_default_value:
          if not(field in job.keys()):
@@ -2458,7 +2462,7 @@ class decimate(engine):
         self.log_info('empty job %s filename forced to %s' % (n, job[n]), \
                       4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
 
-    self.log_debug('after wrap job=%s' % self.print_job(job), 4, trace='WRAP')
+    self.log_debug('after wrap job=%s' % self.print_job(job,print_all=True), 4, trace='WRAP')
 
     if False:
       # calculating the unique identifier
@@ -2735,7 +2739,7 @@ class decimate(engine):
 
         current_job = self.JOBS[job_id]
         self.log_debug('index_to_submit = >%s< job = %s' % \
-                       (pprint.pformat(index_to_submit), self.print_job(current_job)), 2)
+                       (pprint.pformat(index_to_submit), self.print_job(current_job)), 2, trace='PARSE')
         first_one_in_step = False
 
     self.STEPS[step]['jobs'] = self.STEPS[step]['jobs'] + job_ids
@@ -2851,9 +2855,14 @@ class decimate(engine):
     else:
       prolog = prolog + \
                ['--time=%s' % job['time'],
-                '--ntasks=%s' % job['ntasks'],
                 '--error=%s.task_%%04a-attempt_%s' % (job['error'], attempt),
                 '--output=%s.task_%%04a-attempt_%s' % (job['output'], attempt)]
+      if job['nodes']:
+          prolog = prolog + ['--nodes=%s' % job['nodes']]
+      if job['ntasks']:
+          prolog = prolog + ['--ntasks=%s' % job['ntasks']]
+
+
 
     cmd = cmd + ['%s_%s' % (job['script_file'], attempt)]
     self.log_debug("submitting cmd prolog : %s " % prolog, 4, trace='SUBMIT')
