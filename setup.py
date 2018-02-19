@@ -41,7 +41,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.9.2',  # Required
+    version='0.9.3',  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -73,6 +73,15 @@ setup(
     # above.
     author_email='samuel.kortas@kaust.edu.sa',  # Optional
     maintainer_email='samuel.kortas@kaust.edu.sa',  # Optional
+
+    # source_label and source_url are described in draft PEP426. they are
+    # inserted into the package's metadata, which can be retrieved by using
+    # `py-info <package>` on any installed package. the contents are not
+    # validated to conform to any spec other than being a string
+    source_label = "1fb08feff378d736d0f32b05dbbd8abcbe379825",
+
+    # same with source_url, it's only in the metadata
+    source_url = "https://github.com/samkos/decimate/commit/1fb08feff378d736d0f32b05dbbd8abcbe379825",
 
     # Classifiers help users find your project by categorizing it.
     #

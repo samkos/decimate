@@ -325,9 +325,12 @@ conda config --set anaconda_upload no
 conda config --add channels auto
 
 
-conda skeleton pypi decimate
-conda-build decimate
+conda skeleton pypi --pypi-url https://pypi.python.org/pypi/decimate decimate
+conda build decimate
 
+
+
+conda skeleton pypi pyinstrument
 
 #Install Anaconda Client:
 #conda install anaconda-client
