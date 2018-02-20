@@ -8,6 +8,7 @@ from env import TMPDIR
 import fnmatch
 import itertools
 import math
+import numpy
 import os
 import pandas as pd
 import pprint

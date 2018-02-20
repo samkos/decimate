@@ -23,7 +23,7 @@ Distribution
 *Decimate* is an open-source project distributed under the BSD
 2-Clause "Simplified" License which means that many possibilities are
 offered to the end user including the fact to embed *Decimate* in
-one's own software.
+one own software.
 
 Installing *Decimate* using PIP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
