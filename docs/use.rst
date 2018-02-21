@@ -7,8 +7,8 @@ Via *Decimate*, four commands are added to the user environment:
 status, **dlog** to tail the log information produced and **dkill** to
 cancel the execution of the workflow.
  
-Supported Workflows
--------------------
+Submitting a Workflow
+---------------------
 
 For *Decimate*, a *workflow* is a set of jobs submitted from a same
 directory. These jobs can depend on one another and be job array
@@ -16,7 +16,7 @@ of any size.
 
 
 Submitting a job 
------------------
+````````````````
 
 options
 ```````
@@ -81,8 +81,8 @@ Notice how the command syntax is similar to **sbatch** command.
 
 .. _SLURM job array documentation: https://slurm.schedmd.com/job_array.html
 
-dependent job
-`````````````
+job depending on previous submitted jobs
+````````````````````````````````````````
 
 Here is how to submit a job dependending on a previous job:
 
@@ -107,11 +107,11 @@ allows it.
 
     
 submitting a job with a user-defined checking function
-------------------------------------------------------
+``````````````````````````````````````````````````````
 
 *Decimate* allow the user to define its own function to qualify a job as *ABORT*, *SUCCESS* or *FAILED*.
 This can be a simple bash script file or a program written in Python. For example here is a typical script
-written in shell checking if the message 'job DONE' appears in the job output file::
+*check_job.sh* written in shell checking if the message 'job DONE' appears in the job output file::
 
 
   job_step=$1
@@ -143,21 +143,22 @@ When submitting the job, one only adds *--check* followed by the path of the che
 
 ::
 
-      dbatch --job-name=job_1 my_job.sh
+      dbatch --check=check_job.sh --job-name=job_1 my_job.sh
 
-One can follows the current status of the workflow thanks to **dlog**.
+One can follows the current status of the workflow thanks to **dlog**
+that displays the log file attached to the current workflow.
    
 
     
-other kind of jobs
-``````````````````
+other kind of workflows
+```````````````````````
 A comprehensive list of job examples can be found in `Examples of Workflows`_.
 
 .. _Examples of Workflows: http:workflows.html
 
   
-checking the status
--------------------
+Checking the current status
+---------------------------
 
 The current workflow status can be checked with **dstat**:
 

@@ -35,14 +35,24 @@ Burst Buffer:
 -xs, --burst-buffer-space=BURST_BUFFER_SPACE_name  sets Burst Buffer name
 
 
-dtstat
-------
+dstat
+-----
 
 Usage: dstat [OPTIONS...] 
 
 Help:
 
 -h, --help                show all possible options for **dstat**
+
+
+dlog
+----
+
+Usage: dlog [OPTIONS...] 
+
+Help:
+
+-h, --help                show all possible options for **dlog**
 
 
 
