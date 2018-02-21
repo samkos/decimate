@@ -29,10 +29,10 @@ http://decimate.readthedocs.io.
 
 
 Installing *Decimate* using PIP
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 Installing *Decimate* as root using PIP
-"""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To install *Decimate* as a standard Python package using PIP [#]_ as root::
 
@@ -40,13 +40,13 @@ To install *Decimate* as a standard Python package using PIP [#]_ as root::
 
 Or alternatively, using the source tarball::
 
-    $ pip install decimate-1.x.tar.gz
+    $ pip install decimate-0.9.x.tar.gz
 
 
 .. _install-pip-user:
 
 Installing *Decimate* as user using PIP
-"""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To install *Decimate* as a standard Python package using PIP as an user::
 

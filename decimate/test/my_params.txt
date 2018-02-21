@@ -3,7 +3,8 @@ x  y z   nodes   ntasks_per_node
 
 
 #DECIM t = 10
-#DECIM ntasks = nodes * ntasks_per_node
+#DECIM ntasks = nodes * 1.0
+####DECIM ntasks = nodes * ntaaks_per_node * 1.0
 
 
 

@@ -635,8 +635,15 @@ class decimate(engine):
       task_parameter_file.write('# set parameter from file %s for task %s' % \
                                 (self.args.parameter_file, self.TASK_ID))
       s = ""
+
       for p in self.parameters.columns:
-        task_parameter_file.write('\nexport %s=%s' % (p, params[p]))
+        if p in self.slurm_vars.keys():
+          if self.slurm_vars[p]==int:
+            print 'params[%s]' % p,':',params[p],type(params[p])
+            val = int(params[p].item())
+          else:
+            val = params[p]
+        task_parameter_file.write('\nexport %s=%s' % (p, val))
         s = s + "%s=>%s< " % (p, params[p])
         
       #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
@@ -3182,6 +3189,7 @@ class decimate(engine):
     self.slurm_parser = argparse.ArgumentParser(description='Slurm parser',
                                                 conflict_handler='resolve')
     self.slurm_options = {}
+    self.slurm_vars = {}
 
     for o in HELP_MESSAGE.split("\n"):
       o = clean_line(o)
@@ -3207,9 +3215,11 @@ class decimate(engine):
                              (short_option, long_option, help_message))
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=int, help=help_message)
+              self.slurm_vars[long_option[2:]] = int
             else:
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=str, help=help_message)
+              self.slurm_vars[long_option[2:]] = str
           else:
             self.slurm_parser.add_argument(short_option, long_option,
                                            action="store_true", help=help_message)
@@ -3223,10 +3233,13 @@ class decimate(engine):
             long_option = long_option.split('[')[0]
             if help_message.find('number') > -1:
               self.slurm_parser.add_argument(long_option, type=int, help=help_message)
+              self.slurm_vars[long_option[2:]] = int
             else:
               self.slurm_parser.add_argument(long_option, type=str, help=help_message)
+              self.slurm_vars[long_option[2:]] = str
           else:
             self.slurm_parser.add_argument(long_option, action="store_true", help=help_message)
+            self.slurm_vars[long_option[2:]] = bool
           self.slurm_options[long_option] = long_option[2:]
 
   #########################################################################
@@ -3250,6 +3263,8 @@ class decimate(engine):
 
     self.log_debug('slurm_args before completion: %s' % pprint.pformat(self.slurm_args), \
                    4, trace='PARSE')
+    self.log_debug('slurm_vars=%s' % pprint.pformat(self.slurm_vars),\
+                   4,trace='VAR')
 
     job_file_slurm_args, job_file_extra_args = self.slurm_parser.parse_known_args(job_file_args)
     self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args), \

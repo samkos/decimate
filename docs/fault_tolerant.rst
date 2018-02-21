@@ -5,7 +5,7 @@ Fault-tolerant Workflows
 Adding a user-defined checking function
 ---------------------------------------
 
-*Decimate* allow the user to define its own function to qualify a job as *ABORT*, *SUCCESS* or *FAILED*.
+*Decimate* allows the user to define its own function to qualify a job as *ABORT*, *SUCCESS* or *FAILED*.
 This can be a simple bash script file or a program written in Python. For example here is a typical script
 *check_job.sh* written in shell checking if the message 'job DONE' appears in the job output file::
 
@@ -32,7 +32,7 @@ This can be a simple bash script file or a program written in Python. For exampl
   grep 'job DONE' $output_file
 
 
-All the parameters are passed to the script as argument added on the command line.
+All the parameters are passed to the script as arguments added on the command line.
 
 Succesful job submission
 ------------------------
