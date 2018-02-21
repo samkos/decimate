@@ -12,6 +12,7 @@ Welcome to Decimate's documentation!
    install
    use
    workflows
+   fault_tolerant
    parameters
    options
    

@@ -69,7 +69,22 @@ Help:
 environment variables
 ---------------------
 
-DPARAM                      options forwarded to Decimate
+environment variable forwarded to *Decimate* and setting option per default that will be added to
+any *Decimate* command initiated from the shell::
+  
+  DPARAM       
+
+code to return when a job is considered as *Succesfull*::
+  
+  0                   
+
+code to return when a job is considered as *Failed*::
+  
+  -1           
+
+code to return when a workflow has to be immediately stopped::
+  
+  -9999                
 
 
 Job script directives
@@ -77,11 +92,12 @@ Job script directives
 
 in script directives (to be added as-is anywhere in a SLURM job script).
 
-  To show the parameters set in the job environment from a parametic file processed via *Decimate*::
+To show the parameters set in the job environment from a parametic file processed via *Decimate*::
   
-#DECIM SHOW_PARAMETERS
+  #DECIM SHOW_PARAMETERS
 
-  To process all the files ending by *.template* and replacing any parameter (typically *__Name_of_parameter__*)
-  with a value coming from the parametric file processed by *Decimate*.
+To process all the files ending by *.template* and replacing any
+  parameter (typically *__Name_of_parameter__*) with a value coming
+  from the parametric file processed by *Decimate*.::
 
-#DECIM PROCESS_TEMPLATE_FILES 
+  #DECIM PROCESS_TEMPLATE_FILES 
