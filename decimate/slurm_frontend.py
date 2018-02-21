@@ -223,7 +223,7 @@ class slurm_frontend(decimate):
       final_checking_job['ntasks'] = 1
       final_checking_job['dependency'] = job_id
       final_checking_job['time'] = "05:00"
-      final_checking_job['script'] = "%s/bin/end_job.sh" % self.DECIMATE_DIR
+      final_checking_job['script'] = "%s/scripts/end_job.sh" % self.DECIMATE_DIR
       del final_checking_job['script_file']
       final_checking_job['array'] = "1-1"
 
@@ -293,6 +293,11 @@ def kill():
 
 def stat():
     sys.argv[1:] = ["--decimate", "--status"] + sys.argv[1:]
+    K = slurm_frontend()
+    K.start()
+
+def log():
+    sys.argv[1:] = ["--decimate", "--log"] + sys.argv[1:]
     K = slurm_frontend()
     K.start()
 

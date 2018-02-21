@@ -192,6 +192,7 @@ setup(
              'dbatch=decimate.slurm_frontend:batch',
              'dkill=decimate.slurm_frontend:kill',
              'dstat=decimate.slurm_frontend:stat',
+             'dlog=decimate.slurm_frontend:log',
              'dconsole=decimate.slurm_frontend:console',
          ],
      },
