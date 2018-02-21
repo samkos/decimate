@@ -275,7 +275,9 @@ class slurm_frontend(decimate):
 
     done = 'job DONE'
     is_done = self.greps(done,output_file,exclude_patterns=['[INFO','[DEBUG'])
+
     if not(is_done):
+      self.log_info('default job check in decimate: "job DONE" was not found in this job output file')
       return FAILURE
     else:
       return SUCCESS

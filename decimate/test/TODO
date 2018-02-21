@@ -10,3 +10,8 @@ create an option to upload examples, includes them in distribution
 virer la stacktrace en cas d'erreur
 
 db non_existent job
+
+
+support python import in params.txt file, even with no #DECIM PYTHON DIRECTIVE
+
+error Signal if #DECIM directive present but not known

@@ -35,12 +35,43 @@ Burst Buffer:
 -xs, --burst-buffer-space=BURST_BUFFER_SPACE_name  sets Burst Buffer name
 
 
-environment variables:
+dtstat
+------
+
+Usage: dstat [OPTIONS...] 
+
+Help:
+
+-h, --help                show all possible options for **dstat**
+
+
+
+dkill
+-----
+
+Usage: dkill [OPTIONS...] 
+
+Help:
+
+-h, --help                show all possible options for **dkill**
+
+
+environment variables
+---------------------
 
 DPARAM                      options forwarded to Decimate
 
 
-script directives
+Job script directives
+---------------------
 
-#DECIM SHOW_PARAMETERS 
+in script directives (to be added as-is anywhere in a SLURM job script).
+
+  To show the parameters set in the job environment from a parametic file processed via *Decimate*::
+  
+#DECIM SHOW_PARAMETERS
+
+  To process all the files ending by *.template* and replacing any parameter (typically *__Name_of_parameter__*)
+  with a value coming from the parametric file processed by *Decimate*.
+
 #DECIM PROCESS_TEMPLATE_FILES 
