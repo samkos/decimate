@@ -14,7 +14,6 @@ For *Decimate*, a *workflow* is a set of jobs submitted from a same
 directory. These jobs can depend on one another and be job array
 of any size.
 
-How job are named: *job_name-attempt-array*
 
 Submitting a job 
 -----------------
@@ -106,7 +105,50 @@ allows it.
     the submission is canceled.
   - Of course, dependency on a previous job id is also supported.
 
+    
+submitting a job with a user-defined checking function
+------------------------------------------------------
 
+*Decimate* allow the user to define its own function to qualify a job as *ABORT*, *SUCCESS* or *FAILED*.
+This can be a simple bash script file or a program written in Python. For example here is a typical script
+written in shell checking if the message 'job DONE' appears in the job output file::
+
+
+  job_step=$1
+  attempt=$2
+  task_id=$3
+  running_dir=$4
+  output_file=$5
+  error_file=$5
+  is_job_completed=$6
+
+
+  echo job_step=$job_step  attempt=$attempt task_id=$task_id
+  echo running_dir=$running_dir
+  echo output_file=$output_file
+  echo error_file=$error_file
+  echo is_job_completed=$is_job_completed
+
+
+  SUCCESS=0
+  FAILURE=-1
+  ABORT=-9999
+
+  grep 'job DONE' $output_file
+
+
+All the parameters are passed to the script as argument added on the command line.
+
+When submitting the job, one only adds *--check* followed by the path of the checking job script
+
+::
+
+      dbatch --job-name=job_1 my_job.sh
+
+One can follows the current status of the workflow thanks to **dlog**.
+   
+
+    
 other kind of jobs
 ``````````````````
 A comprehensive list of job examples can be found in `Examples of Workflows`_.

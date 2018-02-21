@@ -15,3 +15,8 @@ db non_existent job
 support python import in params.txt file, even with no #DECIM PYTHON DIRECTIVE
 
 error Signal if #DECIM directive present but not known
+
+add a default parameter containing current number of paramater combination
+
+
+change DPARAM in DECIMATE_DEFAULT_PARAMS

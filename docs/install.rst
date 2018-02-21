@@ -1,21 +1,16 @@
 Installation
 ============
 
-*Decimate* is distributed in several packages. On RedHat-like OS, we
-recommend to use the RPM package (.rpm) distribution.
-
-As a system software for cluster, *Decimate* is primarily made for
-system-wide installation to be used by system administrators. However,
-changes have been made so that it's now easy to install it without
-root access (see :ref:`install-pip-user`).
-
 
 Requirements
 ------------
 
 *Decimate* should work with any cluster based on Unix operating systems which provides
 Python 2.7 and using SLURM as a scheduler. It also depends on the python packages
-pandas and clustershell.
+numpy, pandas and clustershell.
+
+In a further release, *Decimate* is planned to be compatible with Python 3 and no
+dependency on numpy will be imposed.
 
 Distribution
 ------------
@@ -24,6 +19,14 @@ Distribution
 2-Clause "Simplified" License which means that many possibilities are
 offered to the end user including the fact to embed *Decimate* in
 one own software.
+
+Its stable production branch is available via github at
+https://github.com/KAUST-KSL/decimate, but its latest production and
+development branch can be found at https://github.com/samkos/decimate
+
+most up todate documentation about *Decimate* can be browsed at
+http://decimate.readthedocs.io.
+
 
 Installing *Decimate* using PIP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

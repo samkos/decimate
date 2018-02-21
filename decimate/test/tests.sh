@@ -107,7 +107,7 @@ db -o 1.%j.out -e 1.%j.err -J 1 -bbz decimate/test/my_job.sh --decimate
 
 # testing user script to check
 gC
-db -J 1 --check=test/check_job.sh decimate/test/my_job_no_wait.sh
+db -J 1 --check=decimate/test/check_job.sh decimate/test/my_job_no_wait.sh
 ds
 dl
 db -f USER_CHECK --check=test/check_job.sh -J 3 decimate/test/my_job_no_wait.sh
