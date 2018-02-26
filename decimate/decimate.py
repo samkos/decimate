@@ -641,7 +641,7 @@ class decimate(engine):
           if self.slurm_vars[p]==int:
             print 'params[%s]' % p,':',params[p],type(params[p])
             val = int(params[p].item())
-          else:
+        else:
             val = params[p]
         task_parameter_file.write('\nexport %s=%s' % (p, val))
         s = s + "%s=>%s< " % (p, params[p])
