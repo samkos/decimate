@@ -1,0 +1,59 @@
+#%Module
+
+module-whatis "decimate"
+
+proc ModulesHelp { } {
+    puts stderr "
+experimental decimate SLURM extension.  try
+    dbatch --help
+or 
+    man decimate
+to know more
+
+version using /project/k01/kortass/CLE6/DECIMATE_DEBUG/out virtual env
+build by
+
+
+cd /project/k01/kortass/CLE6/DECIMATE-DEBUG
+ml python/2.7.14
+gc
+virtualenv out
+source out/bin/activate
+pip install numpy
+pip install pandas
+
+python setup.py install
+
+pip install -e .
+
+
+
+"
+}
+
+conflict python
+module load  python/2.7.14
+
+
+
+
+set prefix /project/k01/kortass/CLE6/DECIMATE_DEBUG
+
+
+set-alias de        "dconsole"
+set-alias db        "dbatch"
+set-alias dk        "dkill"
+set-alias dky        "dkill -y"
+set-alias ds       "dstat "
+set-alias dsa       "dstat -sa"
+set-alias dsl       "dstat -sl"
+
+prepend-path PATH $prefix/out/bin
+prepend-path PYTHONPATH $prefix
+prepend-path MANPATH $prefix/docs/_build/man:$prefix/man
+
+
+setenv CONDA_DEFAULT_ENV $prefix/out
+setenv CONDA_PREFIX $prefix/out
+
+

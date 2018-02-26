@@ -1,0 +1,39 @@
+#%Module 1.0 -*- tcl -*-
+#
+#  Module for decimate 0.9.4
+# 
+
+set app_dir /sw/xc40cle6/decimate/0.9.4/cle6.0.5_miniconda2env/env
+
+# Additional conflicts
+#conflict name
+
+module load miniconda/2.7.14
+
+
+if { [module-info mode load] } {
+   puts stderr "Loading module for decimate"
+   puts stderr "decimate 0.9.4 module now loaded"
+    }
+
+if { [module-info mode remove] } {
+    puts stderr "Unloading module for decimate"
+    puts stderr "decimate 0.9.4 modules now unloaded"
+    
+ }
+
+
+# TODO: `source activate` via conda
+if { [ module-info mode load ] } {
+#  system "source $app_dir/bin/activate $app_dir"
+}
+
+# TODO: instead we diff the `env` pre- and post- `source activate`, and duplicate manually here...
+
+# Specific setup goes here, license files, path setup, etc
+prepend-path PATH $app_dir/bin
+#prepend-path LD_LIBRARY_PATH $app_dir
+
+setenv CONDA_DEFAULT_ENV $app_dir
+setenv CONDA_PREFIX $app_dir
+

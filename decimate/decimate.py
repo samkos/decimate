@@ -163,7 +163,7 @@ Other options:
 
 environment variables:
   DPARAM                      options forwarded to Decimate
-xxxxxxxxxxxx
+
       """
 
 
@@ -2873,7 +2873,8 @@ class decimate(engine):
 
 
     cmd = cmd + ['%s_%s' % (job['script_file'], attempt)]
-    self.log_debug("submitting cmd prolog : %s " % prolog, 4, trace='SUBMIT')
+    self.log_debug("submitting cmd prolog : %s " % prolog, 4, trace='SUBMIT,PROLOG')
+    self.log_debug("self.args : %s " % pprint.pformat(self.args), 4, trace='SUBMIT,PROLOG')
 
     job_content_template = "#!/bin/bash\n"
     for p in prolog:
@@ -3368,6 +3369,9 @@ class decimate(engine):
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
+
+    if self.args.reservation:
+        l0 = l0 + " --reservation='%s'" % self.args.partition
 
     if self.args.account:
         l0 = l0 + " --account='%s'" % self.args.account

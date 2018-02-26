@@ -277,12 +277,28 @@ map(lambda k: k[0].split('-')[:-1],STEPS.items())
 
 
 
-# testing in one environment
+# testing on shaheen
+
+ml python/2.7.14
+gc
+virtualenv out
+source out/bin/activate
+pip install numpy
+pip install pandas
+
+python setup.py install
+
+#pip install -e .
+
+
+# testing in one environment  on worstation
 module purge
 ml python/optim
 
 gC
-#python setup.py build
+#python setup.py buil
+
+
 
 virtualenv out
 

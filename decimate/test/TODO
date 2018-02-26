@@ -2,6 +2,8 @@ in distrib
   add man to  share/man/man1
 
 
+fix job submitted via a reservation
+
 there's still something adherent to shaheen as it create mail directory in
 [INFO ] creating mail directory /scratch/tmp//kortass/decimate_buffer/
 
@@ -19,4 +21,6 @@ error Signal if #DECIM directive present but not known
 add a default parameter containing current number of paramater combination
 
 
-change DPARAM in DECIMATE_DEFAULT_PARAMS
+- change DPARAM in DECIMATE_DEFAULT_PARAMS
+
+- put right error message when calling dlog in an empty/fresh directory
