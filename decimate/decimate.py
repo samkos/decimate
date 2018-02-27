@@ -2426,13 +2426,13 @@ class decimate(engine):
     original_script_content_lines = open(job['script'], 'r').readlines()
     (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
 
-    self.log_debug('after reading job script file job %s=%s' % \
+    self.log_debug('after reading job script file %s job =%s' % \
                    (job['script'], self.print_job(job, print_only=job.keys())), \
                    4, trace='WRAP,PARSE')
 
-    self.log_debug('after reading job script file self.job %s=%s' % \
-                   (job['script'], self.print_job(job, print_only=job.keys())), \
-                   4, trace='WRAP,PARSE')
+    self.log_debug('after reading job script file %s self.args=%s' % \
+                   (job['script'], pprint.pformat(self.args)), \
+                   4, trace='WRAP,PARSE,OVERWRITTING')
 
     # if no time is given, rejecting the job...
     if not(job['time']):
@@ -3275,6 +3275,7 @@ class decimate(engine):
     self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args), \
                    4, trace='PARSE')
 
+    p_args = vars(self.args)
     p_slurm_args = vars(self.slurm_args)
     p_job_file_slurm_args = vars(job_file_slurm_args)
 
@@ -3285,18 +3286,34 @@ class decimate(engine):
         if not(p_slurm_args[k]):
           p_slurm_args[k] = v
           self.log_debug('adding from job_file to slurm_args : --%s=%s' % (k, v), \
-                         4, trace='PARSE')
+                         4, trace='PARSE,OVERWRITTING')
         else:
           job_file_args_overloaded = job_file_args_overloaded + [k]
 
+
+    self.log_debug('before leaving complete_slurm_args self.slurm_args=%s' % \
+                   (pprint.pformat(self.slurm_args)), \
+                   4, trace='WRAP,PARSE,OVERWRITTING')
+
+
+    # forcing job parameters with parameters coming from line command
     for k, v in p_slurm_args.items():
       if p_slurm_args[k]:
+        self.log_debug('forcing job[%s] to %s' % (k,v),4,trace='PARSE,OVERWRITTING')          
         job[k] = v
 
+
+    # duplicating the parameter on self.args
     for k, v in job.items():
       if v:
-        self.log_debug('forcing slurm args %s to %s' % (k,v),4,trace='PARSE')
-        p_slurm_args[k] = v
+        self.log_debug('forcing self.args.%s to %s' % (k,v),4,trace='PARSE,OVERWRITTING')
+        p_args[k] = v
+
+
+    self.log_debug('before leaving complete_slurm_args=%s' % \
+                   (pprint.pformat(self.args)), \
+                   4, trace='WRAP,PARSE,OVERWRITTING')
+
 
     return (job, job_file_args_overloaded)
 
