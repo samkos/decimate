@@ -116,9 +116,10 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--max-retry', "%s" % self.slurm_args.max_retry]
 
-    if self.slurm_args.max_retry:
-      decimate_extra_config = decimate_extra_config + \
-                              ['--max-retry', "%s" % self.slurm_args.max_retry]
+
+    # if self.slurm_args.max_jobs:
+    #   decimate_extra_config = decimate_extra_config + \
+    #                           ['--max-jobs', "%s" % self.slurm_args.max_jobs]
 
     if self.slurm_args.yalla_parallel_runs:
       decimate_extra_config = decimate_extra_config + \

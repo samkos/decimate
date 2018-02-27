@@ -2430,6 +2430,10 @@ class decimate(engine):
                    (job['script'], self.print_job(job, print_only=job.keys())), \
                    4, trace='WRAP,PARSE')
 
+    self.log_debug('after reading job script file self.job %s=%s' % \
+                   (job['script'], self.print_job(job, print_only=job.keys())), \
+                   4, trace='WRAP,PARSE')
+
     # if no time is given, rejecting the job...
     if not(job['time']):
       self.error('sbatch: error: Invalid time limit specification', exit=1)
@@ -3289,6 +3293,11 @@ class decimate(engine):
       if p_slurm_args[k]:
         job[k] = v
 
+    for k, v in job.items():
+      if v:
+        self.log_debug('forcing slurm args %s to %s' % (k,v),4,trace='PARSE')
+        p_slurm_args[k] = v
+
     return (job, job_file_args_overloaded)
 
   #########################################################################
@@ -3371,7 +3380,8 @@ class decimate(engine):
         l0 = l0 + " --partition='%s'" % self.args.partition
 
     if self.args.reservation:
-        l0 = l0 + " --reservation='%s'" % self.args.partition
+        print '******* adding reservation'
+        l0 = l0 + " --reservation='%s'" % self.args.reservation
 
     if self.args.account:
         l0 = l0 + " --account='%s'" % self.args.account
