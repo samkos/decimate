@@ -154,6 +154,8 @@ Burst Buffer:
 
 Checking option:
         --check=SCRIPT_FILE      python or shell to check if results are ok
+        --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
+                                 queue  (450 per default)
         --max-retry=MAX_RETRY    number of time a step can fail and be
                                  restarted automatically before failing the 
                                  whole workflow  (3 per default)
