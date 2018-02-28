@@ -1142,6 +1142,7 @@ class engine(object):
       self.log_debug('squeue results>>\n%s<<' % output,2,trace='STATUS_DETAIL')
       jobs_in_queue = output[:-1].split("\n")
       if in_queue_only:
+          self.log_debug('in queue only', 2,trace='STATUS_DETAIL')
           self.release_lock(lock_file)
           if len(jobs_in_queue) > 1:
             return jobs_in_queue[1:]
@@ -1152,7 +1153,7 @@ class engine(object):
           if output.find("%s" % j) == -1:
               jobs_gone = jobs_gone + [j]
 
-      self.log_info('jobs_gone=%s' % ",".join(map(lambda x: str(x),jobs_gone)),1)
+      self.log_debug('jobs_gone=%s' % ",".join(map(lambda x: str(x),jobs_gone)),1,trace='STATUS_DETAIL')
 
       job_to_check_filtered = jobs_to_check.keys()
       cmd = ";".join(map(lambda x: 'sacct -n -p -j %s' % x, job_to_check_filtered))

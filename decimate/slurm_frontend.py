@@ -116,7 +116,6 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--max-retry', "%s" % self.slurm_args.max_retry]
 
-
     if self.slurm_args.max_jobs:
       decimate_extra_config = decimate_extra_config + \
                               ['--max-jobs', "%s" % self.slurm_args.max_jobs]
@@ -215,7 +214,7 @@ class slurm_frontend(decimate):
 
     (job_id, cmd) = self.submit_job(new_job)
 
-    self.log_debug('Submitted batch job %s' % job_id)
+    self.log_debug('Submitted batch job %s' % job_id, trace='SUBMIT_JOB,STATUS_DETAIL',)
 
     if self.slurm_args.check:
       final_checking_job = copy.deepcopy(new_job)

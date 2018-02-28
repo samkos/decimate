@@ -2551,6 +2551,10 @@ class decimate(engine):
               self.log_debug("submitted_jobs= [%s]" % ','.join(self.steps_submitted), \
                              4, trace='JOBS')
               self.save(take_lock=False)
+          if self.args.decimate:
+              self.error('this step %s has already been submitted as job %s and reached status %s' % \
+                         (step,job_id,status),exit=True)
+              
           self.log_debug('returning an already submitted job %s' % job_id, \
                          4, trace='RESTART,HEAL,RESTART_FAKED')
           self.release_lock(lock_file)
@@ -3714,8 +3718,8 @@ class decimate(engine):
             job = self.JOBS[j]
             status = job['status']
             nb_jobs = len(RangeSet(job['array']))
-            self.log_debug('feed_workflow: status of job %s ([%s]):%s  size:%s' % \
-                           (j, job['array'], status, nb_jobs), 1, trace='FEED_DETAIL')
+            self.log_debug('feed_workflow: status of job %s (%s[%s]):%s  size:%s' % \
+                           (j, job['job_name'],job['array'], status, nb_jobs), 1, trace='FEED_DETAIL')
             if status == 'WAITING':
                 jobs_waiting = jobs_waiting + [j]
                 nb_jobs_waiting = nb_jobs_waiting + nb_jobs
