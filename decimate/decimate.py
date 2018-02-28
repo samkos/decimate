@@ -225,6 +225,7 @@ class decimate(engine):
                     app_version=app_version, extra_args=extra_args)
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
+    self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     if not(os.path.exists(self.MAIL_DIR)):
       self.log_info("creating mail directory %s" % self.MAIL_DIR)
@@ -631,7 +632,7 @@ class decimate(engine):
       sys.exit(0)
 
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
-      param_file = '/tmp/parameters.%s' % self.TASK_ID
+      param_file = '%s.%s' % (self.PARAMETER_FILE,self.TASK_ID)
       task_parameter_file = open(param_file, "w")
       params = self.parameters.iloc[self.TASK_ID]
       task_parameter_file.write('# set parameter from file %s for task %s' % \
@@ -3549,7 +3550,7 @@ class decimate(engine):
         # prefix0 = prefix0 + '\necho --------------------------------------'
         
         
-        prefix0 = prefix0 + '\n.  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+        prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
         # prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
       
 
@@ -3560,7 +3561,7 @@ class decimate(engine):
                   '# should replace template here returning in the right directory \n\n' +\
                   "HERE_TO_PROCESS=$PWD \n (cd %s;" % (job['submit_dir'])  +\
                   '%s --process-templates $HERE_TO_PROCESS; cd - )' % l0)\
-                  .replace('#DECIM SHOW_PARAMETERS','cat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}')  \
+                  .replace('#DECIM SHOW_PARAMETERS','cat  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE)  \
         + "\n# ----------------   END OF ORIGINAL USER SCRIPT  -------------------\n\n"
 
     l = l + """
