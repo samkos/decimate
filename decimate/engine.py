@@ -1139,6 +1139,8 @@ class engine(object):
                      4,trace='STATUS_DETAIL')
       jobs_gone = []
       output = self.system(cmd,force=1)
+      self.log_debug('cmd to get new status via squeue : %s' % "DONE",\
+                     4,trace='STATUS_DETAIL')
       self.log_debug('squeue results>>\n%s<<' % output,2,trace='STATUS_DETAIL')
       jobs_in_queue = output[:-1].split("\n")
       if in_queue_only:
