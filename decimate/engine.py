@@ -1158,9 +1158,9 @@ class engine(object):
       self.log_debug('jobs_gone=%s' % ",".join(map(lambda x: str(x),jobs_gone)),1,trace='STATUS_DETAIL')
 
       job_to_check_filtered = jobs_to_check.keys()
-      cmd = ";".join(map(lambda x: 'sacct -n -p -j %s' % x, job_to_check_filtered))
-      # cmd = ["sacct","-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
-      # cmd = " ".join(cmd)
+      #cmd = ";".join(map(lambda x: 'sacct -n -p -j %s' % x, job_to_check_filtered))
+      cmd = ["/opt/slurm/default/bin/sacct","-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
+      cmd = " ".join(cmd)
       self.log_debug('cmd to get new status via sacct : %s' % "".join(cmd),\
                      1,trace='STATUS_DETAIL,STATUS')
       try:
@@ -1637,6 +1637,7 @@ class engine(object):
       while (True):
           # Read line from stdout, break if EOF reached, append line to output
           line = proc.stdout.readline()
+          print line
           # line = line.decode()
           if (line == ""):
             break

@@ -154,9 +154,9 @@ Burst Buffer:
 
 Checking option:
         --check=SCRIPT_FILE      python or shell to check if results are ok
-        --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
+  -xj,  --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
                                  queue  (450 per default)
-        --max-retry=MAX_RETRY    number of time a step can fail and be
+  -xr,   --max-retry=MAX_RETRY    number of time a step can fail and be
                                  restarted automatically before failing the 
                                  whole workflow  (3 per default)
 
@@ -2846,12 +2846,14 @@ class decimate(engine):
     prolog = prolog + ['--job-name=%s' % (job['job_name'])]
 
     if job['yalla']:
-      if not(job['nodes']):
-        self.error('when asking for a Yalla container, number of nodes has to be valued',
+      if not(job['nodes']) and not(job['ntasks']):
+        self.error('when asking for a Yalla container, either nodes or ntasks has to be valued',
                    exit=True)
 
+        
       nb_jobs = len(RangeSet(job['array']))
       job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
+      
       # compute new time for yalla container
       (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
       print job['yalla_parallel_runs']
@@ -2859,14 +2861,29 @@ class decimate(engine):
       whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
       (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
       job['time'] = '%d:%02d:%02d' % (h, m, s)
+
+
+      # computes number of nodes required to host the container
+      
+      if job['ntasks'] and not(job['nodes']):
+          all_tasks = job['ntasks'] * job['yalla_parallel_runs']
+          container_nodes_nb = all_tasks/32+1
+          if all_tasks % 32:
+              container_nodes_nb = container_nodes_nb + 1
+      else: 
+          container_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
+      
+              
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
                                                     'yalla', 'output', 'error']), 4, trace='YALLA')
 
+      self.log_debug('yalla container_nodes_nb:%s' % container_nodes_nb, 4, trace='YALLA')
+
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
-                '--nodes=%s' % (job['nodes'] * job['yalla_parallel_runs']),
+                '--nodes=%s' % container_nodes_nb,
                 '--error=%s.task_yyy-attempt_%s' % \
                 (job['error'].replace('%a', job['array'][0:20]), attempt),
                 '--output=%s.task_yyy-attempt_%s' % \
