@@ -153,7 +153,8 @@ Burst Buffer:
   -xs,  --burst-buffer-space=BURST_BUFFER_SPACE_name
 
 Checking option:
-        --check=SCRIPT_FILE      python or shell to check if results are ok
+        --check                  check the step at its end (job DONE printed)
+        --check-file=SCRIPT_FILE python or shell to check if results are ok
   -xj,  --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
                                  queue  (450 per default)
   -xr,   --max-retry=MAX_RETRY    number of time a step can fail and be
@@ -935,8 +936,9 @@ class decimate(engine):
 
       self.log_info('Done! -> creating stub file %s' % filename, 3)
 
-      # checking current worflow
-      self.check_current_state(self.args.step, self.args.attempt,
+      # checking current worflow if checking parameter
+      if self.args.check:
+          self.check_current_state(self.args.step, self.args.attempt,
                                tasks=[self.TASK_ID],
                                from_finalize=True)
 
