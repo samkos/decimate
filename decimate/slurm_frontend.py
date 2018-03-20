@@ -41,7 +41,7 @@ class slurm_frontend(decimate):
       if DEBUG:
         print('testing:/%s/ (is_waiting_param_file=%s,is_decimate=%s' % \
               (f,is_waiting_param_file,is_decimate))
-      if f == "-P" or f == "--parameter-file" or f == "--check":
+      if f == "-P" or f == "--parameter-file" or f == "--check-file":
         args = args + [f]
         is_waiting_param_file = True
         continue
@@ -73,10 +73,22 @@ class slurm_frontend(decimate):
     self.slurm_parser.add_argument('--debug', action="count", default=0, help=argparse.SUPPRESS)
     self.slurm_parser.add_argument('--info', action="count", default=0, help=argparse.SUPPRESS)
 
+
+    self.slurm_parser.add_argument("--resume", action="store_true",
+                             help='resume the already launched step and workflow in this directory',
+                             default=True)
+    self.slurm_parser.add_argument("--restart", action="store_true",
+                             help='restart the already launched step or workflow in this directory',
+                             default=True)
+    self.slurm_parser.add_argument("-sc", "--scratch", action="store_true",
+                             help='relaunch a new workflow, erasing all from the previous one',
+                             default=False)
+    
+
     self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
-                                   help='Use yalla container', default=False)
+                                   help='Use yalla pool', default=False)
     self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                                   help='# of job to run in parallel in a container', default=4)
+                                   help='# of job to run in parallel in a pool', default=4)
 
     self.parser.add_argument("-P", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
@@ -103,7 +115,7 @@ class slurm_frontend(decimate):
     if (self.slurm_args.decimate_help or decimate_extra_config == ["-h"]):
       return ['-h']
 
-    if not(self.job_script) and not(self.slurm_args.parameter_list) and len(decimate_args) == 0:
+    if not(self.job_script) and not(self.slurm_args.parameter_list) and not(self.slurm_args.version) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
 
     if self.slurm_args.yalla:
@@ -182,10 +194,11 @@ class slurm_frontend(decimate):
     self.slurm_args.script = os.path.abspath("%s" % self.job_script)
 
     # does the checking script exist?
-    if self.slurm_args.check:
-      if not(os.path.exists(self.slurm_args.check)):
-        self.error('checking job script %s missing...' % self.slurm_args.check, exit=True)
-      self.slurm_args.check = os.path.abspath("%s" % self.slurm_args.check)
+    if self.slurm_args.check_file:
+      if not(os.path.exists(self.slurm_args.check_file)):
+        self.error('checking job script %s missing...' % self.slurm_args.check_file, exit=True)
+      self.slurm_args.check_file = os.path.abspath("%s" % self.slurm_args.check_file)
+      self.slurm_args.check = True
 
     # does the checking script exist?
     if self.slurm_args.parameter_file:

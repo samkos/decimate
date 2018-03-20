@@ -132,6 +132,11 @@ Help options:
   -f,   --filter=FILTERS      activate traces
                               API, PARSE, USER_CHECK
 
+Job Management:
+       --kill                 kill all jobs in the workflow either RUNNING, PENDING or WAITING
+       --resume               resume  the already launched step and workflow in this directory
+       --restart              restart the already launched step or workflow in this directory
+
 Parametric Jobs:
   -P,  --parameter-file=PARAM_FILE file listing all parameter
                                           combinations to cover
@@ -140,10 +145,10 @@ Parametric Jobs:
   -Pf, --parameter-filter=FILTER filter while reading parameter file
   -Pa, --parameter-range=range numeric filter while reading parameter file
 
-Containers:
-  -xy,  --yalla               Use Yalla Container
+Pools:
+  -xy,  --yalla               Use Yalla Pool
   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
-                              of parallel runs in a container
+                              of parallel runs in a pool
 
 
 Burst Buffer:
@@ -153,8 +158,8 @@ Burst Buffer:
   -xs,  --burst-buffer-space=BURST_BUFFER_SPACE_name
 
 Checking option:
-        --check                  check the step at its end (job DONE printed)
-        --check-file=SCRIPT_FILE python or shell to check if results are ok
+  -ch   --check                  check the step at its end (job DONE printed)
+  -chf, --check-file=SCRIPT_FILE python or shell to check if results are ok
   -xj,  --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
                                  queue  (450 per default)
   -xr,   --max-retry=MAX_RETRY    number of time a step can fail and be
@@ -294,8 +299,11 @@ class decimate(engine):
                              help='list detailed status of jobs of the workflow')
     self.parser.add_argument("-k", "--kill", action="store_true",
                              help='kills job of this workflow')
-    self.parser.add_argument("-c", "--cont", action="store_true",
-                             help='continue the already launched workflow in this directory',
+    self.parser.add_argument("--resume", action="store_true",
+                             help='resume the already launched step and workflow in this directory',
+                             default=True)
+    self.parser.add_argument("--restart", action="store_true",
+                             help='restart the already launched step or workflow in this directory',
                              default=True)
     self.parser.add_argument("-sc", "--scratch", action="store_true",
                              help='relaunch a new workflow, erasing all from the previous one',
@@ -308,7 +316,9 @@ class decimate(engine):
 
     self.parser.add_argument("--decimate", action="store_true",
                              help=argparse.SUPPRESS)
-    self.parser.add_argument("--check", type=str,
+    self.parser.add_argument("--check",  action="store_true", default=False,
+                             help="check at the end of the step")
+    self.parser.add_argument("--check-file", type=str,
                              help=argparse.SUPPRESS)
     self.parser.add_argument("-pe", "--print-environment", action="store_true", default=False,
                              help="print environment variables in job output file")
@@ -411,9 +421,9 @@ class decimate(engine):
                              help='do release all the job of a step.', default=False)
 
     self.parser.add_argument("-xy", "--yalla", action="store_true",
-                             help='Use yalla container', default=False)
+                             help='Use yalla pool', default=False)
     self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                             help='# of job to run in parallel in a container', default=4)
+                             help='# of job to run in parallel in a pool', default=4)
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
 
@@ -491,6 +501,10 @@ class decimate(engine):
     self.set_mail_subject_prefix('Re: %s' % (self.args.workflowid))
 
     self.currently_healing_workflow = False
+
+    if self.slurm_args.version:
+      self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
+      sys.exit(0)
 
     if self.args.max_jobs < 8:
         self.error("maximumm jobs in the queue should be at least of 8", exit=True)
@@ -731,7 +745,10 @@ class decimate(engine):
         self.fake_actual_job()
 
     if not(self.args.spawned):
-      if len(self.jobs_list) > 0 and self.args.cont:
+      self.log_debug('self.jobs_list = [%s]' % ",".join(map(lambda x : str(x),self.jobs_list)),\
+                         4, trace='WORKFLOW')
+  
+      if len(self.jobs_list) > 0 and self.args.restart:
           # self.ask("Adding jobs to the current workflow? ", default='y' )
           self.log_debug('Workflow has already run in this directory, trying to continue it', \
                          4, trace='WORKFLOW')
@@ -1265,57 +1282,58 @@ class decimate(engine):
 
     s = "CHECKING step : %s task %s " % (step, task_id)
 
-    self.log_info(s, 2)
+    self.log_info(s, 2, trace='USER_CHECK')
     
     if checking_from_console and not(self.args.decimate):
       self.log_console(s, noCR=True)
         
-    if self.args.check:
-      # if a user check procedure was given as a script file
-      # executing it
-      cmd = "%s %s %s %s %s %s %s %s" % \
-            (self.args.check, what, attempt, task_id, running_dir, output_file, error_file, is_done)
-      self.log_debug('checking via user_script with cmd/%s/' % cmd, \
-                     4, trace='USER_CHECK')
-      (return_code, result) = self.system(cmd, return_code=True)
-      user_check = FAILURE
-      self.log_debug('return_code=/%s/' % return_code, 4, trace='USER_CHECK')
-      try:
-        return_code = int(return_code)
-      except:
-        self.log_info('Aborting workflow because\nreturn_code=/%s/ not integer code while checking via user_script with cmd/%s/' % \
-                      (return_code, cmd))
-        user_check = ABORT
-      if return_code == 0:
-        user_check = SUCCESS
-      elif return_code == -9999 or return_code == 'ABORT':
-        user_check = ABORT
-      self.log_debug('user_check=/%s/\nresult=/%s/' % (user_check, result), \
-                     4, trace='USER_CHECK')
+    if self.args.check or checking_from_console:
+      if self.args.check_file:
+         # if a user check procedure was given as a script file
+         # executing it
+         cmd = "%s %s %s %s %s %s %s %s" % \
+               (self.args.check_file, what, attempt, task_id, running_dir, output_file, error_file, is_done)
+         self.log_debug('checking via user_script with cmd/%s/' % cmd, \
+                        4, trace='USER_CHECK')
+         (return_code, result) = self.system(cmd, return_code=True)
+         user_check = FAILURE
+         self.log_debug('return_code=/%s/' % return_code, 4, trace='USER_CHECK')
+         try:
+           return_code = int(return_code)
+         except:
+           self.log_info('Aborting workflow because\nreturn_code=/%s/ not integer code while checking via user_script with cmd/%s/' % \
+                         (return_code, cmd))
+           user_check = ABORT
+         if return_code == 0:
+           user_check = SUCCESS
+         elif return_code == -9999 or return_code == 'ABORT':
+           user_check = ABORT
+         self.log_debug('user_check=/%s/\nresult=/%s/' % (user_check, result), \
+                        4, trace='USER_CHECK')
 
-    else:
-      # else calling either default python method, either user overload python method    
+      else:
+        # else calling either default python method, either user overload python method    
       
-      try:
-        user_check = self.check_job(what, attempt, task_id, running_dir, output_file, error_file,
-                                    is_done, fix=not(checking_from_console),
-                                    job_tasks=job_tasks, step_tasks=step_tasks)
-      except Exception:
-        # something went wrong during user_check
-        s = "User defined function check_job had a problem while CHECKING step: %s Task: %s " % \
-            (step, task_id)
-        self.error(s, exit=False, exception=True)
-        user_check = FAILURE
+        try:
+          user_check = self.check_job(what, attempt, task_id, running_dir, output_file, error_file,
+                                      is_done, fix=not(checking_from_console),
+                                      job_tasks=job_tasks, step_tasks=step_tasks)
+        except Exception:
+          # something went wrong during user_check
+          s = "User defined function check_job had a problem while CHECKING step: %s Task: %s " % \
+              (step, task_id)
+          self.error(s, exit=False, exception=True)
+          user_check = FAILURE
 
-    s = "%s found while CHECKING step: %s   Task: %s " % (user_check, step, task_id) + " " + \
-        "running_dir : %s" % (running_dir) + " " + \
-        "output_file : %s" % (output_file) + " " + \
-        "error_file : %s" % (error_file) + " " + \
-        "Running dir : %s" % (running_dir) + " "
-    self.log_info(s, 4, trace='USER_CHECK')
+      s = "%s found while CHECKING step: %s   Task: %s " % (user_check, step, task_id) + " " + \
+          "running_dir : %s" % (running_dir) + " " + \
+          "output_file : %s" % (output_file) + " " + \
+          "error_file : %s" % (error_file) + " " + \
+          "Running dir : %s" % (running_dir) + " "
+      self.log_info(s, 4, trace='USER_CHECK')
 
-    if not(user_check == SUCCESS):
-        self.error_add('User error detected!!! for step %s  attempt %s' % (what, attempt), task_id)
+      if not(user_check == SUCCESS):
+          self.error_add('User error detected!!! for step %s  attempt %s' % (what, attempt), task_id)
 
     return user_check
 
@@ -2555,8 +2573,11 @@ class decimate(engine):
                              4, trace='JOBS')
               self.save(take_lock=False)
           if self.args.decimate:
-              self.error('this step %s has already been submitted as job %s and reached status %s' % \
-                         (step,job_id,status),exit=True)
+              if not(self.args.restart):
+                  self.error('this step %s has already been submitted as job %s and reached status %s' % \
+                         (step,job_id,status) + \
+                             'Resubmit with --restart or --scratch to force its continuation or reexecution' \
+                             ,exit=True)
               
           self.log_debug('returning an already submitted job %s' % job_id, \
                          4, trace='RESTART,HEAL,RESTART_FAKED')
@@ -2849,43 +2870,43 @@ class decimate(engine):
 
     if job['yalla']:
       if not(job['nodes']) and not(job['ntasks']):
-        self.error('when asking for a Yalla container, either nodes or ntasks has to be valued',
+        self.error('when asking for a Yalla pool, either nodes or ntasks has to be valued',
                    exit=True)
 
         
       nb_jobs = len(RangeSet(job['array']))
       job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
       
-      # compute new time for yalla container
+      # compute new time for yalla pool
       (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
-      print job['yalla_parallel_runs']
+      self.log_info("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'])
       factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
       whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
       (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
       job['time'] = '%d:%02d:%02d' % (h, m, s)
 
 
-      # computes number of nodes required to host the container
+      # computes number of nodes required to host the pool
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          container_nodes_nb = all_tasks/32+1
+          pool_nodes_nb = all_tasks/32+1
           if all_tasks % 32:
-              container_nodes_nb = container_nodes_nb + 1
+              pool_nodes_nb = pool_nodes_nb + 1
       else: 
-          container_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
+          pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
       
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
                                                     'yalla', 'output', 'error']), 4, trace='YALLA')
 
-      self.log_debug('yalla container_nodes_nb:%s' % container_nodes_nb, 4, trace='YALLA')
+      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA')
 
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
-                '--nodes=%s' % container_nodes_nb,
+                '--nodes=%s' % pool_nodes_nb,
                 '--error=%s.task_yyy-attempt_%s' % \
                 (job['error'].replace('%a', job['array'][0:20]), attempt),
                 '--output=%s.task_yyy-attempt_%s' % \
@@ -3417,7 +3438,10 @@ class decimate(engine):
     l0 = l0 + " --workflowid='%s'" % self.args.workflowid
     l0 = l0 + " --filter='%s'" % self.args.filter
     if job['check']:
-      l0 = l0 + " --check='%s'" % job['check']
+      l0 = l0 + " --check"
+
+    # if job['check-file']:
+    #   l0 = l0 + " --check-file='%s'" % job['check-file']
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
@@ -3643,7 +3667,7 @@ class decimate(engine):
       f.write(output)
       f.close()
 
-      l = l + '\n\n# Yalla container execution...\n\n'
+      l = l + '\n\n# Yalla pool execution...\n\n'
       l = l + output
     else:
       l = prefix + l

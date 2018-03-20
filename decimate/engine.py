@@ -1616,14 +1616,14 @@ class engine(object):
   def system(self,cmd,comment="No comment",fake=False,verbosity=1,
              force=False,trace=True,return_code=False):
 
-    self.log_info('in system cmd=/%s/ ' % cmd,2)
+    self.log_debug('in system cmd=/%s/ ' % cmd,2,trace='SYSTEM')
     self.log_debug("\tcurrently executing /%s/ :\n\t\t%s" % (comment,cmd),verbosity,trace='SYSTEM')
 
     if trace and self.args.load:
         self.log_info('reading from trace file / output = /%s/' % \
-                      len(self.SYSTEM_OUTPUTS[self.args.load]),2)
+                      len(self.SYSTEM_OUTPUTS[self.args.load]),2,trace='SYSTEM')
         output = self.SYSTEM_OUTPUTS[self.args.load].pop(0)
-        self.log_info('reading from trace file / output = /%s/' % output,3)
+        self.log_info('reading from trace file / output = /%s/' % output,3,trace='SYSTEM')
         return output
 
     output = 'FAKE EXECUTION'
@@ -1637,7 +1637,7 @@ class engine(object):
       while (True):
           # Read line from stdout, break if EOF reached, append line to output
           line = proc.stdout.readline()
-          print line
+          self.log_debug('l:%s' % line, 4, trace='SYSTEM,SYSTEM_OUT')
           # line = line.decode()
           if (line == ""):
             break
@@ -1646,7 +1646,7 @@ class engine(object):
         self.log_debug("output=+" + output,verbosity + 1,trace='SYSTEM')
       if trace and self.args.save:
           self.SYSTEM_OUTPUTS[self.args.save].append(output)
-          self.log_info('writing to trace file / output = /%s/' % output,3)
+          self.log_debug('writing to trace file / output = /%s/' % output,3,trace='SYSTEM')
     if (return_code):
       return (proc.returncode,output)
     else:
