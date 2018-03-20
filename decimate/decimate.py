@@ -551,7 +551,7 @@ class decimate(engine):
 
     # reading of the parameter file
     if self.args.parameter_file:
-          self.read_parameter_file()
+          self.array_clustered = self.read_parameter_file()
             
     if self.args.taskid:
       try:
@@ -646,6 +646,7 @@ class decimate(engine):
       self.finalize()
       sys.exit(0)
 
+    # checking previous step
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
       param_file = '%s.%s' % (self.PARAMETER_FILE,self.TASK_ID)
       task_parameter_file = open(param_file, "w")
@@ -2306,25 +2307,38 @@ class decimate(engine):
 
     if self.args.parameter_list:
         self.log_console(parameter_list)
-        sys.exit(0)
 
+    self.array_clustered = []
     if 'nodes' in l.columns:
       job_per_node_number = l.groupby(['nodes']).size()
       # print job_per_node_number
       # for j in job_per_node_number.keys():
       #   print j,':',job_per_node_number[j]
-      # print l.groupby(['nodes']).size()
-      cols_orig = l.columns
-      cols = ['nodes', 'ntasks']
-      for c in cols_orig:
-        if not(c in ['nodes', 'ntasks']):
-          cols = cols + [c]
-      self.log_debug('parameter combinations:\n%s' % l.groupby(cols).size(), \
-                     4, trace='PARAMETRIC_DETAIL')
-    # sys.exit(1)
+      l_per_nodes = l.groupby(['nodes']).size()
+      self.log_debug('cluster %s per node combinations:' % len(l_per_nodes), \
+                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+      for n in l_per_nodes.index:
+          sub_set = l[l['nodes']==n]
+          self.array_clustered = self.array_clustered + \
+                                 [n,str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))]
+          self.log_debug('\n%s' % pprint.pformat(sub_set),
+                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+                         
+      self.log_info('array_clusters: %s' % pprint.pformat( self.array_clustered),
+                     0, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+      
+      # cols_orig = l.columns
+      # cols = ['nodes', 'ntasks']
+      # for c in cols_orig:
+      #   if not(c in ['nodes', 'ntasks']):
+      #     cols = cols + [c]
 
-    self.parameters = l
-    return self.parameters
+
+    if self.args.parameter_list:
+        sys.exit(0)
+
+
+    return self.array_clustered
       
 
   #########################################################################
