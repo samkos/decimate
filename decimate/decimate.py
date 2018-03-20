@@ -2337,7 +2337,7 @@ class decimate(engine):
     if self.args.parameter_list:
         sys.exit(0)
 
-
+    self.parameters = l
     return self.array_clustered
       
 
