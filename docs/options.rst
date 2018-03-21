@@ -21,7 +21,7 @@ Workflow management:
 --resume               resume  the already launched step and workflow in this directory
 --restart              restart the already launched step or workflow in this directory
 
--ch, --check                  check the step at its end (job DONE printed)
+-ch, --check           check the step at its end (job DONE printed)
 
 -chf, --check-file=SCRIPT_FILE python or shell to check if results are ok
 
@@ -109,7 +109,7 @@ To show the parameters set in the job environment from a parametic file processe
   #DECIM SHOW_PARAMETERS
 
 To process all the files ending by *.template* and replacing any
-  parameter (typically *__Name_of_parameter__*) with a value coming
-  from the parametric file processed by *Decimate*.::
+parameter (typically *__Name_of_parameter__*) with a value coming
+from the parametric file processed by *Decimate*.::
 
   #DECIM PROCESS_TEMPLATE_FILES 
