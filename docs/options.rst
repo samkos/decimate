@@ -16,29 +16,28 @@ Help:
 
 
 Workflow management:
-       --kill                 kill all jobs in the workflow either RUNNING, PENDING or WAITING
-       --resume               resume  the already launched step and workflow in this directory
-       --restart              restart the already launched step or workflow in this directory
 
-       -ch, --check                  check the step at its end (job DONE printed)
-       -chf, --check-file=SCRIPT_FILE python or shell to check if results are ok
-       -xj, --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
-                               queue  (450 per default)
-       -xr, --max-retry=MAX_RETRY   number of time a step can fail and be
-                               restarted automatically before failing the 
-                               whole workflow  (3 per default)
+--kill                 kill all jobs in the workflow either RUNNING, PENDING or WAITING
+--resume               resume  the already launched step and workflow in this directory
+--restart              restart the already launched step or workflow in this directory
 
-        -xj, --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
-                                 queue  (450 per default)
-        -xr, --max-retry=MAX_RETRY    number of time a step can fail and be
-                                 restarted automatically before failing the 
-                                 whole workflow  (3 per default)
+-ch, --check                  check the step at its end (job DONE printed)
+
+-chf, --check-file=SCRIPT_FILE python or shell to check if results are ok
+
+-xj, --max-jobs=MAX_JOBS      maximum number of jobs to keep active in the
+                              queue  (450 per default)
+
+-xr, --max-retry=MAX_RETRY   number of time a step can fail and be
+                             restarted automatically before failing the 
+                             whole workflow  (3 per default)
+
 
 			       
 Execution in a pool:
 
-   -xy, --yalla               Use Yalla Pool
-   -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a pool
+-xy, --yalla               Use Yalla Pool
+-xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a pool
 
 Burst Buffer:
 
