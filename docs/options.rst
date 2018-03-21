@@ -35,7 +35,7 @@ Workflow management:
                                  whole workflow  (3 per default)
 
 			       
-.. Execution in a pool:
+Execution in a pool:
 
    -xy, --yalla               Use Yalla Pool
    -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a pool
