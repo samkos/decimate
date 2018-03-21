@@ -10,6 +10,7 @@ import itertools
 import math
 import numpy
 import os
+import pandas
 import pandas as pd
 import pprint
 import shlex
@@ -655,6 +656,7 @@ class decimate(engine):
                                 (self.args.parameter_file, self.TASK_ID))
       s = ""
 
+      task_parameter_file.write('\nexport task_id=%s' % (self.TASK_ID))
       for p in self.parameters.columns:
         if p in self.slurm_vars.keys():
           if self.slurm_vars[p]==int:
