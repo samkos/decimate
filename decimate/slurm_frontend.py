@@ -85,10 +85,10 @@ class slurm_frontend(decimate):
                              default=False)
     
 
-    self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
-                                   help='Use yalla pool', default=False)
-    self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                                   help='# of job to run in parallel in a pool', default=4)
+    self.slurm_parser.add_argument("-xp", "--pool-nodes", type=int,
+                             help='# of nodes made available per pool', default=0)
+    self.slurm_parser.add_argument("-xc", "--pool-cores", type=int,
+                             help='# of cores made available per pool', default=0)
 
     self.parser.add_argument("-P", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
@@ -118,9 +118,6 @@ class slurm_frontend(decimate):
     if not(self.job_script) and not(self.slurm_args.parameter_list) and not(self.slurm_args.version) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
 
-    if self.slurm_args.yalla:
-      decimate_extra_config = decimate_extra_config + ['--yalla']
-
     if self.slurm_args.filter:
       decimate_extra_config = decimate_extra_config + ['--filter',self.slurm_args.filter]
 
@@ -132,9 +129,13 @@ class slurm_frontend(decimate):
       decimate_extra_config = decimate_extra_config + \
                               ['--max-jobs', "%s" % self.slurm_args.max_jobs]
 
-    if self.slurm_args.yalla_parallel_runs:
+    if self.slurm_args.pool_nodes:
       decimate_extra_config = decimate_extra_config + \
-                              ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
+                              ['--pool-nodes', "%s" % self.slurm_args.pool_nodes]
+
+    if self.slurm_args.pool_cores:
+      decimate_extra_config = decimate_extra_config + \
+                              ['--pool-cores', "%s" % self.slurm_args.pool_cores]
 
     if self.slurm_args.parameter_file:
       decimate_extra_config = decimate_extra_config + \
@@ -214,8 +215,12 @@ class slurm_frontend(decimate):
                                   print_all=True,except_none=True), \
                    4, trace='API')
 
-    if self.args.yalla:
-      new_job['yalla'] = self.args.yalla_parallel_runs
+    if self.args.pool_nodes:
+      new_job['yalla'] = new_job['pool_nodes'] = self.args.pool_nodes
+    if self.args.pool_cores:
+      new_job['yalla'] = new_job['pool_cores'] = self.args.pool_cores
+
+      
     if self.args.use_burst_buffer_size:
       new_job['burst_buffer_size'] = self.args.burst_buffer_size
     if self.args.use_burst_buffer_space:

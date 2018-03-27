@@ -147,9 +147,8 @@ Parametric Jobs:
   -Pa, --parameter-range=range numeric filter while reading parameter file
 
 Pools:
-  -xy,  --yalla               Use Yalla Pool
-  -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
-                              of parallel runs in a pool
+  -xp, --pool-nodes=NB_OF_NODES_TO_RESERVE_PER_POOL  nodes made available per pool
+  -xc, --pool-tasks=NB_OF_CORES_TO_RESERVE_PER_POOL  cores made available per pool
 
 
 Burst Buffer:
@@ -421,10 +420,13 @@ class decimate(engine):
     self.parser.add_argument("-xa", "--all-released", action="store_true",
                              help='do release all the job of a step.', default=False)
 
-    self.parser.add_argument("-xy", "--yalla", action="store_true",
-                             help='Use yalla pool', default=False)
-    self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                             help='# of job to run in parallel in a pool', default=4)
+    self.parser.add_argument("--yalla ", action="store_true", default=False,
+                             help=argparse.SUPPRESS)
+    self.parser.add_argument("-xp", "--pool-nodes", type=int,
+                             help='# of nodes made available per pool', default=0)
+    self.parser.add_argument("-xc", "--pool-cores", type=int,
+                             help='# of cores made available per pool', default=0)
+
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
 
@@ -528,6 +530,9 @@ class decimate(engine):
 
     # initialization of some parameters appearing in traces
 
+    if self.args.pool_nodes>0 or self.args.pool_cores>0:
+        self.args.yalla = True
+    
     if self.args.yalla:
         makefile_name = "%s/Makefile.%s" % (self.YALLA_DIR, self.machine)
         yalla_exe = "%s/YALLA/yalla.exe" % (self.SAVE_DIR)
@@ -2453,7 +2458,9 @@ class decimate(engine):
                          'check': None,
                          'initial_attempt': 0, \
                          'make_depend': None, \
-                         'yalla': 0,
+                         'yalla_parallel_runs': 0,
+                         'pool_nodes': 0,
+                         'pool_cores': 0,
                          'burst_buffer_size': 0,
                          'burst_buffer_space': 0,
                          'submit_dir': os.getcwd()
@@ -2885,10 +2892,24 @@ class decimate(engine):
     prolog = prolog + ['--job-name=%s' % (job['job_name'])]
 
     if job['yalla']:
+      if job['pool_cores'] and job['pool_nodes']:
+        self.error('Please choose if asking  for a pool of nodes or a pool of cores',
+                   exit=True)
       if not(job['nodes']) and not(job['ntasks']):
-        self.error('when asking for a Yalla pool, either nodes or ntasks has to be valued',
+        self.error('when asking for a pool, either nodes or ntasks has to be valued',
+                   exit=True)
+      if not(job['ntasks']) and job['pool_tasks']:
+        self.error('when asking for a pool of tasks, at least ntasks has to be valued',
+                   exit=True)
+      if not(job['nodes']) and job['pool_nodes']:
+        self.error('when asking for a pool of nodes, at least nodes has to be valued',
                    exit=True)
 
+
+      if job['pool_cores']:
+          job['yalla_parallel_runs'] = int(math.ceil(job['pool_cores'] / (job['ntasks'] + 0.)))
+      elif job['pool_nodes']:
+          job['yalla_parallel_runs'] = int(math.ceil(job['pool_nodes'] / (job['nodes'] + 0.)))
         
       nb_jobs = len(RangeSet(job['array']))
       job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
@@ -2904,29 +2925,32 @@ class decimate(engine):
 
       # computes number of nodes required to host the pool
       
-      if job['ntasks'] and not(job['nodes']):
+      if job['pool_cores']:
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/32+1
-          if all_tasks % 32:
-              pool_nodes_nb = pool_nodes_nb + 1
-      else: 
-          pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
-      
+          prolog = prolog + \
+               ['--time=%s' % job['time'],
+                '--ntasks=%s' % all_tasks,
+                '--error=%s.task_yyy-attempt_%s' % \
+                (job['error'].replace('%a', job['array'][0:20]), attempt),
+                '--output=%s.task_yyy-attempt_%s' % \
+                (job['output'].replace('%a', job['array'][0:20]), attempt)]
+          self.log_debug('yalla pool_cores_nb:%s' % all_tasks, 4, trace='YALLA')
+      elif job['pool_nodes']:
+          all_nodes = job['nodes'] * job['yalla_parallel_runs']
+          prolog = prolog + \
+               ['--time=%s' % job['time'],
+                '--nodes=%s' % all_nodes,
+                '--error=%s.task_yyy-attempt_%s' % \
+                (job['error'].replace('%a', job['array'][0:20]), attempt),
+                '--output=%s.task_yyy-attempt_%s' % \
+                (job['output'].replace('%a', job['array'][0:20]), attempt)]
+          self.log_debug('yalla pool_nodes_nb:%s' % all_nodes, 4, trace='YALLA')
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
                                                     'yalla', 'output', 'error']), 4, trace='YALLA')
 
-      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA')
 
-      prolog = prolog + \
-               ['--time=%s' % job['time'],
-                '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
-                '--nodes=%s' % pool_nodes_nb,
-                '--error=%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt),
-                '--output=%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)]
     else:
       prolog = prolog + \
                ['--time=%s' % job['time'],
@@ -2936,7 +2960,6 @@ class decimate(engine):
           prolog = prolog + ['--nodes=%s' % job['nodes']]
       if job['ntasks']:
           prolog = prolog + ['--ntasks=%s' % job['ntasks']]
-
 
 
     cmd = cmd + ['%s_%s' % (job['script_file'], attempt)]
