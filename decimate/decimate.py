@@ -2347,9 +2347,10 @@ class decimate(engine):
                      4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
       for n in l_per_nodes.index:
           sub_set = l[l['nodes']==n]
+          concerned_array_ids = str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))
           self.array_clustered = self.array_clustered + \
-                                 [[n,{'nodes':n},
-                                  str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))]]
+                                 [{'nodes':n,'array':concerned_array_ids}]
+                                  
           self.log_debug('\n%s' % pprint.pformat(sub_set),
                      4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
                          
@@ -2473,12 +2474,24 @@ class decimate(engine):
 
     # only one job profile: only submit one job...
     if len(self.array_clustered)==1:
-        (n, forcing_fields, array) = self.array_clustered[0]
+        forcing_fields = self.array_clustered[0]
         return self.submit_same_profile_job(job,forcing_fields,
-                                       registration,resubmit,take_lock,return_all_job_ids)
+                                            registration,resubmit,take_lock,return_all_job_ids)
 
-    # several job profile
-    self.error('different job profile are not yet supported...')
+    self.log_info('%d differents job profiles have been detected... They will be submitted as separate job arrays...' % \
+                  len(self.array_clustered))
+
+    np=1
+    for profile in self.array_clustered:
+        forcing_fields = profile
+        new_job = copy.deepcopy(job)
+        print forcing_fields
+        (job_id, cmd) = self.submit_same_profile_job(new_job,forcing_fields,
+                                                     registration,resubmit,take_lock,return_all_job_ids,profile_nb=np)
+        np = np +1
+
+    return (job_id,cmd)
+
 
   #########################################################################
   # submitting job of same profile with respect to the scheduler
@@ -2486,7 +2499,7 @@ class decimate(engine):
   #########################################################################
 
   def submit_same_profile_job(self, job, forcing_fields, registration=True, resubmit=False, \
-                              take_lock=False, return_all_job_ids=False):
+                              take_lock=False, return_all_job_ids=False, profile_nb=False):
 
     lock_file = self.take_lock(self.LOCK_FILE)
 
@@ -2534,6 +2547,10 @@ class decimate(engine):
     if not(job['job_name']):
       self.error('sbatch: error: Invalid name specification', exit=1)
 
+    if profile_nb:
+        job['job_name'] =  '%s{%d}' % (job['job_name'],profile_nb)
+
+      
     # if neither ntasks or nodes is valued rejecting the job...
     job_keys = job.keys()
     if not('nodes' in job_keys) and not('ntasks' in job_keys):
