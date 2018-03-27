@@ -670,7 +670,7 @@ class decimate(engine):
 
         task_parameter_file.write('\nexport task_id=%s' % (t))
         for p in self.parameters.columns:
-          self.log_info('self.slurm_vars=%s' % pprint.pformat(self.slurm_vars))
+          self.log_debug('self.slurm_vars=%s' % pprint.pformat(self.slurm_vars),4,trace='VAR')
           if p in self.slurm_vars.keys():
             if self.slurm_vars[p]==int:
               print 'params[%s]' % p,':',params[p],type(params[p])
@@ -2315,8 +2315,21 @@ class decimate(engine):
               ser = pd.Series(results_per_var[v], index=l.index)
               l[v] = ser
 
-    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+    # forcing integer casting of SLURM Integer parameters
+
+    columns_to_cast = []
+    for p in l.columns.get_values():
+        if p in self.slurm_vars.keys():
+            if self.slurm_vars[p]==int:
+                self.log_debug('casting parameter %s to int' % p,\
+                   4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+                columns_to_cast = columns_to_cast + [p]
+    if len(columns_to_cast):
+        l[columns_to_cast] = l[columns_to_cast].astype(int)
+
     
+    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+
     self.log_debug(parameter_list,\
                    4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
 
