@@ -670,6 +670,7 @@ class decimate(engine):
 
         task_parameter_file.write('\nexport task_id=%s' % (t))
         for p in self.parameters.columns:
+          self.log_info('self.slurm_vars=%s' % pprint.pformat(self.slurm_vars))
           if p in self.slurm_vars.keys():
             if self.slurm_vars[p]==int:
               print 'params[%s]' % p,':',params[p],type(params[p])
@@ -3295,11 +3296,11 @@ class decimate(engine):
                              (short_option, long_option, help_message))
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=int, help=help_message)
-              self.slurm_vars[long_option[2:]] = int
+              self.slurm_vars[long_option[2:].replace('-','_')] = int
             else:
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=str, help=help_message)
-              self.slurm_vars[long_option[2:]] = str
+              self.slurm_vars[long_option[2:].replace('-','_')] = str
           else:
             self.slurm_parser.add_argument(short_option, long_option,
                                            action="store_true", help=help_message)
@@ -3313,10 +3314,10 @@ class decimate(engine):
             long_option = long_option.split('[')[0]
             if help_message.find('number') > -1:
               self.slurm_parser.add_argument(long_option, type=int, help=help_message)
-              self.slurm_vars[long_option[2:]] = int
+              self.slurm_vars[long_option[2:].replace('-','_')] = int
             else:
               self.slurm_parser.add_argument(long_option, type=str, help=help_message)
-              self.slurm_vars[long_option[2:]] = str
+              self.slurm_vars[long_option[2:].replace('-','_')] = str
           else:
             self.slurm_parser.add_argument(long_option, action="store_true", help=help_message)
             self.slurm_vars[long_option[2:]] = bool
