@@ -649,30 +649,42 @@ class decimate(engine):
 
     # checking previous step
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
-      param_file = '%s.%s' % (self.PARAMETER_FILE,self.TASK_ID)
-      task_parameter_file = open(param_file, "w")
-      params = self.parameters.iloc[self.TASK_ID]
-      task_parameter_file.write('# set parameter from file %s for task %s' % \
-                                (self.args.parameter_file, self.TASK_ID))
-      s = ""
+      # in case of a yalla job every parameter configuration file should be created ahead
+      if self.args.yalla:
+        tasks = []
+        for t in RangeSet(self.TASK_IDS):
+          tasks = tasks + [t]
+      else:
+        tasks = [self.TASK_ID]
 
-      task_parameter_file.write('\nexport task_id=%s' % (self.TASK_ID))
-      for p in self.parameters.columns:
-        if p in self.slurm_vars.keys():
-          if self.slurm_vars[p]==int:
-            print 'params[%s]' % p,':',params[p],type(params[p])
-            val = int(params[p].item())
-        else:
-            val = params[p]
-        task_parameter_file.write('\nexport %s=%s' % (p, val))
-        s = s + "%s=>%s< " % (p, params[p])
+      self.log_debug('creating parametric files for range [%s]' % self.TASK_IDS,\
+                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
+      
+      for t in tasks:
+        param_file = '%s.%s' % (self.PARAMETER_FILE,t)
+        task_parameter_file = open(param_file, "w")
+        params = self.parameters.iloc[t]
+        task_parameter_file.write('# set parameter from file %s for task %s' % \
+                                  (self.args.parameter_file, t))
+        s = ""
+
+        task_parameter_file.write('\nexport task_id=%s' % (t))
+        for p in self.parameters.columns:
+          if p in self.slurm_vars.keys():
+            if self.slurm_vars[p]==int:
+              print 'params[%s]' % p,':',params[p],type(params[p])
+              val = int(params[p].item())
+          else:
+              val = params[p]
+          task_parameter_file.write('\nexport %s=%s' % (p, val))
+          s = s + "%s=>%s< " % (p, params[p])
+          
+        #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (t, s))
+      
+        task_parameter_file.write('\n')
+        task_parameter_file.close()
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
         
-      #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
-      
-      task_parameter_file.write('\n')
-      task_parameter_file.close()
-      self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
-      
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
@@ -2327,7 +2339,7 @@ class decimate(engine):
                      4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
                          
       self.log_info('array_clusters: %s' % pprint.pformat( self.array_clustered),
-                     0, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+                     1, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
       
       # cols_orig = l.columns
       # cols = ['nodes', 'ntasks']
@@ -3599,18 +3611,13 @@ class decimate(engine):
       prefix0 = ""
     else:
       prefix0 = check_previous
-      if self.args.parameter_file:
+      
+    if self.args.parameter_file:
         prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
-        # prefix0 = prefix0 + '\necho Sourcing parameters taken from file: %s ' % \
-        #           self.args.parameter_file
-        # prefix0 = prefix0 + '\necho --- parameters set here --------------'
-        # prefix0 = prefix0 + '\ncat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
-        # prefix0 = prefix0 + '\necho --------------------------------------'
-        
         
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
-        # prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+
       
 
 
