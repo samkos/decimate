@@ -2348,7 +2348,8 @@ class decimate(engine):
       for n in l_per_nodes.index:
           sub_set = l[l['nodes']==n]
           self.array_clustered = self.array_clustered + \
-                                 [n,str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))]
+                                 [[n,{'nodes':n},
+                                  str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))]]
           self.log_debug('\n%s' % pprint.pformat(sub_set),
                      4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
                          
@@ -2468,6 +2469,25 @@ class decimate(engine):
                        0, trace='RESTART_FAKED,SUBMITTED')
         return (None, 'nothing')
 
+    # dispatching several jobs in the case of different profiles
+
+    # only one job profile: only submit one job...
+    if len(self.array_clustered)==1:
+        (n, forcing_fields, array) = self.array_clustered[0]
+        return self.submit_same_profile_job(job,forcing_fields,
+                                       registration,resubmit,take_lock,return_all_job_ids)
+
+    # several job profile
+    self.error('different job profile are not yet supported...')
+
+  #########################################################################
+  # submitting job of same profile with respect to the scheduler
+  # these clusterization happened in read_parameter_file
+  #########################################################################
+
+  def submit_same_profile_job(self, job, forcing_fields, registration=True, resubmit=False, \
+                              take_lock=False, return_all_job_ids=False):
+
     lock_file = self.take_lock(self.LOCK_FILE)
 
     self.log_debug('submit_job submitting job: %s ' % self.print_job(job, print_all=True), 2, trace='SUBMIT_JOB')
@@ -2485,6 +2505,13 @@ class decimate(engine):
                          'submit_dir': os.getcwd()
                          }
 
+
+    # overwrite with values found in the parameters values clustered
+
+    for (field,value) in forcing_fields.items():
+        job[field] = value
+    
+    
     # scanning original script for merging slurm option
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
