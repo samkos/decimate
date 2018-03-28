@@ -551,6 +551,7 @@ class decimate(engine):
                      exit=True, exception=True)
 
     # reading of the parameter file
+    self.array_clustered = []
     if self.args.parameter_file:
           self.array_clustered = self.read_parameter_file()
             
@@ -2473,7 +2474,11 @@ class decimate(engine):
     # dispatching several jobs in the case of different profiles
 
     # only one job profile: only submit one job...
-    if len(self.array_clustered)==1:
+    if len(self.array_clustered)==0:
+        forcing_fields = {}
+        return self.submit_same_profile_job(job,forcing_fields,
+                                            registration,resubmit,take_lock,return_all_job_ids)
+    elif len(self.array_clustered)==1:
         forcing_fields = self.array_clustered[0]
         return self.submit_same_profile_job(job,forcing_fields,
                                             registration,resubmit,take_lock,return_all_job_ids)
@@ -2485,7 +2490,6 @@ class decimate(engine):
     for profile in self.array_clustered:
         forcing_fields = profile
         new_job = copy.deepcopy(job)
-        print forcing_fields
         (job_id, cmd) = self.submit_same_profile_job(new_job,forcing_fields,
                                                      registration,resubmit,take_lock,return_all_job_ids,profile_nb=np)
         np = np +1
@@ -2498,7 +2502,7 @@ class decimate(engine):
   # these clusterization happened in read_parameter_file
   #########################################################################
 
-  def submit_same_profile_job(self, job, forcing_fields, registration=True, resubmit=False, \
+  def submit_same_profile_job(self, job, forcing_fields={}, registration=True, resubmit=False, \
                               take_lock=False, return_all_job_ids=False, profile_nb=False):
 
     lock_file = self.take_lock(self.LOCK_FILE)
@@ -2998,10 +3002,12 @@ class decimate(engine):
                 '--output=%s.task_yyy-attempt_%s' % \
                 (job['output'].replace('%a', job['array'][0:20]), attempt)]
     else:
+      error_file = '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
       prolog = prolog + \
                ['--time=%s' % job['time'],
-                '--error=%s.task_%%04a-attempt_%s' % (job['error'], attempt),
-                '--output=%s.task_%%04a-attempt_%s' % (job['output'], attempt)]
+                '--error=%s' % error_file,
+                '--output=%s' % output_file]
       if job['nodes']:
           prolog = prolog + ['--nodes=%s' % job['nodes']]
       if job['ntasks']:
@@ -3026,7 +3032,19 @@ class decimate(engine):
                                  (job['burst_buffer_size']) + "\n"
 
     job_content_template = job_content_template + \
-                           "".join(open(job['script_file'], "r").readlines())
+                           """
+o="%s.ok"
+e="%s.ok"
+output_file=`echo $o|sed "s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+
+# creation of directory if it does not exist
+mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
+                              """ % (output_file,error_file) +\
+                           "run_job () { \n"  + \
+                           "".join(open(job['script_file'], "r").readlines()) +\
+                           " } \n run_job > $output_file 2> $error_file"
+    
     job_content_updated = job_content_template.replace('__ATTEMPT__', "%s" % attempt)
     job_content_updated = job_content_updated.replace('__ATTEMPT_INITIAL__', "%s" % \
                                                       job['initial_attempt'])
