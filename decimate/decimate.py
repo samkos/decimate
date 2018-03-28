@@ -3760,8 +3760,10 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     if job['yalla']:
       stream = {}
       for w in ['output', 'error']:
-        s = job[w].replace('%J', '\$SLURM_JOB_ID').replace('%j', '\$SLURM_JOB_ID')\
-            .replace('%a', '\${task}').replace('%04a', '\${formatted_task}`')
+        s = ("%s/%s" % (job['submit_dir'],job[w])).replace('%J', '\$SLURM_JOB_ID')\
+                                                  .replace('%j', '\$SLURM_JOB_ID')\
+                                                  .replace('%a', '\${task}')\
+                                                  .replace('%04a', '\${formatted_task}`')
         stream[w] = s + '.task_\${formatted_task}-attempt_%s' % job['attempt']
       
       l = prefix + (l).replace('$', '\$') + 'EOF\n'

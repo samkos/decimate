@@ -16,9 +16,10 @@ done
 
 cat > __save_dir__/YALLA/__job_name__.cmd <<EOF
 export task=\$1
-export SLURM_ARRAY_JOB_ID=$SLURM_JOB_ID 
+export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
 export SLURM_ARRAY_TASK_ID=\$task 
-formatted_task=\$(printf "%04d" \$task) 
+formatted_task=\$(printf "%04d" \$task)
+# helllllllllo
 . __save_dir__/YALLA/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
 EOF
 chmod +x __save_dir__/YALLA/__job_name__.cmd
