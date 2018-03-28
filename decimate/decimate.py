@@ -3006,8 +3006,8 @@ class decimate(engine):
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
       prolog = prolog + \
                ['--time=%s' % job['time'],
-                '--error=%s' % error_file,
-                '--output=%s' % output_file]
+                '--error=%s/error.%%x.task-%%a-attempt_%s' % (self.LOG_DIR,attempt),
+                '--output=%s/output.%%x.task-%%a-attempt_%s' % (self.LOG_DIR,attempt)]
       if job['nodes']:
           prolog = prolog + ['--nodes=%s' % job['nodes']]
       if job['ntasks']:
@@ -3033,10 +3033,11 @@ class decimate(engine):
 
     job_content_template = job_content_template + \
                            """
-o="%s.ok"
-e="%s.ok"
-output_file=`echo $o|sed "s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
-error_file=`echo $e|sed "s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+o="%s"
+e="%s"
+printf -v formatted_array_task_id "%%04d" $SLURM_ARRAY_TASK_ID
+output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
 
 # creation of directory if it does not exist
 mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
