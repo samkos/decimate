@@ -2512,6 +2512,7 @@ class decimate(engine):
     for profile in self.array_clustered:
         forcing_fields = profile
         new_job = copy.deepcopy(job)
+        self.log_info('profile %d: %s ' % (np,pprint.pformat(profile)))
         (job_id, cmd) = self.submit_same_profile_job(new_job,forcing_fields,
                                                      registration,resubmit,take_lock,return_all_job_ids,profile_nb=np)
         np = np +1
@@ -3002,7 +3003,7 @@ class decimate(engine):
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/self.CORES_PER_NODE+1
+          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
           if all_tasks % self.CORES_PER_NODE:
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
@@ -3011,9 +3012,9 @@ class decimate(engine):
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
-                                                    'yalla', 'output', 'error']), 4, trace='YALLA')
+                                                     'yalla', 'output', 'error']), 4, trace='YALLA,Y')
 
-      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA')
+      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA,Y')
 
       error_file = '%s.task_yyy-attempt_%s' % \
                 (job['error'].replace('%a', job['array'][0:20]), attempt)
@@ -3069,7 +3070,8 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
 # creation of directory if it does not exist
 mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
-                              """ % (output_file,error_file) +\
+
+""" % (output_file,error_file) +\
                            "run_job () { \n"  + \
                            "".join(open(job['script_file'], "r").readlines()) +\
                            " } \n run_job > $output_file 2> $error_file"
@@ -3759,7 +3761,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       stream = {}
       for w in ['output', 'error']:
         s = job[w].replace('%J', '\$SLURM_JOB_ID').replace('%j', '\$SLURM_JOB_ID')\
-            .replace('%a', '\${task}')
+            .replace('%a', '\${task}').replace('%04a', '`printf "%04d" \\${task}`')
         stream[w] = s + '.task_\${formatted_task}-attempt_%s' % job['attempt']
       
       l = prefix + (l).replace('$', '\$') + 'EOF\n'
