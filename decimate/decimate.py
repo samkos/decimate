@@ -200,7 +200,7 @@ class decimate(engine):
     #self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
     self.DECIMATE_DIR = os.path.dirname(os.path.abspath(__file__))
     self.TEMPLATE_SOURCE_DIR = "%s/templates" % self.DECIMATE_DIR
-    self.YALLA_DIR = "%s/yalla" % self.DECIMATE_DIR
+    self.YALLA_SOURCE_DIR = "%s/yalla" % self.DECIMATE_DIR
 
     if not(hasattr(self, 'FILES_TO_COPY')):
         self.FILES_TO_COPY = []
@@ -529,8 +529,8 @@ class decimate(engine):
     # initialization of some parameters appearing in traces
 
     if self.args.yalla:
-        makefile_name = "%s/Makefile.%s" % (self.YALLA_DIR, self.machine)
-        yalla_exe = "%s/YALLA/yalla.exe" % (self.SAVE_DIR)
+        makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
+        yalla_exe = "%s/YALLA/yalla.exe" % (self.YALLA_DIR)
         if not(os.path.exists(yalla_exe)):
           if not os.path.isfile(makefile_name):
               self.error("yalla not available on %s ... \
@@ -541,7 +541,7 @@ class decimate(engine):
           self.log_console('Compiling Yalla...', trace='YALLA')
           cmd = ("mkdir -p %s/YALLA; cd %s/YALLA; cp %s/yalla.c .; " + 
                  "make -f %s > %s/yalla_compile.out 2>&1") % \
-                (self.SAVE_DIR, self.SAVE_DIR, self.YALLA_DIR, makefile_name, self.LOG_DIR)
+                (self.YALLA_DIR, self.YALLA_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
           self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
           output = os.system(cmd)
           self.log_debug('%s' % output, 3, trace='YALLA')
@@ -3751,7 +3751,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       #             (job['job_name'],stream['output'],stream['error']) + \
       #     "done\n"
 
-      input_file = "%s/job.%s" % (self.YALLA_DIR, self.machine)
+      input_file = "%s/job.%s" % (self.YALLA_SOURCE_DIR, self.machine)
       output = "".join(open(input_file, "r").readlines())
       output = output.replace('__save_dir__', self.SAVE_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
@@ -3769,7 +3769,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       else:
         output = output.replace('__DEBUG__', '')
 
-      f = open('%s/YALLA/%s.yalla_job' % (self.SAVE_DIR, job['job_name']), 'w')
+      f = open('%s/YALLA/%s.yalla_job' % (self.YALLA_DIR, job['job_name']), 'w')
       f.write(output)
       f.close()
 

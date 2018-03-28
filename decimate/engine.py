@@ -172,6 +172,7 @@ class engine(object):
     self.CONSOLE_SAVE_FILE = "./.%s/LOGS/%s.pickle" % (app_name,'console')
     self.JOB_DIR = os.path.abspath("./.%s/RESULTS" % app_name)
     self.SAVE_DIR = os.path.abspath("./.%s/SAVE" % app_name)
+    self.YALLA_DIR = os.path.abspath("./.%s-yalla" % app_name)
     self.LOG_DIR = os.path.abspath("./.%s/LOGS" % app_name)
     self.ARCHIVE_DIR = os.path.abspath("./.%s/ARCHIVE" % app_name)
 
