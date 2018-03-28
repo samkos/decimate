@@ -676,7 +676,8 @@ class decimate(engine):
           self.log_debug('self.slurm_vars=%s' % pprint.pformat(self.slurm_vars),4,trace='VAR')
           if p in self.slurm_vars.keys():
             if self.slurm_vars[p]==int:
-              print 'params[%s]' % p,':',params[p],type(params[p])
+              self.log_debug('params[%s]:%s of type %s' % (p,params[p],type(params[p])),\
+                             4,trace='VAR')
               val = int(params[p].item())
           else:
               val = params[p]
@@ -3708,11 +3709,10 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
-                       '--check-previous-step > %s.checking.out 2> %s.checking.err' % \
-                       (job['job_name'], job['job_name']))
+                       '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
       prefix = prefix + \
-               '\n# Defining main loop of tasks in replacemennt for job_array\n\n' + \
-               ('cat >> %s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % job['job_name'])
+               '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
+               ('cat >> %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
       prefix0 = ""
@@ -3786,6 +3786,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__job_output__', stream['output'])
       output = output.replace('__job_error__', stream['error'])
       output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
+      output = output.replace('__TASKS__', " ".join(map(lambda x:str(x), RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__', job['submit_dir'])
       
       if self.args.debug:

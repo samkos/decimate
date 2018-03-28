@@ -39,7 +39,7 @@ export SLURM_ARRAY_TASK_ID=\$task
 formatted_task=\$(printf "%04d" \$task)
 export PATH=__save_dir__/YALLA/bin:\$PATH
 cd __job_submit_dir__
-. ./__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+. __save_dir__/YALLA/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
 EOF
 chmod +x __save_dir__/YALLA/__job_name__.___job_array__.cmd
 
