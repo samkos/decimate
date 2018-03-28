@@ -50,7 +50,8 @@ def get_machine():
 
     tmp_directory = "/tmp"
     machine = socket.gethostname()
-
+    cores_per_node = -1
+    
     if (machine[:4] == "fen3" or machine[:4] == "fen4" or machine[:2] == "cn"):
         machine = "neser"
         tmp_directory = "/scratch/tmp/"
@@ -75,6 +76,7 @@ def get_machine():
         DEFAULT_QUEUE = "workq"
         SUBMIT_COMMAND = 'sbatch'
         EXCLUSIVE = True
+        cores_per_node = 32
     elif (machine[:2] == "db"):
         machine = "ibex"
         tmp_directory = "/scratch/dragon/intel/"
@@ -89,14 +91,15 @@ def get_machine():
         # SCHED_TYPE = "pbs"
         DEFAULT_QUEUE = "debug"
         EXCLUSIVE = False
+        cores_per_node = 8
     else:
         machine = "localhost"
         tmp_directory = "/tmp"
     # print 'Mail command:' + MAIL_COMMAND
-    return machine, tmp_directory
+    return machine, tmp_directory, cores_per_node
 
 
-MY_MACHINE, TMPDIR = get_machine()
+MY_MACHINE, TMPDIR, CORES_PER_NODE = get_machine()
 MY_MACHINE_FULL_NAME = socket.gethostname()
 
 

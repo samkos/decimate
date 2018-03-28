@@ -3,7 +3,7 @@
 import argparse
 from ClusterShell.NodeSet import RangeSet, NodeSet
 import datetime
-from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,clean_line
+from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,clean_line
 import fcntl
 import getpass
 import glob

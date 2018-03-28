@@ -234,6 +234,8 @@ class decimate(engine):
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
+    self.CORES_PER_NODE = CORES_PER_NODE
+    
     if not(os.path.exists(self.MAIL_DIR)):
       self.log_info("creating mail directory %s" % self.MAIL_DIR)
       os.system("mkdir -p %s; chmod 777 %s; chmod o+t %s; chmod o+t %s/.." % 
@@ -2338,32 +2340,52 @@ class decimate(engine):
         self.log_console(parameter_list)
 
     self.array_clustered = []
-    if 'nodes' in l.columns:
-      job_per_node_number = l.groupby(['nodes']).size()
+    clustering_criteria = []
+    for c in ['nodes','ntasks','ntasks_per_nodes']:
+        if c in l.columns:
+            clustering_criteria.append(c)
+
+    cluster_keys = ",".join(map(lambda x:str(x),clustering_criteria))
+    self.log_debug('critera taken : (%s) from %s' %  (cluster_keys,l.columns), \
+                   4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+
+
+    if len(clustering_criteria):
+      job_per_node_number = l.groupby(clustering_criteria).size()
       # print job_per_node_number
       # for j in job_per_node_number.keys():
       #   print j,':',job_per_node_number[j]
-      l_per_nodes = l.groupby(['nodes']).size()
-      self.log_debug('cluster %s per node combinations:' % len(l_per_nodes), \
-                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
-      for n in l_per_nodes.index:
-          sub_set = l[l['nodes']==n]
-          concerned_array_ids = str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))
+      l_per_clusters = l.groupby(clustering_criteria).size()
+      self.log_debug('cluster (%s) in %s combinations:' % \
+                     (cluster_keys,len(l_per_clusters)), \
+                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+
+      for n in l_per_clusters.index:
+          criteria = clustering_criteria
+          if (isinstance(n, type(8))):
+              n = [n]
+          subset = l.loc[l[criteria[0]]==n[0]]
+          values = {}
+          values[criteria[0]]=n[0]
+          i = 1
+          while i<len(criteria):
+              subset = subset.loc[l[criteria[i]]==n[i]]
+              values[criteria[i]]=n[i]
+              i = i+1
+              
+          subset = subset.filter(items=clustering_criteria)
+          concerned_array_ids = str(RangeSet(','.join(map(lambda x:str(x),subset.index.get_values()))))
+          values['array'] = concerned_array_ids
+          
           self.array_clustered = self.array_clustered + \
-                                 [{'nodes':n,'array':concerned_array_ids}]
+                                 [values]
                                   
-          self.log_debug('\n%s' % pprint.pformat(sub_set),
-                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+          self.log_debug('\n%s' % pprint.pformat(subset),\
+                         4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
                          
       self.log_info('array_clusters: %s' % pprint.pformat( self.array_clustered),
-                     1, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+                    1, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
       
-      # cols_orig = l.columns
-      # cols = ['nodes', 'ntasks']
-      # for c in cols_orig:
-      #   if not(c in ['nodes', 'ntasks']):
-      #     cols = cols + [c]
-
 
     if self.args.parameter_list:
         sys.exit(0)
@@ -2969,7 +2991,7 @@ class decimate(engine):
       
       # compute new time for yalla pool
       (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
-      self.log_info("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'])
+      self.log_debug("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'],4,trace='YALLA,Y')
       factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
       whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
       (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
@@ -2980,8 +3002,8 @@ class decimate(engine):
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/32+1
-          if all_tasks % 32:
+          pool_nodes_nb = all_tasks/self.CORES_PER_NODE+1
+          if all_tasks % self.CORES_PER_NODE:
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
           pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
