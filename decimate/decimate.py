@@ -2993,14 +2993,20 @@ class decimate(engine):
 
       self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA')
 
+      error_file = '%s.task_yyy-attempt_%s' % \
+                (job['error'].replace('%a', job['array'][0:20]), attempt)
+      output_file = '%s.task_yyy-attempt_%s' % \
+                (job['output'].replace('%a', job['array'][0:20]), attempt)
+
+      '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
+
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % pool_nodes_nb,
-                '--error=%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt),
-                '--output=%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)]
+                '--error=%s ' % error_file,
+                '--output=%s' % output_file]
     else:
       error_file = '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
