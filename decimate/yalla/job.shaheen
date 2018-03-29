@@ -53,11 +53,11 @@ echo __ARRAY_UNFOLD__ > __save_dir__/YALLA/__job_name__.___job_array__.tasks
 cd __job_submit_dir__
 
 sleep 2s
-echo running srun -n  __PARALLEL_RUNS__   __save_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
+echo running srun -n  __PARALLEL_RUNS__   __yalla_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
 ##srun hostname >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 nb_runs=$((__PARALLEL_RUNS__+1))
 nb_nodes_runs=$((nb_runs/32+1))
-srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __save_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __yalla_dir__/YALLA/yalla__DEBUG__.exe '__save_dir__/YALLA/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 
 echo >>   $YALLA_JOB_OUTPUT   
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   

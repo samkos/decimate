@@ -661,7 +661,7 @@ class decimate(engine):
         tasks = [self.TASK_ID]
 
       self.log_debug('creating parametric files for range [%s]' % self.TASK_IDS,\
-                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
+                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
       
       for t in tasks:
         param_file = '%s.%s' % (self.PARAMETER_FILE,t)
@@ -688,7 +688,7 @@ class decimate(engine):
       
         task_parameter_file.write('\n')
         task_parameter_file.close()
-        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
         
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
@@ -1911,7 +1911,7 @@ class decimate(engine):
     matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
       (t, v) = (matchObj.group(1), matchObj.group(2))
-      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL,PD')
       self.combined_tag[t] = v
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
@@ -1920,7 +1920,7 @@ class decimate(engine):
     matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
       (t, v) = (matchObj.group(1), matchObj.group(2))
-      self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL,PD')
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
       return True
@@ -1947,7 +1947,7 @@ class decimate(engine):
                  exception=True, exit=True, where="eval_tag")
     value = locals()[tag]
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s' % (expr, tag, value), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     return value
 
   #########################################################################
@@ -1973,7 +1973,7 @@ class decimate(engine):
       if tag.find('__') == -1 and ("%s" % value).find('<') == -1:
         values[tag] = value
         self.log_debug('value of %s = %s' % (tag, value), \
-                       4, trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
+                       4, trace='PARAMETRIC_DETAIL,PD,PARAMETRIC_PROG')
     return values
 
   #########################################################################
@@ -2007,7 +2007,7 @@ class decimate(engine):
 
   def read_parameter_file(self):
     self.log_debug('reading yalla parameter files %s' % self.args.parameter_file, \
-                   2, trace='YALLA,PARAMETRIC_DETAIL')
+                   2, trace='YALLA,PARAMETRIC_DETAIL,PD')
 
     if not(os.path.exists(self.args.parameter_file)):
       self.error('Parameter file %s does not exist!!!' % self.args.parameter_file)
@@ -2040,7 +2040,7 @@ class decimate(engine):
             continue
           for k in self.direct_tag.keys():
             line = line + " " + self.direct_tag[k]
-          self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
+          self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL,PD')
           matchObj = re.match("^.*" + self.args.parameter_filter + ".*$", line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
@@ -2133,7 +2133,7 @@ class decimate(engine):
         continue
 
       self.log_debug("testing : %s\ntags_names:%s" % (line, tags_names), \
-                     4, trace='PARAMETRIC_DETAIL')
+                     4, trace='PARAMETRIC_DETAIL,PD')
     
       tags = shlex.split(line)
 
@@ -2148,19 +2148,19 @@ class decimate(engine):
       ts = copy.deepcopy(tags_names)
       tag = {}
       self.log_debug("ts:%s\ntags:%s" % (pprint.pformat(ts), pprint.pformat(tags))\
-                     , 4, trace='PARAMETRIC_DETAIL')
+                     , 4, trace='PARAMETRIC_DETAIL,PD')
       
       while(len(ts)):
         t = ts.pop(0)
         tag["%s" % t] = tags.pop(0)
-        self.log_debug("tag %s : !%s! " % (t, tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
-      self.log_debug('tag:%s' % pprint.pformat(tag), 4, trace='PARAMETRIC_DETAIL')
+        self.log_debug("tag %s : !%s! " % (t, tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL,PD')
+      self.log_debug('tag:%s' % pprint.pformat(tag), 4, trace='PARAMETRIC_DETAIL,PD')
 
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
-                     4, trace='PARAMETRIC_DETAIL,PARAMETRIC')
+                     4, trace='PARAMETRIC_DETAIL,PD,PARAMETRIC')
 
     pd.options.display.max_rows = 999
     pd.options.display.max_columns = 999
@@ -2175,11 +2175,11 @@ class decimate(engine):
     else:
       tag = {}
     self.log_debug('%d parameters before functional_tags : \n %s' % (len(l), l), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     self.log_debug('tag before functional_tags : \n %s' % l.columns, \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     self.log_debug('prog before functional_tags : \n %s' % prog, \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
 
     
     
@@ -2198,10 +2198,10 @@ class decimate(engine):
       
       self.log_debug('self.direct_tag %s tag:%s' % \
                    (pprint.pformat(self.direct_tag), pprint.pformat(tag)), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
       self.log_debug('self.direct_tag_ordered %s ' % \
                    (pprint.pformat(self.direct_tag_ordered)), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
       # adding the tags enforced by a #DECIM directive
       # evaluating them first
 
@@ -2212,29 +2212,29 @@ class decimate(engine):
         if len(l) > 1:
           values = l.iloc[[1]]
           self.log_debug('values on first line : \n %s' % values, \
-                         4, trace='PARAMETRIC_DETAIL')
+                         4, trace='PARAMETRIC_DETAIL,PD')
           for c in l.columns:
             already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[0][c])
         self.log_debug('already_set_variables : \n %s' % already_set_variables, \
-                       4, trace='PARAMETRIC_DETAIL')
+                       4, trace='PARAMETRIC_DETAIL,PD')
 
         formula = self.direct_tag[t]
         if t.find("YALLA_prog") == -1:
           results = { t:  self.eval_tag(t, formula, already_set_variables)}
           tag, result = t, results[t]
           self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
-                         4, trace='PARAMETRIC_DETAIL')
+                         4, trace='PARAMETRIC_DETAIL,PD')
           # output produced is a row of values
           if isinstance(result, list):
             if  len(l) > 0 and (t in self.combined_tag):
               new_column = pd.DataFrame(pd.Series(result), columns=[t])
               self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l), l), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column), new_column), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               l = self.cartesian(l, new_column)
               self.log_debug('after cartesian product %d combinations : \n %s' % (len(l), l), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
             else:
               if len(result) == len(l) or len(l) == 0:
                 if len(l) > 0:
@@ -2253,16 +2253,16 @@ class decimate(engine):
             for row in range(1, len(l)):
               values = l.iloc[[row]]
               self.log_debug('values on row %s: \n %s' % (row, values), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               already_set_variables = ""
               for c in l.columns:
                 already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[row][c])
               self.log_debug('about to be revaluated! t=%s results=%s' % (t, results), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               result = self.eval_tag(t, formula, already_set_variables)
               results = results + [result]
             self.log_debug('evaluated! %s = %s = %s' % (t, formula, results), \
-                          4, trace='PARAMETRIC_DETAIL')
+                          4, trace='PARAMETRIC_DETAIL,PD')
 
             ser = pd.Series(results, index=l.index)
             l[t] = ser
@@ -2274,7 +2274,7 @@ class decimate(engine):
           result_as_column = {}
           for tag, result in results.items():  
             self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
-                           4, trace='PARAMETRIC_DETAIL')
+                           4, trace='PARAMETRIC_DETAIL,PD')
             # output produced is a row of values
             if isinstance(result, list):
               if len(result) == len(l) or len(l) == 0 or (t in self.combined_tag):
@@ -2326,7 +2326,7 @@ class decimate(engine):
         if p in self.slurm_vars.keys():
             if self.slurm_vars[p]==int:
                 self.log_debug('casting parameter %s to int' % p,\
-                   4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
                 columns_to_cast = columns_to_cast + [p]
     if len(columns_to_cast):
         l[columns_to_cast] = l[columns_to_cast].astype(int)
@@ -2335,7 +2335,7 @@ class decimate(engine):
     parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
 
     self.log_debug(parameter_list,\
-                   4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
 
     if self.args.parameter_list:
         self.log_console(parameter_list)
@@ -2348,7 +2348,7 @@ class decimate(engine):
 
     cluster_keys = ",".join(map(lambda x:str(x),clustering_criteria))
     self.log_debug('critera taken : (%s) from %s' %  (cluster_keys,l.columns), \
-                   4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+                   4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
 
 
     if len(clustering_criteria):
@@ -2359,7 +2359,7 @@ class decimate(engine):
       l_per_clusters = l.groupby(clustering_criteria).size()
       self.log_debug('cluster (%s) in %s combinations:' % \
                      (cluster_keys,len(l_per_clusters)), \
-                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+                     4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
 
       for n in l_per_clusters.index:
           criteria = clustering_criteria
@@ -2382,10 +2382,10 @@ class decimate(engine):
                                  [values]
                                   
           self.log_debug('\n%s' % pprint.pformat(subset),\
-                         4, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+                         4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
                          
       self.log_info('array_clusters: %s' % pprint.pformat( self.array_clustered),
-                    1, trace='PARAMETRIC_DETAIL,GATHER_JOBS,GJ')
+                    1, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
       
 
     if self.args.parameter_list:
@@ -3780,6 +3780,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       input_file = "%s/job.%s" % (self.YALLA_SOURCE_DIR, self.machine)
       output = "".join(open(input_file, "r").readlines())
       output = output.replace('__save_dir__', self.SAVE_DIR)
+      output = output.replace('__yalla_dir__', self.YALLA_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
