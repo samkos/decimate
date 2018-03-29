@@ -147,8 +147,9 @@ Parametric Jobs:
   -Pa, --parameter-range=range numeric filter while reading parameter file
 
 Pools:
-  -xp, --pool-nodes=NB_OF_NODES_TO_RESERVE_PER_POOL  nodes made available per pool
-  -xc, --pool-tasks=NB_OF_CORES_TO_RESERVE_PER_POOL  cores made available per pool
+  -xy,  --yalla               Use Yalla Pool
+  -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number 
+                              of parallel runs in a pool
 
 
 Burst Buffer:
@@ -171,6 +172,11 @@ Other options:
 
 environment variables:
   DPARAM                      options forwarded to Decimate
+
+parameter file syntax:
+  #DECIM variable = value
+  #DECIM COMBINE variable = value
+  #DECIM PYTHON
 
       """
 
@@ -199,7 +205,7 @@ class decimate(engine):
     #self.DECIMATE_DIR = os.getenv('DECIMATE_PATH')
     self.DECIMATE_DIR = os.path.dirname(os.path.abspath(__file__))
     self.TEMPLATE_SOURCE_DIR = "%s/templates" % self.DECIMATE_DIR
-    self.YALLA_DIR = "%s/yalla" % self.DECIMATE_DIR
+    self.YALLA_SOURCE_DIR = "%s/yalla" % self.DECIMATE_DIR
 
     if not(hasattr(self, 'FILES_TO_COPY')):
         self.FILES_TO_COPY = []
@@ -233,6 +239,8 @@ class decimate(engine):
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
+    self.CORES_PER_NODE = CORES_PER_NODE
+    
     if not(os.path.exists(self.MAIL_DIR)):
       self.log_info("creating mail directory %s" % self.MAIL_DIR)
       os.system("mkdir -p %s; chmod 777 %s; chmod o+t %s; chmod o+t %s/.." % 
@@ -420,13 +428,10 @@ class decimate(engine):
     self.parser.add_argument("-xa", "--all-released", action="store_true",
                              help='do release all the job of a step.', default=False)
 
-    self.parser.add_argument("--yalla ", action="store_true", default=False,
-                             help=argparse.SUPPRESS)
-    self.parser.add_argument("-xp", "--pool-nodes", type=int,
-                             help='# of nodes made available per pool', default=0)
-    self.parser.add_argument("-xc", "--pool-cores", type=int,
-                             help='# of cores made available per pool', default=0)
-
+    self.parser.add_argument("-xy", "--yalla", action="store_true",
+                             help='Use yalla pool', default=False)
+    self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
+                             help='# of job to run in parallel in a pool', default=4)
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
 
@@ -530,32 +535,48 @@ class decimate(engine):
 
     # initialization of some parameters appearing in traces
 
-    if self.args.pool_nodes>0 or self.args.pool_cores>0:
-        self.args.yalla = True
-    
-    if self.args.yalla:
-        makefile_name = "%s/Makefile.%s" % (self.YALLA_DIR, self.machine)
-        yalla_exe = "%s/YALLA/yalla.exe" % (self.SAVE_DIR)
+    if self.args.yalla and not(self.args.spawned):
+        makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
+        yalla_exe = "%s/yalla.exe" % (self.YALLA_EXEC_DIR)
         if not(os.path.exists(yalla_exe)):
           if not os.path.isfile(makefile_name):
               self.error("yalla not available on %s ... \
                      no makefile %s available for this type of machine"
                          % (self.machine, makefile_name), exit=True)
 
-          # compilation of yalla
-          self.log_console('Compiling Yalla...', trace='YALLA')
-          cmd = ("mkdir -p %s/YALLA; cd %s/YALLA; cp %s/yalla.c .; " + 
+          # installation of yalla
+          self.log_console('Installing pool support...', trace='YALLA')
+
+          # compiling yalla.exe master-slave orchestrator
+          cmd = ("mkdir -p %s; cd %s; cp %s/yalla.c .; " + 
                  "make -f %s > %s/yalla_compile.out 2>&1") % \
-                (self.SAVE_DIR, self.SAVE_DIR, self.YALLA_DIR, makefile_name, self.LOG_DIR)
+                (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
           self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
           output = os.system(cmd)
-          self.log_debug('%s' % output, 3, trace='YALLA')
+          self.log_debug('output of yalla.exe compilation %s' % output, 3, trace='YALLA')
 
         if not(os.path.exists(yalla_exe)):
           self.error('could not compile yalla successfully\n output=\n%s' % output,
                      exit=True, exception=True)
 
+        yalla_srun_wrapper = "%s/srun" % (self.YALLA_EXEC_DIR)
+        if not(os.path.exists(yalla_srun_wrapper)):
+          # creating srun wrapper
+          #
+          srun_original_cmd = self.system("which srun")[:-1]
+          srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
+          f = open(srun_wrapper_file, "w")
+          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
+                   "%s -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+          f.close()
+          os.chmod(srun_wrapper_file, 0755)
+          
+        if not(os.path.exists(yalla_srun_wrapper)):
+          self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,
+                     exit=True, exception=True)
+
     # reading of the parameter file
+    self.array_clustered = []
     if self.args.parameter_file:
           self.array_clustered = self.read_parameter_file()
             
@@ -654,30 +675,44 @@ class decimate(engine):
 
     # checking previous step
     if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
-      param_file = '%s.%s' % (self.PARAMETER_FILE,self.TASK_ID)
-      task_parameter_file = open(param_file, "w")
-      params = self.parameters.iloc[self.TASK_ID]
-      task_parameter_file.write('# set parameter from file %s for task %s' % \
-                                (self.args.parameter_file, self.TASK_ID))
-      s = ""
+      # in case of a yalla job every parameter configuration file should be created ahead
+      if self.args.yalla:
+        tasks = []
+        for t in RangeSet(self.TASK_IDS):
+          tasks = tasks + [t]
+      else:
+        tasks = [self.TASK_ID]
 
-      task_parameter_file.write('\nexport task_id=%s' % (self.TASK_ID))
-      for p in self.parameters.columns:
-        if p in self.slurm_vars.keys():
-          if self.slurm_vars[p]==int:
-            print 'params[%s]' % p,':',params[p],type(params[p])
-            val = int(params[p].item())
-        else:
-            val = params[p]
-        task_parameter_file.write('\nexport %s=%s' % (p, val))
-        s = s + "%s=>%s< " % (p, params[p])
+      self.log_debug('creating parametric files for range [%s]' % self.TASK_IDS,\
+                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
+      
+      for t in tasks:
+        param_file = '%s.%s' % (self.PARAMETER_FILE,t)
+        task_parameter_file = open(param_file, "w")
+        params = self.parameters.iloc[t]
+        task_parameter_file.write('# set parameter from file %s for task %s' % \
+                                  (self.args.parameter_file, t))
+        s = ""
+
+        task_parameter_file.write('\nexport task_id=%s' % (t))
+        for p in self.parameters.columns:
+          self.log_debug('self.slurm_vars=%s' % pprint.pformat(self.slurm_vars),4,trace='VAR')
+          if p in self.slurm_vars.keys():
+            if self.slurm_vars[p]==int:
+              self.log_debug('params[%s]:%s of type %s' % (p,params[p],type(params[p])),\
+                             4,trace='VAR')
+              val = int(params[p].item())
+          else:
+              val = params[p]
+          task_parameter_file.write('\nexport %s=%s' % (p, val))
+          s = s + "%s=>%s< " % (p, params[p])
+          
+        #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (t, s))
+      
+        task_parameter_file.write('\n')
+        task_parameter_file.close()
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
         
-      #task_parameter_file.write('\necho Current Parameters[%s]: "%s"' % (self.TASK_ID, s))
-      
-      task_parameter_file.write('\n')
-      task_parameter_file.close()
-      self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL')
-      
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
@@ -1899,7 +1934,7 @@ class decimate(engine):
     matchObj = re.match(r'^#DECIM\s*COMBINE\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
       (t, v) = (matchObj.group(1), matchObj.group(2))
-      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.log_debug("combine tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL,PD')
       self.combined_tag[t] = v
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
@@ -1908,7 +1943,7 @@ class decimate(engine):
     matchObj = re.match(r'^#DECIM\s*(\S+|_)\s*=\s*(.*)\s*$', line)
     if (matchObj):
       (t, v) = (matchObj.group(1), matchObj.group(2))
-      self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL')
+      self.log_debug("direct tag definitition: /%s/ " % line, 4, trace='YALLA,PARAMETRIC_DETAIL,PD')
       self.direct_tag[t] = v
       self.direct_tag_ordered = self.direct_tag_ordered + [t]
       return True
@@ -1935,7 +1970,7 @@ class decimate(engine):
                  exception=True, exit=True, where="eval_tag")
     value = locals()[tag]
     self.log_debug('expression to be evaluted : %s  -> value of %s = %s' % (expr, tag, value), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     return value
 
   #########################################################################
@@ -1961,7 +1996,7 @@ class decimate(engine):
       if tag.find('__') == -1 and ("%s" % value).find('<') == -1:
         values[tag] = value
         self.log_debug('value of %s = %s' % (tag, value), \
-                       4, trace='PARAMETRIC_DETAIL,PARAMETRIC_PROG')
+                       4, trace='PARAMETRIC_DETAIL,PD,PARAMETRIC_PROG')
     return values
 
   #########################################################################
@@ -1995,7 +2030,7 @@ class decimate(engine):
 
   def read_parameter_file(self):
     self.log_debug('reading yalla parameter files %s' % self.args.parameter_file, \
-                   2, trace='YALLA,PARAMETRIC_DETAIL')
+                   2, trace='YALLA,PARAMETRIC_DETAIL,PD')
 
     if not(os.path.exists(self.args.parameter_file)):
       self.error('Parameter file %s does not exist!!!' % self.args.parameter_file)
@@ -2028,7 +2063,7 @@ class decimate(engine):
             continue
           for k in self.direct_tag.keys():
             line = line + " " + self.direct_tag[k]
-          self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL')
+          self.log_debug('direct_tag: /%s/' % line, 4, trace='PARAMETRIC_DETAIL,PD')
           matchObj = re.match("^.*" + self.args.parameter_filter + ".*$", line)
           # prints all the tests that will be selected
           if (matchObj) and not(self.args.yes):
@@ -2121,7 +2156,7 @@ class decimate(engine):
         continue
 
       self.log_debug("testing : %s\ntags_names:%s" % (line, tags_names), \
-                     4, trace='PARAMETRIC_DETAIL')
+                     4, trace='PARAMETRIC_DETAIL,PD')
     
       tags = shlex.split(line)
 
@@ -2136,19 +2171,19 @@ class decimate(engine):
       ts = copy.deepcopy(tags_names)
       tag = {}
       self.log_debug("ts:%s\ntags:%s" % (pprint.pformat(ts), pprint.pformat(tags))\
-                     , 4, trace='PARAMETRIC_DETAIL')
+                     , 4, trace='PARAMETRIC_DETAIL,PD')
       
       while(len(ts)):
         t = ts.pop(0)
         tag["%s" % t] = tags.pop(0)
-        self.log_debug("tag %s : !%s! " % (t, tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL')
-      self.log_debug('tag:%s' % pprint.pformat(tag), 4, trace='PARAMETRIC_DETAIL')
+        self.log_debug("tag %s : !%s! " % (t, tag["%s" % t]), 4, trace='PARAMETRIC_DETAIL,PD')
+      self.log_debug('tag:%s' % pprint.pformat(tag), 4, trace='PARAMETRIC_DETAIL,PD')
 
       self.parameters[nb_case] = tag
 
     self.log_debug('self.parameters: %s ' % \
                      (pprint.pformat(self.parameters)), \
-                     4, trace='PARAMETRIC_DETAIL,PARAMETRIC')
+                     4, trace='PARAMETRIC_DETAIL,PD,PARAMETRIC')
 
     pd.options.display.max_rows = 999
     pd.options.display.max_columns = 999
@@ -2163,11 +2198,11 @@ class decimate(engine):
     else:
       tag = {}
     self.log_debug('%d parameters before functional_tags : \n %s' % (len(l), l), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     self.log_debug('tag before functional_tags : \n %s' % l.columns, \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
     self.log_debug('prog before functional_tags : \n %s' % prog, \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
 
     
     
@@ -2186,10 +2221,10 @@ class decimate(engine):
       
       self.log_debug('self.direct_tag %s tag:%s' % \
                    (pprint.pformat(self.direct_tag), pprint.pformat(tag)), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
       self.log_debug('self.direct_tag_ordered %s ' % \
                    (pprint.pformat(self.direct_tag_ordered)), \
-                   4, trace='PARAMETRIC_DETAIL')
+                   4, trace='PARAMETRIC_DETAIL,PD')
       # adding the tags enforced by a #DECIM directive
       # evaluating them first
 
@@ -2200,29 +2235,29 @@ class decimate(engine):
         if len(l) > 1:
           values = l.iloc[[1]]
           self.log_debug('values on first line : \n %s' % values, \
-                         4, trace='PARAMETRIC_DETAIL')
+                         4, trace='PARAMETRIC_DETAIL,PD')
           for c in l.columns:
             already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[0][c])
         self.log_debug('already_set_variables : \n %s' % already_set_variables, \
-                       4, trace='PARAMETRIC_DETAIL')
+                       4, trace='PARAMETRIC_DETAIL,PD')
 
         formula = self.direct_tag[t]
         if t.find("YALLA_prog") == -1:
           results = { t:  self.eval_tag(t, formula, already_set_variables)}
           tag, result = t, results[t]
           self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
-                         4, trace='PARAMETRIC_DETAIL')
+                         4, trace='PARAMETRIC_DETAIL,PD')
           # output produced is a row of values
           if isinstance(result, list):
             if  len(l) > 0 and (t in self.combined_tag):
               new_column = pd.DataFrame(pd.Series(result), columns=[t])
               self.log_debug('before cartesian product \n l: %d combinations : \n %s' % (len(l), l), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               self.log_debug('before cartesian product \n new_column: %d combinations : \n %s' % (len(new_column), new_column), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               l = self.cartesian(l, new_column)
               self.log_debug('after cartesian product %d combinations : \n %s' % (len(l), l), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
             else:
               if len(result) == len(l) or len(l) == 0:
                 if len(l) > 0:
@@ -2241,16 +2276,16 @@ class decimate(engine):
             for row in range(1, len(l)):
               values = l.iloc[[row]]
               self.log_debug('values on row %s: \n %s' % (row, values), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               already_set_variables = ""
               for c in l.columns:
                 already_set_variables = already_set_variables + "\n" + "%s = %s " % (c, l.iloc[row][c])
               self.log_debug('about to be revaluated! t=%s results=%s' % (t, results), \
-                             4, trace='PARAMETRIC_DETAIL')
+                             4, trace='PARAMETRIC_DETAIL,PD')
               result = self.eval_tag(t, formula, already_set_variables)
               results = results + [result]
             self.log_debug('evaluated! %s = %s = %s' % (t, formula, results), \
-                          4, trace='PARAMETRIC_DETAIL')
+                          4, trace='PARAMETRIC_DETAIL,PD')
 
             ser = pd.Series(results, index=l.index)
             l[t] = ser
@@ -2262,7 +2297,7 @@ class decimate(engine):
           result_as_column = {}
           for tag, result in results.items():  
             self.log_debug('evaluated! %s = %s = %s' % (tag, formula, result), \
-                           4, trace='PARAMETRIC_DETAIL')
+                           4, trace='PARAMETRIC_DETAIL,PD')
             # output produced is a row of values
             if isinstance(result, list):
               if len(result) == len(l) or len(l) == 0 or (t in self.combined_tag):
@@ -2307,39 +2342,74 @@ class decimate(engine):
               ser = pd.Series(results_per_var[v], index=l.index)
               l[v] = ser
 
-    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+    # forcing integer casting of SLURM Integer parameters
+
+    columns_to_cast = []
+    for p in l.columns.get_values():
+        if p in self.slurm_vars.keys():
+            if self.slurm_vars[p]==int:
+                self.log_debug('casting parameter %s to int' % p,\
+                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
+                columns_to_cast = columns_to_cast + [p]
+    if len(columns_to_cast):
+        l[columns_to_cast] = l[columns_to_cast].astype(int)
+
     
+    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+
     self.log_debug(parameter_list,\
-                   4, trace='PS,PARAMETRIC_DETAIL,PARAMETRIC_SUMMARY')
+                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
 
     if self.args.parameter_list:
         self.log_console(parameter_list)
 
     self.array_clustered = []
-    if 'nodes' in l.columns:
-      job_per_node_number = l.groupby(['nodes']).size()
+    clustering_criteria = []
+    for c in ['nodes','ntasks','ntasks_per_nodes']:
+        if c in l.columns:
+            clustering_criteria.append(c)
+
+    cluster_keys = ",".join(map(lambda x:str(x),clustering_criteria))
+    self.log_debug('critera taken : (%s) from %s' %  (cluster_keys,l.columns), \
+                   4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
+
+
+    if len(clustering_criteria):
+      job_per_node_number = l.groupby(clustering_criteria).size()
       # print job_per_node_number
       # for j in job_per_node_number.keys():
       #   print j,':',job_per_node_number[j]
-      l_per_nodes = l.groupby(['nodes']).size()
-      self.log_debug('cluster %s per node combinations:' % len(l_per_nodes), \
-                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
-      for n in l_per_nodes.index:
-          sub_set = l[l['nodes']==n]
+      l_per_clusters = l.groupby(clustering_criteria).size()
+      self.log_debug('cluster (%s) in %s combinations:' % \
+                     (cluster_keys,len(l_per_clusters)), \
+                     4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
+
+      for n in l_per_clusters.index:
+          criteria = clustering_criteria
+          if (isinstance(n, type(8))):
+              n = [n]
+          subset = l.loc[l[criteria[0]]==n[0]]
+          values = {}
+          values[criteria[0]]=n[0]
+          i = 1
+          while i<len(criteria):
+              subset = subset.loc[l[criteria[i]]==n[i]]
+              values[criteria[i]]=n[i]
+              i = i+1
+              
+          subset = subset.filter(items=clustering_criteria)
+          concerned_array_ids = str(RangeSet(','.join(map(lambda x:str(x),subset.index.get_values()))))
+          values['array'] = concerned_array_ids
+          
           self.array_clustered = self.array_clustered + \
-                                 [n,str(RangeSet(','.join(map(lambda x:str(x),sub_set.index.get_values()))))]
-          self.log_debug('\n%s' % pprint.pformat(sub_set),
-                     4, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+                                 [values]
+                                  
+          self.log_debug('\n%s' % pprint.pformat(subset),\
+                         4, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
                          
       self.log_info('array_clusters: %s' % pprint.pformat( self.array_clustered),
-                     0, trace='PARAMETRIC_DETAIL,GATHER_JOBS')
+                    1, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
       
-      # cols_orig = l.columns
-      # cols = ['nodes', 'ntasks']
-      # for c in cols_orig:
-      #   if not(c in ['nodes', 'ntasks']):
-      #     cols = cols + [c]
-
 
     if self.args.parameter_list:
         sys.exit(0)
@@ -2447,6 +2517,41 @@ class decimate(engine):
                        0, trace='RESTART_FAKED,SUBMITTED')
         return (None, 'nothing')
 
+    # dispatching several jobs in the case of different profiles
+
+    # only one job profile: only submit one job...
+    if len(self.array_clustered)==0:
+        forcing_fields = {}
+        return self.submit_same_profile_job(job,forcing_fields,
+                                            registration,resubmit,take_lock,return_all_job_ids)
+    elif len(self.array_clustered)==1:
+        forcing_fields = self.array_clustered[0]
+        return self.submit_same_profile_job(job,forcing_fields,
+                                            registration,resubmit,take_lock,return_all_job_ids)
+
+    self.log_info('%d differents job profiles have been detected... They will be submitted as separate job arrays...' % \
+                  len(self.array_clustered))
+
+    np=1
+    for profile in self.array_clustered:
+        forcing_fields = profile
+        new_job = copy.deepcopy(job)
+        self.log_info('profile %d: %s ' % (np,pprint.pformat(profile)))
+        (job_id, cmd) = self.submit_same_profile_job(new_job,forcing_fields,
+                                                     registration,resubmit,take_lock,return_all_job_ids,profile_nb=np)
+        np = np +1
+
+    return (job_id,cmd)
+
+
+  #########################################################################
+  # submitting job of same profile with respect to the scheduler
+  # these clusterization happened in read_parameter_file
+  #########################################################################
+
+  def submit_same_profile_job(self, job, forcing_fields={}, registration=True, resubmit=False, \
+                              take_lock=False, return_all_job_ids=False, profile_nb=False):
+
     lock_file = self.take_lock(self.LOCK_FILE)
 
     self.log_debug('submit_job submitting job: %s ' % self.print_job(job, print_all=True), 2, trace='SUBMIT_JOB')
@@ -2458,14 +2563,19 @@ class decimate(engine):
                          'check': None,
                          'initial_attempt': 0, \
                          'make_depend': None, \
-                         'yalla_parallel_runs': 0,
-                         'pool_nodes': 0,
-                         'pool_cores': 0,
+                         'yalla': 0,
                          'burst_buffer_size': 0,
                          'burst_buffer_space': 0,
                          'submit_dir': os.getcwd()
                          }
 
+
+    # overwrite with values found in the parameters values clustered
+
+    for (field,value) in forcing_fields.items():
+        job[field] = value
+    
+    
     # scanning original script for merging slurm option
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
@@ -2488,6 +2598,10 @@ class decimate(engine):
     if not(job['job_name']):
       self.error('sbatch: error: Invalid name specification', exit=1)
 
+    if profile_nb:
+        job['job_name'] =  '%s{%d}' % (job['job_name'],profile_nb)
+
+      
     # if neither ntasks or nodes is valued rejecting the job...
     job_keys = job.keys()
     if not('nodes' in job_keys) and not('ntasks' in job_keys):
@@ -2892,31 +3006,17 @@ class decimate(engine):
     prolog = prolog + ['--job-name=%s' % (job['job_name'])]
 
     if job['yalla']:
-      if job['pool_cores'] and job['pool_nodes']:
-        self.error('Please choose if asking  for a pool of nodes or a pool of cores',
-                   exit=True)
       if not(job['nodes']) and not(job['ntasks']):
-        self.error('when asking for a pool, either nodes or ntasks has to be valued',
-                   exit=True)
-      if not(job['ntasks']) and job['pool_tasks']:
-        self.error('when asking for a pool of tasks, at least ntasks has to be valued',
-                   exit=True)
-      if not(job['nodes']) and job['pool_nodes']:
-        self.error('when asking for a pool of nodes, at least nodes has to be valued',
+        self.error('when asking for a Yalla pool, either nodes or ntasks has to be valued',
                    exit=True)
 
-
-      if job['pool_cores']:
-          job['yalla_parallel_runs'] = int(math.ceil(job['pool_cores'] / (job['ntasks'] + 0.)))
-      elif job['pool_nodes']:
-          job['yalla_parallel_runs'] = int(math.ceil(job['pool_nodes'] / (job['nodes'] + 0.)))
         
       nb_jobs = len(RangeSet(job['array']))
       job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
       
       # compute new time for yalla pool
       (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
-      self.log_info("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'])
+      self.log_debug("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'],4,trace='YALLA,Y')
       factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
       whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
       (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
@@ -2925,41 +3025,47 @@ class decimate(engine):
 
       # computes number of nodes required to host the pool
       
-      if job['pool_cores']:
+      if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          prolog = prolog + \
-               ['--time=%s' % job['time'],
-                '--ntasks=%s' % all_tasks,
-                '--error=%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt),
-                '--output=%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)]
-          self.log_debug('yalla pool_cores_nb:%s' % all_tasks, 4, trace='YALLA')
-      elif job['pool_nodes']:
-          all_nodes = job['nodes'] * job['yalla_parallel_runs']
-          prolog = prolog + \
-               ['--time=%s' % job['time'],
-                '--nodes=%s' % all_nodes,
-                '--error=%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt),
-                '--output=%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)]
-          self.log_debug('yalla pool_nodes_nb:%s' % all_nodes, 4, trace='YALLA')
+          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
+          if all_tasks % self.CORES_PER_NODE:
+              pool_nodes_nb = pool_nodes_nb + 1
+      else: 
+          pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
+      
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
-                                                    'yalla', 'output', 'error']), 4, trace='YALLA')
+                                                     'yalla', 'output', 'error']), 4, trace='YALLA,Y')
 
+      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA,Y')
 
-    else:
+      error_file = '%s.task_yyy-attempt_%s' % \
+                (job['error'].replace('%a', job['array'][0:20]), attempt)
+      output_file = '%s.task_yyy-attempt_%s' % \
+                (job['output'].replace('%a', job['array'][0:20]), attempt)
+
+      '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
+
       prolog = prolog + \
                ['--time=%s' % job['time'],
-                '--error=%s.task_%%04a-attempt_%s' % (job['error'], attempt),
-                '--output=%s.task_%%04a-attempt_%s' % (job['output'], attempt)]
+                '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
+                '--nodes=%s' % pool_nodes_nb,
+                '--error=%s ' % error_file,
+                '--output=%s' % output_file]
+    else:
+      error_file = '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
+      prolog = prolog + \
+               ['--time=%s' % job['time'],
+                '--error=%s/error.%%x.task-%%a-attempt_%s' % (self.LOG_DIR,attempt),
+                '--output=%s/output.%%x.task-%%a-attempt_%s' % (self.LOG_DIR,attempt)]
       if job['nodes']:
           prolog = prolog + ['--nodes=%s' % job['nodes']]
       if job['ntasks']:
           prolog = prolog + ['--ntasks=%s' % job['ntasks']]
+
 
 
     cmd = cmd + ['%s_%s' % (job['script_file'], attempt)]
@@ -2979,7 +3085,21 @@ class decimate(engine):
                                  (job['burst_buffer_size']) + "\n"
 
     job_content_template = job_content_template + \
-                           "".join(open(job['script_file'], "r").readlines())
+                           """
+o="%s"
+e="%s"
+printf -v formatted_array_task_id "%%04d" $SLURM_ARRAY_TASK_ID
+output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+
+# creation of directory if it does not exist
+mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
+
+""" % (output_file,error_file) +\
+                           "run_job () { \n"  + \
+                           "".join(open(job['script_file'], "r").readlines()) +\
+                           " } \n run_job > $output_file 2> $error_file"
+    
     job_content_updated = job_content_template.replace('__ATTEMPT__', "%s" % attempt)
     job_content_updated = job_content_updated.replace('__ATTEMPT_INITIAL__', "%s" % \
                                                       job['initial_attempt'])
@@ -3306,11 +3426,11 @@ class decimate(engine):
                              (short_option, long_option, help_message))
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=int, help=help_message)
-              self.slurm_vars[long_option[2:]] = int
+              self.slurm_vars[long_option[2:].replace('-','_')] = int
             else:
               self.slurm_parser.add_argument(short_option, long_option,
                                              type=str, help=help_message)
-              self.slurm_vars[long_option[2:]] = str
+              self.slurm_vars[long_option[2:].replace('-','_')] = str
           else:
             self.slurm_parser.add_argument(short_option, long_option,
                                            action="store_true", help=help_message)
@@ -3324,10 +3444,10 @@ class decimate(engine):
             long_option = long_option.split('[')[0]
             if help_message.find('number') > -1:
               self.slurm_parser.add_argument(long_option, type=int, help=help_message)
-              self.slurm_vars[long_option[2:]] = int
+              self.slurm_vars[long_option[2:].replace('-','_')] = int
             else:
               self.slurm_parser.add_argument(long_option, type=str, help=help_message)
-              self.slurm_vars[long_option[2:]] = str
+              self.slurm_vars[long_option[2:].replace('-','_')] = str
           else:
             self.slurm_parser.add_argument(long_option, action="store_true", help=help_message)
             self.slurm_vars[long_option[2:]] = bool
@@ -3612,28 +3732,22 @@ class decimate(engine):
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
-                       '--check-previous-step > %s.checking.out 2> %s.checking.err' % \
-                       (job['job_name'], job['job_name']))
+                       '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
       prefix = prefix + \
-               '\n# Defining main loop of tasks in replacemennt for job_array\n\n' + \
-               ('cat >> %s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % job['job_name'])
+               '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
+               ('cat >> %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
       prefix0 = ""
     else:
       prefix0 = check_previous
-      if self.args.parameter_file:
+      
+    if self.args.parameter_file:
         prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
-        # prefix0 = prefix0 + '\necho Sourcing parameters taken from file: %s ' % \
-        #           self.args.parameter_file
-        # prefix0 = prefix0 + '\necho --- parameters set here --------------'
-        # prefix0 = prefix0 + '\ncat  /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
-        # prefix0 = prefix0 + '\necho --------------------------------------'
-        
         
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
-        # prefix0 = prefix0 + '\nrm /tmp/parameters.${SLURM_ARRAY_TASK_ID}'
+
       
 
 
@@ -3669,8 +3783,10 @@ class decimate(engine):
     if job['yalla']:
       stream = {}
       for w in ['output', 'error']:
-        s = job[w].replace('%J', '\$SLURM_JOB_ID').replace('%j', '\$SLURM_JOB_ID')\
-            .replace('%a', '\${task}')
+        s = ("%s/%s" % (job['submit_dir'],job[w])).replace('%J', '\$SLURM_JOB_ID')\
+                                                  .replace('%j', '\$SLURM_JOB_ID')\
+                                                  .replace('%a', '\${task}')\
+                                                  .replace('%04a', '\${formatted_task}`')
         stream[w] = s + '.task_\${formatted_task}-attempt_%s' % job['attempt']
       
       l = prefix + (l).replace('$', '\$') + 'EOF\n'
@@ -3684,9 +3800,11 @@ class decimate(engine):
       #             (job['job_name'],stream['output'],stream['error']) + \
       #     "done\n"
 
-      input_file = "%s/job.%s" % (self.YALLA_DIR, self.machine)
+      input_file = "%s/job.%s" % (self.YALLA_SOURCE_DIR, self.machine)
       output = "".join(open(input_file, "r").readlines())
       output = output.replace('__save_dir__', self.SAVE_DIR)
+      output = output.replace('__yalla_dir__', self.YALLA_DIR)
+      output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
@@ -3695,6 +3813,7 @@ class decimate(engine):
       output = output.replace('__job_output__', stream['output'])
       output = output.replace('__job_error__', stream['error'])
       output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
+      output = output.replace('__TASKS__', " ".join(map(lambda x:str(x), RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__', job['submit_dir'])
       
       if self.args.debug:
@@ -3702,7 +3821,7 @@ class decimate(engine):
       else:
         output = output.replace('__DEBUG__', '')
 
-      f = open('%s/YALLA/%s.yalla_job' % (self.SAVE_DIR, job['job_name']), 'w')
+      f = open('%s/%s.yalla_job' % (self.YALLA_DIR, job['job_name']), 'w')
       f.write(output)
       f.close()
 

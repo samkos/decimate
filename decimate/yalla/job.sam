@@ -1,12 +1,12 @@
-mkdir -p __save_dir__/YALLA/HOSTS/
+mkdir -p __yalla_dir__/HOSTS/
 
 
 
-scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __save_dir__/YALLA/machines.txt
-split -l __PARALLEL_RUNS__ -d -a 3  __save_dir__/YALLA/machines.txt  __save_dir__/YALLA/HOSTS/mach
-cd __save_dir__/YALLA/HOSTS
-sort -u ../machines.txt > b
-for f in mach*; do
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __yalla_dir__/__job_name___machines.txt
+split -l __PARALLEL_RUNS__ -d -a 3  __yalla_dir__/__job_name___machines.txt  __yalla_dir__/HOSTS/__job_name___mach
+cd __yalla_dir__/HOSTS
+sort -u ../__job_name___machines.txt > b
+for f in __job_name___mach*; do
     sort -u $f > a
     grep -Fxvf a b > ex_$f
 done
@@ -14,17 +14,18 @@ done
 
 # building command to be run by yalla...
 
-cat > __save_dir__/YALLA/__job_name__.cmd <<EOF
+cat > __yalla_dir__/__job_name__.cmd <<EOF
 export task=\$1
-export SLURM_ARRAY_JOB_ID=$SLURM_JOB_ID 
+export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
 export SLURM_ARRAY_TASK_ID=\$task 
-formatted_task=\$(printf "%04d" \$task) 
-. ./__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+formatted_task=\$(printf "%04d" \$task)
+# helllllllllo
+. __yalla_dir__/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
 EOF
-chmod +x __save_dir__/YALLA/__job_name__.cmd
+chmod +x __yalla_dir__/__job_name__.cmd
 
 
-head -1 __save_dir__/YALLA/HOSTS/mach* -q > __save_dir__/YALLA/machines_head.txt
+head -1 __yalla_dir__/HOSTS/__job_name___mach* -q > __yalla_dir__/__job_name___machines_head.txt
 
 # starting __NB_JOBS__ runs (__PARALLEL_RUNS__ in parallel)
 
@@ -32,9 +33,9 @@ sleep 2s
 
 cd __job_submit_dir__
 
-for t in `seq 1 __NB_JOBS__`; do
-    __save_dir__/YALLA/__job_name__.cmd $t
+for t in __TASKS__; do
+    __yalla_dir__/__job_name__.cmd $t
 done
 
-# mpirun -machinefile __save_dir__/YALLA/machines_head.txt -np  __PARALLEL_RUNS__   __save_dir__/YALLA/yalla__DEBUG__.exe "__save_dir__/YALLA/__job_name__.cmd %d" __NB_JOBS__ >> __job_name__.yalla.out 2>> __job_name__.yalla.err
+
 

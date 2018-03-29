@@ -237,7 +237,7 @@ class slurm_frontend(decimate):
     if self.slurm_args.check:
       final_checking_job = copy.deepcopy(new_job)
       for n in ['job_name','error','output']:
-        final_checking_job[n] = 'chk_' + new_job[n]
+        final_checking_job[n] = new_job[n]+"_chk"
       final_checking_job['ntasks'] = 1
       final_checking_job['dependency'] = job_id
       final_checking_job['time'] = "05:00"
