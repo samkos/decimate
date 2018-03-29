@@ -10,11 +10,6 @@ for f in mach*; do
     grep -Fxvf a b > ex_$f
 done
 
-mkdir -p __yalla_dir__/bin
-echo echo wrapping srun : actually running `which srun`  -N __NB_NODES_PER_PARALLEL_RUNS__ ' -x $HOSTS_EXCLUDED $* ' > __yalla_dir__/bin/srun
-echo `which srun` -N __NB_NODES_PER_PARALLEL_RUNS__ ' -x $HOSTS_EXCLUDED $* ' >> __yalla_dir__/bin/srun
-chmod +x __yalla_dir__/bin/srun
-
 
 export YALLA_JOB_OUTPUT=__job_submit_dir__/__job_name__.___job_array__.yalla.out
 export YALLA_JOB_ERROR=__job_submit_dir__/__job_name__.___job_array__.yalla.err
@@ -37,7 +32,8 @@ export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex_mach\${formatted_worker_rank}
 export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
 export SLURM_ARRAY_TASK_ID=\$task 
 formatted_task=\$(printf "%04d" \$task)
-export PATH=__yalla_dir__/bin:\$PATH
+export PATH=__yalla_exec_dir__:$PATH
+
 cd __job_submit_dir__
 . __yalla_dir__/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
 EOF

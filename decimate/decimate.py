@@ -535,7 +535,7 @@ class decimate(engine):
 
     # initialization of some parameters appearing in traces
 
-    if self.args.yalla:
+    if self.args.yalla and not(self.args.spawned):
         makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
         yalla_exe = "%s/yalla.exe" % (self.YALLA_EXEC_DIR)
         if not(os.path.exists(yalla_exe)):
@@ -544,17 +544,36 @@ class decimate(engine):
                      no makefile %s available for this type of machine"
                          % (self.machine, makefile_name), exit=True)
 
-          # compilation of yalla
+          # installation of yalla
           self.log_console('Installing pool support...', trace='YALLA')
+
+          # compiling yalla.exe master-slave orchestrator
           cmd = ("mkdir -p %s; cd %s; cp %s/yalla.c .; " + 
                  "make -f %s > %s/yalla_compile.out 2>&1") % \
                 (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
           self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
           output = os.system(cmd)
-          self.log_debug('%s' % output, 3, trace='YALLA')
+          self.log_debug('output of yalla.exe compilation %s' % output, 3, trace='YALLA')
 
         if not(os.path.exists(yalla_exe)):
           self.error('could not compile yalla successfully\n output=\n%s' % output,
+                     exit=True, exception=True)
+
+        yalla_srun_wrapper = "%s/srun" % (self.YALLA_EXEC_DIR)
+        if not(os.path.exists(yalla_srun_wrapper)):
+          lock_file = self.take_lock(self.FEED_LOCK_FILE)
+          # creating srun wrapper
+          cmd = ("echo echo wrapping srun : actually running `which srun`  -x $HOSTS_EXCLUDED $* ' >> %s/srun\n" +\
+                 "echo `which srun`  -x $HOSTS_EXCLUDED $* \n exit' >> %s/srun\n" +\
+                 "chmod +x %s/srun" ) % (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR)
+          self.log_debug('wrapping srun cmd = \n%s' % cmd, 3, trace='YALLA')
+          output = os.system(cmd)
+          self.log_debug('output of wrapping srun %s' % output, 3, trace='YALLA')
+          self.release_lock(lock_file)
+
+          
+        if not(os.path.exists(yalla_srun_wrapper)):
+          self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,
                      exit=True, exception=True)
 
     # reading of the parameter file
