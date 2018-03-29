@@ -561,16 +561,15 @@ class decimate(engine):
 
         yalla_srun_wrapper = "%s/srun" % (self.YALLA_EXEC_DIR)
         if not(os.path.exists(yalla_srun_wrapper)):
-          lock_file = self.take_lock(self.FEED_LOCK_FILE)
           # creating srun wrapper
-          cmd = ("echo echo wrapping srun : actually running `which srun`  -x $HOSTS_EXCLUDED $* ' >> %s/srun\n" +\
-                 "echo `which srun`  -x $HOSTS_EXCLUDED $* \n exit' >> %s/srun\n" +\
-                 "chmod +x %s/srun" ) % (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR)
-          self.log_debug('wrapping srun cmd = \n%s' % cmd, 3, trace='YALLA')
-          output = os.system(cmd)
-          self.log_debug('output of wrapping srun %s' % output, 3, trace='YALLA')
-          self.release_lock(lock_file)
-
+          #
+          srun_original_cmd = self.system("which srun")[:-1]
+          srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
+          f = open(srun_wrapper_file, "w")
+          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
+                   "%s -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+          f.close()
+          os.chmod(srun_wrapper_file, 0755)
           
         if not(os.path.exists(yalla_srun_wrapper)):
           self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,

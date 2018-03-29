@@ -1,11 +1,11 @@
 mkdir -p __yalla_dir__/HOSTS/
 
 
-scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __yalla_dir__/machines.txt
-split -n __PARALLEL_RUNS__ -d -a 4  __yalla_dir__/machines.txt  __yalla_dir__/HOSTS/mach
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __yalla_dir__/__job_name__machines.txt
+split -n __PARALLEL_RUNS__ -d -a 4  __yalla_dir__/__job_name__machines.txt  __yalla_dir__/HOSTS/__job_name__mach
 cd __yalla_dir__/HOSTS
-sort -u ../machines.txt > b
-for f in mach*; do
+sort -u ../__job_name__machines.txt > b
+for f in __job_name__mach*; do
     sort -u $f > a
     grep -Fxvf a b > ex_$f
 done
@@ -28,7 +28,7 @@ export nb_task=\$1
 task=\`cut -d ' ' -f\$nb_task __yalla_dir__/__job_name__.___job_array__.tasks \`
 export worker_rank=\$((\$2-1))
 formatted_worker_rank=\$(printf "%04d" \$worker_rank) 
-export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex_mach\${formatted_worker_rank}
+export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex___job_name__mach\${formatted_worker_rank}
 export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
 export SLURM_ARRAY_TASK_ID=\$task 
 formatted_task=\$(printf "%04d" \$task)
@@ -43,7 +43,7 @@ echo __ARRAY_UNFOLD__ > __yalla_dir__/__job_name__.___job_array__.tasks
 
 # computing nodes that will wait work to do
 
-# head -1 __RESULTS_PATH__/LOGS/HOSTS/mach* -q > __RESULTS_PATH__/LOGS/machines_head.txt
+# head -1 __RESULTS_PATH__/LOGS/HOSTS/__job_name__mach* -q > __RESULTS_PATH__/LOGS/__job_name__machines_head.txt
 
 
 cd __job_submit_dir__
