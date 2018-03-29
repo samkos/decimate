@@ -173,6 +173,11 @@ Other options:
 environment variables:
   DPARAM                      options forwarded to Decimate
 
+parameter file syntax:
+  #DECIM variable = value
+  #DECIM COMBINE variable = value
+  #DECIM PYTHON
+
       """
 
 
@@ -532,7 +537,7 @@ class decimate(engine):
 
     if self.args.yalla:
         makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
-        yalla_exe = "%s/YALLA/yalla.exe" % (self.YALLA_DIR)
+        yalla_exe = "%s/yalla.exe" % (self.YALLA_EXEC_DIR)
         if not(os.path.exists(yalla_exe)):
           if not os.path.isfile(makefile_name):
               self.error("yalla not available on %s ... \
@@ -540,10 +545,10 @@ class decimate(engine):
                          % (self.machine, makefile_name), exit=True)
 
           # compilation of yalla
-          self.log_console('Compiling Yalla...', trace='YALLA')
-          cmd = ("mkdir -p %s/YALLA; cd %s/YALLA; cp %s/yalla.c .; " + 
+          self.log_console('Installing pool support...', trace='YALLA')
+          cmd = ("mkdir -p %s; cd %s; cp %s/yalla.c .; " + 
                  "make -f %s > %s/yalla_compile.out 2>&1") % \
-                (self.YALLA_DIR, self.YALLA_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
+                (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
           self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
           output = os.system(cmd)
           self.log_debug('%s' % output, 3, trace='YALLA')
@@ -3781,6 +3786,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = "".join(open(input_file, "r").readlines())
       output = output.replace('__save_dir__', self.SAVE_DIR)
       output = output.replace('__yalla_dir__', self.YALLA_DIR)
+      output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
@@ -3797,7 +3803,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       else:
         output = output.replace('__DEBUG__', '')
 
-      f = open('%s/YALLA/%s.yalla_job' % (self.YALLA_DIR, job['job_name']), 'w')
+      f = open('%s/%s.yalla_job' % (self.YALLA_DIR, job['job_name']), 'w')
       f.write(output)
       f.close()
 

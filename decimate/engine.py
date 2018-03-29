@@ -172,7 +172,8 @@ class engine(object):
     self.CONSOLE_SAVE_FILE = "./.%s/LOGS/%s.pickle" % (app_name,'console')
     self.JOB_DIR = os.path.abspath("./.%s/RESULTS" % app_name)
     self.SAVE_DIR = os.path.abspath("./.%s/SAVE" % app_name)
-    self.YALLA_DIR = os.path.abspath("./.%s-yalla" % app_name)
+    self.YALLA_DIR = os.path.abspath("./.%s/SAVE/YALLA" % app_name)
+    self.YALLA_EXEC_DIR = os.path.abspath("./.%s-yalla/YALLA" % app_name)
     self.LOG_DIR = os.path.abspath("./.%s/LOGS" % app_name)
     self.ARCHIVE_DIR = os.path.abspath("./.%s/ARCHIVE" % app_name)
 
@@ -569,7 +570,7 @@ class engine(object):
 
     self.log_debug('initialize environment ',4)
 
-    for d in [self.SAVE_DIR,self.LOG_DIR,self.ARCHIVE_DIR]:
+    for d in [self.SAVE_DIR,self.LOG_DIR,self.ARCHIVE_DIR,self.YALLA_DIR]:
       if not(os.path.exists(d)):
         os.makedirs(d)
         self.log_debug("creating directory " + d,1)
