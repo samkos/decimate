@@ -3045,8 +3045,8 @@ class decimate(engine):
       output_file = '%s.task_yyy-attempt_%s' % \
                 (job['output'].replace('%a', job['array'][0:20]), attempt)
 
-      '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
-      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
+      error_file  ='%s.task_%%04a-axxxxxxttempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-axxxxxttempt_%s' % (job['output'], attempt)
 
       prolog = prolog + \
                ['--time=%s' % job['time'],
