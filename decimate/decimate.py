@@ -3048,6 +3048,8 @@ class decimate(engine):
       error_file  ='%s.task_%%04a-axxxxxxttempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-axxxxxttempt_%s' % (job['output'], attempt)
 
+      self.log_debug('output_file=/%s/' % output_file,4,trace='X')
+      
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
