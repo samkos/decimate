@@ -37,7 +37,7 @@ export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex___job_name__mach\${formatted_worker
 # export SLURM_NNODES=__NB_NODES_PER_PARALLEL_RUN
 #export SLURM_JOB_NUM_NODES=__NB_NODES_PER_PARALLEL_RUNS__
 
-export YALLA_SRUN_PARAMS="--ntasks=__NB_CORES_PER_PARALLEL_RUNS__"
+export YALLA_SRUN_PARAMS="--ntasks=__NB_CORES_PER_PARALLEL_RUNS__ --nodes=__NB_NODES_PER_PARALLEL_RUNS__ "
 
 formatted_task=\$(printf "%04d" \$task)
 export PATH=__yalla_exec_dir__:$PATH
