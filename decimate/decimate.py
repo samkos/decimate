@@ -567,12 +567,55 @@ class decimate(engine):
           srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
           f = open(srun_wrapper_file, "w")
           f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
-                   "%s -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
           f.close()
           os.chmod(srun_wrapper_file, 0755)
           
         if not(os.path.exists(yalla_srun_wrapper)):
           self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,
+                     exit=True, exception=True)
+
+        yalla_srun_debug_wrapper = "%s/srun_debug" % (self.YALLA_EXEC_DIR)
+        if not(os.path.exists(yalla_srun_debug_wrapper)):
+          # creating srun wrapper
+          #
+          srun_debug_wrapper_file = "%s/srun_debug" % self.YALLA_EXEC_DIR
+          f = open(srun_debug_wrapper_file, "w")
+          f.write(\
+                   """
+echo wrapping srun : actually running %s -x $HOSTS_EXCLUDED $*
+
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+
+echo running %s -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
+
+echo --------------- hosts_excluded --------------------
+cat $HOSTS_EXCLUDED
+echo ---------------------------------------------------
+
+echo -------------- slurm environment variables
+env | grep SLURM
+echo ----------------------------
+
+
+
+echo --------------- command
+/opt/slurm/default/bin/srun -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
+""" % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+                  
+          f.close()
+          os.chmod(srun_debug_wrapper_file, 0755)
+          
+        if not(os.path.exists(yalla_srun_debug_wrapper)):
+          self.error('could not install yalla_srun_debug_wrapper successfully\n output=\n%s' % output,
                      exit=True, exception=True)
 
     # reading of the parameter file
