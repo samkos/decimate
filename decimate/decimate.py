@@ -3815,7 +3815,10 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__YALLA_NODES__', str( self.yalla_pool_nodes_nb))
-      output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
+      if (job['nodes']):
+          output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
+      else:
+          output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', "1")
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
       output = output.replace('__job_name__', str(job['job_name']))
       output = output.replace('__job_array__', str(job['array']))
