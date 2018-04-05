@@ -567,12 +567,55 @@ class decimate(engine):
           srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
           f = open(srun_wrapper_file, "w")
           f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
-                   "%s -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
           f.close()
           os.chmod(srun_wrapper_file, 0755)
           
         if not(os.path.exists(yalla_srun_wrapper)):
           self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,
+                     exit=True, exception=True)
+
+        yalla_srun_debug_wrapper = "%s/srun_debug" % (self.YALLA_EXEC_DIR)
+        if not(os.path.exists(yalla_srun_debug_wrapper)):
+          # creating srun wrapper
+          #
+          srun_debug_wrapper_file = "%s/srun_debug" % self.YALLA_EXEC_DIR
+          f = open(srun_debug_wrapper_file, "w")
+          f.write(\
+                   """
+echo wrapping srun : actually running %s -x $HOSTS_EXCLUDED $*
+
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+echo ============================ in wrapper srun ===================================
+
+echo running %s -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
+
+echo --------------- hosts_excluded --------------------
+cat $HOSTS_EXCLUDED
+echo ---------------------------------------------------
+
+echo -------------- slurm environment variables
+env | grep SLURM
+echo ----------------------------
+
+
+
+echo --------------- command
+/opt/slurm/default/bin/srun -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
+""" % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+                  
+          f.close()
+          os.chmod(srun_debug_wrapper_file, 0755)
+          
+        if not(os.path.exists(yalla_srun_debug_wrapper)):
+          self.error('could not install yalla_srun_debug_wrapper successfully\n output=\n%s' % output,
                      exit=True, exception=True)
 
     # reading of the parameter file
@@ -3006,39 +3049,6 @@ class decimate(engine):
     prolog = prolog + ['--job-name=%s' % (job['job_name'])]
 
     if job['yalla']:
-      if not(job['nodes']) and not(job['ntasks']):
-        self.error('when asking for a Yalla pool, either nodes or ntasks has to be valued',
-                   exit=True)
-
-        
-      nb_jobs = len(RangeSet(job['array']))
-      job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
-      
-      # compute new time for yalla pool
-      (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
-      self.log_debug("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'],4,trace='YALLA,Y')
-      factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
-      whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
-      (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
-      job['time'] = '%d:%02d:%02d' % (h, m, s)
-
-
-      # computes number of nodes required to host the pool
-      
-      if job['ntasks'] and not(job['nodes']):
-          all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
-          if all_tasks % self.CORES_PER_NODE:
-              pool_nodes_nb = pool_nodes_nb + 1
-      else: 
-          pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
-      
-              
-      self.log_debug('yalla related parameters in job:%s' % \
-                     self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
-                                                     'yalla', 'output', 'error']), 4, trace='YALLA,Y')
-
-      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA,Y')
 
       error_file = '%s.task_yyy-attempt_%s' % \
                 (job['error'].replace('%a', job['array'][0:20]), attempt)
@@ -3053,7 +3063,7 @@ class decimate(engine):
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
-                '--nodes=%s' % pool_nodes_nb,
+                '--nodes=%s' % self.yalla_pool_nodes_nb,
                 '--error=%s ' % error_file,
                 '--output=%s' % output_file]
     else:
@@ -3783,6 +3793,45 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                    4, trace='WRAP')
 
     if job['yalla']:
+
+      if not(job['nodes']) and not(job['ntasks']):
+        self.error('when asking for a Yalla pool, either nodes or ntasks has to be valued',
+                   exit=True)
+
+        
+      nb_jobs = len(RangeSet(job['array']))
+      job['yalla_parallel_runs'] = min(job['yalla_parallel_runs'], nb_jobs)
+      
+      # compute new time for yalla pool
+      (d, h, m, s) = ([0, 0, 0, 0, 0] + map(lambda x:int(x), job['time'].split(':')))[-4:]
+      self.log_debug("job['yalla_parallel_runs']=%s" % job['yalla_parallel_runs'],4,trace='YALLA,Y')
+      factor = math.ceil(nb_jobs / (job['yalla_parallel_runs'] + 0.))
+      whole_time = (((d * 24 + h) * 60 + m) * 60 + s) * factor  # NOQA
+      (h, m, s) = (int(whole_time / 3600), int(whole_time % 3600) / 60, whole_time % 60)
+      job['time'] = '%d:%02d:%02d' % (h, m, s)
+
+
+      # computes number of nodes required to host the pool
+      
+      if job['ntasks'] and not(job['nodes']):
+          all_tasks = job['ntasks'] * job['yalla_parallel_runs']
+          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
+          if all_tasks % self.CORES_PER_NODE:
+              pool_nodes_nb = pool_nodes_nb + 1
+      else: 
+          pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
+      
+              
+      self.log_debug('yalla related parameters in job:%s' % \
+                     self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
+                                                     'yalla', 'output', 'error']), 4, trace='YALLA,Y')
+
+      self.log_debug('yalla pool_nodes_nb:%s' % pool_nodes_nb, 4, trace='YALLA,Y')
+
+      self.yalla_pool_nodes_nb = pool_nodes_nb
+
+
+        
       stream = {}
       for w in ['output', 'error']:
         s = ("%s/%s" % (job['submit_dir'],job[w])).replace('%J', '\$SLURM_JOB_ID')\
@@ -3808,7 +3857,11 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__yalla_dir__', self.YALLA_DIR)
       output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
-      output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
+      output = output.replace('__YALLA_NODES__', str( self.yalla_pool_nodes_nb))
+      if (job['nodes']):
+          output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
+      else:
+          output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', "1")
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
       output = output.replace('__job_name__', str(job['job_name']))
       output = output.replace('__job_array__', str(job['array']))

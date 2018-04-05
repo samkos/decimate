@@ -29,8 +29,16 @@ task=\`cut -d ' ' -f\$nb_task __yalla_dir__/__job_name__.___job_array__.tasks \`
 export worker_rank=\$((\$2-1))
 formatted_worker_rank=\$(printf "%04d" \$worker_rank) 
 export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex___job_name__mach\${formatted_worker_rank}
-export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
-export SLURM_ARRAY_TASK_ID=\$task 
+# export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
+# export SLURM_ARRAY_TASK_ID=\$task
+# export SLURM_NTASKS=__NB_CORES_PER_PARALLEL_RUNS__
+# export SLURM_PROCS=__NB_CORES_PER_PARALLEL_RUNS__
+# export SLURM_STEP_NUM_NODES=__NB_NODES_PER_PARALLEL_RUNS__
+# export SLURM_NNODES=__NB_NODES_PER_PARALLEL_RUN
+#export SLURM_JOB_NUM_NODES=__NB_NODES_PER_PARALLEL_RUNS__
+
+export YALLA_SRUN_PARAMS="--ntasks=__NB_CORES_PER_PARALLEL_RUNS__ --nodes=__NB_NODES_PER_PARALLEL_RUNS__ "
+
 formatted_task=\$(printf "%04d" \$task)
 export PATH=__yalla_exec_dir__:$PATH
 
@@ -49,11 +57,11 @@ echo __ARRAY_UNFOLD__ > __yalla_dir__/__job_name__.___job_array__.tasks
 cd __job_submit_dir__
 
 sleep 2s
-echo running srun -n  __PARALLEL_RUNS__   __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
 ##srun hostname >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
-nb_runs=$((__PARALLEL_RUNS__+1))
-nb_nodes_runs=$((nb_runs/32+1))
-srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+nb_runs=$((__PARALLEL_RUNS__+0))
+nb_nodes_runs=$((__YALLA_NODES__+0))
+echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=v,local --cpu_bind=threads __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
+srun -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=v,local --cpu_bind=threads  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 
 echo >>   $YALLA_JOB_OUTPUT   
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
