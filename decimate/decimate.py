@@ -3058,7 +3058,6 @@ echo --------------- command
       error_file  ='%s.task_%%04a-axxxxxxttempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-axxxxxttempt_%s' % (job['output'], attempt)
 
-      self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       
       prolog = prolog + \
                ['--time=%s' % job['time'],
@@ -3066,6 +3065,9 @@ echo --------------- command
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
                 '--error=%s ' % error_file,
                 '--output=%s' % output_file]
+      self.log_debug('output_file=/%s/' % output_file,4,trace='X')
+      self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
+
     else:
       error_file = '%s.task_%%04a-attempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
