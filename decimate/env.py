@@ -92,6 +92,14 @@ def get_machine():
         DEFAULT_QUEUE = "debug"
         EXCLUSIVE = False
         cores_per_node = 8
+    elif (machine[:11] == "samy-EL1352"):
+        machine = "home"
+        CORE_PER_NODE_REGARDING_QUEUE["debug"] = 4
+        MAIL_COMMAND = """mail -s "%s" %s < %s """
+        # SCHED_TYPE = "pbs"
+        DEFAULT_QUEUE = "debug"
+        EXCLUSIVE = False
+        cores_per_node = 8
     else:
         machine = "localhost"
         tmp_directory = "/tmp"

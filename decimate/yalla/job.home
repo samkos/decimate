@@ -1,0 +1,41 @@
+mkdir -p __yalla_dir__/HOSTS/
+
+
+
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __yalla_dir__/__job_name___machines.txt
+split -l __PARALLEL_RUNS__ -d -a 3  __yalla_dir__/__job_name___machines.txt  __yalla_dir__/HOSTS/__job_name___mach
+cd __yalla_dir__/HOSTS
+sort -u ../__job_name___machines.txt > b
+for f in __job_name___mach*; do
+    sort -u $f > a
+    grep -Fxvf a b > ex_$f
+done
+
+
+# building command to be run by yalla...
+
+cat > __yalla_dir__/__job_name__.cmd <<EOF
+export task=\$1
+export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
+export SLURM_ARRAY_TASK_ID=\$task 
+formatted_task=\$(printf "%04d" \$task)
+# helllllllllo
+. __yalla_dir__/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+EOF
+chmod +x __yalla_dir__/__job_name__.cmd
+
+
+head -1 __yalla_dir__/HOSTS/__job_name___mach* -q > __yalla_dir__/__job_name___machines_head.txt
+
+# starting __NB_JOBS__ runs (__PARALLEL_RUNS__ in parallel)
+
+sleep 2s
+
+cd __job_submit_dir__
+
+for t in __TASKS__; do
+    __yalla_dir__/__job_name__.cmd $t
+done
+
+
+
