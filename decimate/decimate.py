@@ -3055,16 +3055,16 @@ echo --------------- command
       output_file = '%s.task_yyy-attempt_%s' % \
                 (job['output'].replace('%a', job['array'][0:20]), attempt)
 
-      error_file  ='%s.task_%%04a-axxxxxxttempt_%s' % (job['error'], attempt)
-      output_file = '%s.task_%%04a-axxxxxttempt_%s' % (job['output'], attempt)
+      error_file  ='%s.task_%%04a-attempt_%s' % (job['error'], attempt)
+      output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
 
       
       prolog = prolog + \
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
-                '--error=%s ' % error_file,
-                '--output=%s' % output_file]
+                '--error=%s ' % error_file.replace("%04a",job['array']),
+                '--output=%s' % output_file.replace("%04a",job['array'])]
       self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
 
@@ -3079,6 +3079,7 @@ echo --------------- command
           prolog = prolog + ['--nodes=%s' % job['nodes']]
       if job['ntasks']:
           prolog = prolog + ['--ntasks=%s' % job['ntasks']]
+
 
 
 
@@ -3103,6 +3104,7 @@ echo --------------- command
 o="%s"
 e="%s"
 printf -v formatted_array_task_id "%%04d" $SLURM_ARRAY_TASK_ID
+echo formatted_array_task_id=$formatted_array_task_id
 output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
 error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
 
