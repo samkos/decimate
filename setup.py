@@ -12,6 +12,8 @@ from codecs import open
 from os import path
 import glob
 
+from decimate import decimate
+
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
@@ -41,7 +43,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.9.6',  # Required
+    version=decimate.DECIMATE_VERSION,  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -78,10 +80,10 @@ setup(
     # inserted into the package's metadata, which can be retrieved by using
     # `py-info <package>` on any installed package. the contents are not
     # validated to conform to any spec other than being a string
-    source_label = "1fb08feff378d736d0f32b05dbbd8abcbe379825",
+    source_label = "a542aa8578486b315fab5958586e133749900cc7",
 
     # same with source_url, it's only in the metadata
-    source_url = "https://github.com/samkos/decimate/commit/1fb08feff378d736d0f32b05dbbd8abcbe379825",
+    source_url = "https://github.com/samkos/decimate/commit/a542aa8578486b315fab5958586e133749900cc7",
 
     # Classifiers help users find your project by categorizing it.
     #

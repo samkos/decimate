@@ -89,7 +89,7 @@ REPORTING BUGS
 
 
 COPYRIGHT
-       Copyright (c) 2017, KAUST Supercomputing Laboratory
+       Copyright (c) 2018, KAUST Supercomputing Laboratory
        All rights reserved.
 
        Redistribution and use in source and binary forms, with or without
