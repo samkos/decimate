@@ -103,80 +103,15 @@ conda skeleton pypi decimate --pypi-url https://testpypi.python.org/pypi/decimat
 conda build decimate
 
 
-could not find setuptools:
-This seems to happen because although the correct PATH is set, the python in that path is a symlink, and does not set sys.path to what you would expect.
-
-mv /home/kortass/PUSH_CONDA27/env/bin/python /home/kortass/PUSH_CONDA27/env/bin/python-old
-cp /home/kortass/PUSH_CONDA27/env/bin/python2.7 /home/kortass/PUSH_CONDA27/env/bin/python
-
-
-
-
-
-
-export CONDA_PY=27
-conda skeleton pypi decimate
-
-
-modify decimate/meta.yaml with
-  host:
-    - python=2.7               <<<<<<<<<<<<
-    - setuptools
-    - clustershell
-    - pandas
-  run:
-    - python=2.7              <<<<<<<<<<<<<<<<<
-    - clustershell
-    - pandas
-
-
-
-    conda build decimate
-
-
-    --single-version-externally-managed --record=record.txt
-
-
-
-    Anaconda Client:
-#conda install anaconda-client
-#Log into your Cloud account:
-
 anaconda login
 samuel_kortas
 
-#At the prompt, enter your Cloud username and password.
-
-#Choose the package you would like to build. For this example, download our public devel package:
-
-git clone https://github.com/Anaconda-Platform/anaconda-client
-cd anaconda-client/example-packages/conda/
-#To build your devel package, first install conda-build and turn off automatic Client uploading, then run the conda build command:
-
-conda build .
-Find the path to where the newly-built file was placed so you can use it in the next step:
-
-conda build . --output
-Upload your newly-built devel package to your Cloud account:
 
 anaconda login
-anaconda upload /your/path/conda-package.tar.bz2
+anaconda upload /home/kortass/APPS/miniconda2/conda-bld/broken/decimate-0.9.7.1-py27_0.tar.bz2
 
 
+conda install -c samuel_kortas decimate 
 
-
-
-
-
-conda skeleton pypi --pypi-url https://test.pypi.org/pypi/decimate decimate
-conda build decimate
-
-
-
-
-conda skeleton pypi skyfield
-
-
-conda skeleton pypi pyinstrument
-
-
+man decimate
+man workflow
