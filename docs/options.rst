@@ -36,7 +36,8 @@ Workflow management:
 			       
 Execution in a pool:
 
--xy, --yalla               Use Yalla Pool
+-xy, --yalla               Execute simultaneous runs within a pool of nodes
+
 -xyp, --yalla-parallel-runs=YALLA_PARALLEL_RUNS  number  of parallel runs in a pool
 
 Burst Buffer:

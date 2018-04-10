@@ -24,7 +24,7 @@ Its stable production branch is available via github at
 https://github.com/KAUST-KSL/decimate, but its latest production and
 development branch can be found at https://github.com/samkos/decimate
 
-most up todate documentation about *Decimate* can be browsed at
+The most recent documentation about *Decimate* can be browsed at
 http://decimate.readthedocs.io.
 
 
@@ -65,6 +65,17 @@ able to import the library and ``PATH`` to easily use the :ref:`tools`::
 Configuration files are installed in ``~/.local/etc/decimate`` and are
 automatically loaded before system-wide ones (for more info about supported
 user config files, please see the :ref:`decimate-config` config section).
+
+
+
+Installing *Decimate* using Anaconda
+------------------------------------
+
+*Decimate* is also available in Anaconda from the *hpc4all*
+ channel. It can be installed with the command::
+
+   $ conda install -c hpc4all decimate 
+
 
 .. _install-source:
 
