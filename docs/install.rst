@@ -71,8 +71,8 @@ user config files, please see the :ref:`decimate-config` config section).
 Installing *Decimate* using Anaconda
 ------------------------------------
 
-*Decimate* is also available in Anaconda from the *hpc4all*
- channel. It can be installed with the command::
+*Decimate* is also available in Anaconda from the hpc4all_
+channel. It can be installed with the command::
 
    $ conda install -c hpc4all decimate 
 
@@ -98,5 +98,5 @@ and for the development version::
 .. _LGPL v2.1+: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 .. _Test Updates: http://fedoraproject.org/wiki/QA/Updates_Testing
 .. _EPEL: http://fedoraproject.org/wiki/EPEL
-
+.. _hpcall: https://anaconda.org/hpc4all
 
