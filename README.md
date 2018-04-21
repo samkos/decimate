@@ -119,3 +119,6 @@ SEE ALSO
                 <http://http://decimate.readthedocs.io>
 		
        KAUST Supercomputing Laboratory: <http://hpc.kaust.edu.sa/>
+
+
+[![Join the chat at https://gitter.im/hpc4all-decimate/Lobby](https://badges.gitter.im/hpc4all-decimate/Lobby.svg)](https://gitter.im/hpc4all-decimate/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
