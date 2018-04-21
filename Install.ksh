@@ -1,6 +1,8 @@
 python -m compileall -f .
 cd docs
-make html; cp -R _build/html/ ~/public_html/DOCS/
+make html;
+\rm rf ~/public_html/DOCS/decimate
+cp -R _build/html ~/public_html/DOCS/decimate
 make man
 
 

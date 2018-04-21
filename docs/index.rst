@@ -15,4 +15,4 @@ Welcome to Decimate's documentation!
    fault_tolerant
    parameters
    options
-   
+   release-notes
