@@ -3762,7 +3762,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     if self.args.parameter_file:
         prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
-        
+        prefix0 = prefix0 + '\necho executing   %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
 
       

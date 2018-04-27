@@ -10,7 +10,7 @@ import glob
 import logging
 import logging.handlers
 import os
-import pickle
+import cPickle as pickle
 import pprint
 import re
 import subprocess
