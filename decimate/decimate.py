@@ -628,7 +628,7 @@ echo --------------- command
       try:
         args = self.args.taskid.split(',')
         self.TASK_ID = int(args[0])
-        self.TASK_IDS = args[1]
+        self.TASK_IDS = self.args.taskid
       except Exception:
         self.error('pb in reading taskid', exception=True, exit=True)
         self.TASK_ID = 1
@@ -3053,9 +3053,9 @@ echo --------------- command
     if job['yalla']:
 
       error_file = '%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt)
+                (job['error'].replace('%a', job['job_name']), attempt)
       output_file = '%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)
+                (job['output'].replace('%a', job['job_name']), attempt)
 
       error_file  ='%s.task_%%04a-attempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
@@ -3065,8 +3065,8 @@ echo --------------- command
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
-                '--error=%s ' % error_file.replace("%04a",job['array']).replace("%a",job['array']),
-                '--output=%s' % output_file.replace("%04a",job['array']).replace("%a",job['array'])]
+                '--error=%s ' % error_file.replace("%04a",job['array']).replace("%a",job['job_name']),
+                '--output=%s' % output_file.replace("%04a",job['array']).replace("%a",job['job_name'])]
       self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
 
@@ -3104,11 +3104,12 @@ echo --------------- command
         job_array_tid_mask =                            """
 o="%s"
 e="%s"
-printf -v formatted_array_task_id "Yalla_ALL"
+printf -v formatted_array_task_id """ + '"' + (job['job_name']) + '"' + """
+printf -v formatted_array_task_ids """ + '"' + (job['array']) + '"' + """
 echo formatted_array_task_id=$formatted_array_task_id
-output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
-error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
-    """
+output_file=`echo $o|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+    """ 
     else:
               job_array_tid_mask =                            """
 o="%s"
@@ -3330,12 +3331,12 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       self.log_debug("job submitted : %s depends on %s" % (job_id, job['dependency']), \
                      1, trace='ACTIVATE_DETAIL,RESTART')
     else:
-      self.log_info("should submit job %s (%s)" % (job['job_name'], job['array'][0:20]))
+      self.log_info("should submit job %s (%s)" % (job['job_name'], job['array'][0:30]))
       self.log_info(" with cmd = %s " % " ".join(cmd), 2)
       job_id = "%s" % job['job_name']
 
     job_script_updated = open('%s_%s_%s_%s' % \
-                              (job['script_file'], job['array'][0:20], \
+                              (job['script_file'], job['array'][0:30], \
                                self.args.attempt, job_id), "w")
     for jid in self.waiting_job_final_id.keys():
         new_job_id = self.waiting_job_final_id[jid]
