@@ -727,8 +727,9 @@ echo --------------- command
       else:
         tasks = [self.TASK_ID]
 
-      self.log_debug('creating parametric files for range [%s]' % self.TASK_IDS,\
-                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
+      self.log_debug('creating parametric files for range [self.TASK_IDS=%s,tasks=%s]' % \
+                     (self.TASK_IDS,tasks),\
+                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
       
       for t in tasks:
         param_file = '%s.%s' % (self.PARAMETER_FILE,t)
@@ -755,7 +756,7 @@ echo --------------- command
       
         task_parameter_file.write('\n')
         task_parameter_file.close()
-        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
         
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
@@ -3064,8 +3065,8 @@ echo --------------- command
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
-                '--error=%s ' % error_file.replace("%04a",job['array']),
-                '--output=%s' % output_file.replace("%04a",job['array'])]
+                '--error=%s ' % error_file.replace("%04a",job['array']).replace("%a",job['array']),
+                '--output=%s' % output_file.replace("%04a",job['array']).replace("%a",job['array'])]
       self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
 
@@ -3099,20 +3100,32 @@ echo --------------- command
           job_content_template = job_content_template + \
                                  "#DW jobdw type=scratch access_mode=striped capacity=%s" % \
                                  (job['burst_buffer_size']) + "\n"
-
-    job_content_template = job_content_template + \
-                           """
+    if self.args.yalla:
+        job_array_tid_mask =                            """
+o="%s"
+e="%s"
+printf -v formatted_array_task_id "Yalla_ALL"
+echo formatted_array_task_id=$formatted_array_task_id
+output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+    """
+    else:
+              job_array_tid_mask =                            """
 o="%s"
 e="%s"
 printf -v formatted_array_task_id "%%04d" $SLURM_ARRAY_TASK_ID
 echo formatted_array_task_id=$formatted_array_task_id
 output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
 error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
-
+    """
+          
+    job_content_template = job_content_template + \
+                           job_array_tid_mask %  (output_file,error_file) +\
+                           """
 # creation of directory if it does not exist
 mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
 
-""" % (output_file,error_file) +\
+                           """ +\
                            "run_job () { \n"  + \
                            "".join(open(job['script_file'], "r").readlines()) +\
                            " } \n run_job > $output_file 2> $error_file"
@@ -3136,7 +3149,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     step = job['step']
     job['cmd'] = cmd
     job['array'] = array_range
-
+ 
     job['status'] = 'WAITING'
     job['completion'] = []
     job['success'] = []
@@ -3145,7 +3158,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     job['success_percent'] = 0
     job['failure_percent'] = 0
 
-    self.log_debug("submitting cmd: " + " ".join(cmd), 4, trace='SUBMIT')
+    self.log_debug("submitting cmd: " + " ".join(cmd), 4, trace='SUBMIT,SUBMIT_CMD')
     # unique jid building
     job_id = '%s-%s-%s' % (step, array_range, time.strftime('%Y-%b-%d-%H:%M:%S'))
     job_id = '%s-%s' % (step, array_range[:20])
