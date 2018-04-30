@@ -2399,9 +2399,10 @@ echo --------------- command
     if len(columns_to_cast):
         l[columns_to_cast] = l[columns_to_cast].astype(int)
 
-    
-    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+    l['current_combination'] =  range(0, len(l))
 
+    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+ 
     self.log_debug(parameter_list,\
                    4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
 
