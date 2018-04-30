@@ -8,6 +8,7 @@ sort -u ../__job_name__machines.txt > b
 for f in __job_name__mach*; do
     sort -u $f > a
     grep -Fxvf a b > ex_$f
+    echo nid11111 >> ex_$f
 done
 
 

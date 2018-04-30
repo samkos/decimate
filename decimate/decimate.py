@@ -142,6 +142,7 @@ Job Management:
 Parametric Jobs:
   -P,  --parameter-file=PARAM_FILE file listing all parameter
                                           combinations to cover
+  -Pc, --parameter-count counts all parameters combination to scan and exit
   -Pl, --parameter-list lists all parameters combination to scan and exit
 
   -Pf, --parameter-filter=FILTER filter while reading parameter file
@@ -2401,17 +2402,21 @@ echo --------------- command
 
     l['current_combination'] =  range(0, len(l))
 
-    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
- 
-    self.log_debug(parameter_list,\
-                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
+    if self.args.parameter_count:
+        parameter_count = '%d combination of %d parameters   ' % (len(l), len(l.columns))
+        self.log_console(parameter_count)
 
     if self.args.parameter_list:
+        parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+ 
+        self.log_debug(parameter_list,\
+                       4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
+
         self.log_console(parameter_list)
 
     self.array_clustered = []
     clustering_criteria = []
-    for c in ['nodes','ntasks','ntasks_per_nodes']:
+    for c in ['nodes','ntasks','ntasks_per_node','time']:
         if c in l.columns:
             clustering_criteria.append(c)
 
@@ -2457,7 +2462,7 @@ echo --------------- command
                     1, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
       
 
-    if self.args.parameter_list:
+    if self.args.parameter_list or self.args.parameter_count:
         sys.exit(0)
 
     self.parameters = l
@@ -3835,8 +3840,12 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
-          if all_tasks % self.CORES_PER_NODE:
+          max_cores_per_node = self.CORES_PER_NODE
+          if job['ntasks_per_node']:
+              max_cores_per_node = min(self.CORES_PER_NODE,job['ntasks_per_node'])
+                        
+          pool_nodes_nb = all_tasks/max_cores_per_node
+          if all_tasks % max_cores_per_node:
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
           pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])

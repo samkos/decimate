@@ -92,6 +92,8 @@ class slurm_frontend(decimate):
 
     self.parser.add_argument("-P", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
+    self.parser.add_argument("-Pc", "--parameter-count", action="store_true",
+                                   help='counts all parameters combination to scan and exit', default=False)
     self.parser.add_argument("-Pl", "--parameter-list", action="store_true",
                                    help='lists all parameters combination to scan and exit', default=False)
     self.parser.add_argument("-PF", "--parameter-filter", type=str,
@@ -115,7 +117,9 @@ class slurm_frontend(decimate):
     if (self.slurm_args.decimate_help or decimate_extra_config == ["-h"]):
       return ['-h']
 
-    if not(self.job_script) and not(self.slurm_args.parameter_list) and not(self.slurm_args.version) and len(decimate_args) == 0:
+    if not(self.job_script) and not(self.slurm_args.parameter_list) \
+       and not(self.slurm_args.parameter_count) \
+       and not(self.slurm_args.version) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
 
     if self.slurm_args.yalla:
@@ -151,6 +155,10 @@ class slurm_frontend(decimate):
     if self.slurm_args.parameter_list:
       decimate_extra_config = decimate_extra_config + \
                               [ '--parameter-list' ]
+
+    if self.slurm_args.parameter_count:
+      decimate_extra_config = decimate_extra_config + \
+                              [ '--parameter-count' ]
 
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
