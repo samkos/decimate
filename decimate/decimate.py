@@ -568,8 +568,8 @@ class decimate(engine):
           srun_original_cmd = self.system("which srun")[:-1]
           srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
           f = open(srun_wrapper_file, "w")
-          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
-                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $* --cpu_bind=verbose,mask_cpu:$CPU_MASK \n"+
+                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
           f.close()
           os.chmod(srun_wrapper_file, 0755)
           
@@ -3840,12 +3840,12 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          max_cores_per_node = self.CORES_PER_NODE
+          used_cores_per_node = self.CORES_PER_NODE
           if job['ntasks_per_node']:
-              max_cores_per_node = min(self.CORES_PER_NODE,job['ntasks_per_node'])
+              used_cores_per_node = min(self.CORES_PER_NODE,job['ntasks_per_node'])
                         
-          pool_nodes_nb = all_tasks/max_cores_per_node
-          if all_tasks % max_cores_per_node:
+          pool_nodes_nb = all_tasks/used_cores_per_node
+          if all_tasks % used_cores_per_node:
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
           pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
@@ -3887,6 +3887,9 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__YALLA_NODES__', str( self.yalla_pool_nodes_nb))
+      output = output.replace('__USED_CORES_PER_NODE__', str(used_cores_per_node))
+      output = output.replace('__TOTAL_CORES_PER_NODE__', str(self.CORES_PER_NODE))
+      output = output.replace('__CORES_PER_JOB__', str(job['ntasks']))
       if (job['nodes']):
           output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
       else:

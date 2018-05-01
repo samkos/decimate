@@ -1,14 +1,24 @@
 mkdir -p __yalla_dir__/HOSTS/
 
 
-scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<32;i++) { print $0}}' > __yalla_dir__/__job_name__machines.txt
-split -n __PARALLEL_RUNS__ -d -a 4  __yalla_dir__/__job_name__machines.txt  __yalla_dir__/HOSTS/__job_name__mach
+#scontrol show hostname $SLURM_NODELIST | awk -v ntasks=$SLURM_TASKS_PER_NODE 'BEGIN{n=0} {for (i=0;i<ntasks;i++) { if (!($0==n)) { c=0; n=$0;}; printf("%04d %s\n",c, $0); c++}}' > __job_name__machines.txt
+
+
+scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<__USED_CORES_PER_NODE__;i++) { print $0}}' > __yalla_dir__/__job_name__machines.txt
+scontrol show hostname $SLURM_NODELIST | awk 'BEGIN{n=0} {for (i=0;i<__USED_CORES_PER_NODE__;i++) { if (!($0==n)) { c=0; n=$0;}; printf("%04d \n",c); c=c+__TOTAL_CORES_PER_NODE__/__USED_CORES_PER_NODE__}}' > __yalla_dir__/__job_name__num_cores.txt
+scontrol show hostname $SLURM_NODELIST | awk 'BEGIN{n=0} {for (i=0;i<__USED_CORES_PER_NODE__;i++) { if (!($0==n)) { c=0; n=$0;}; printf("%04d %s\n",c, $0); c=c+__TOTAL_CORES_PER_NODE__/__USED_CORES_PER_NODE__}}' > __yalla_dir__/__job_name__machines_and_num_cores.txt
+
+
+
+split -l __CORES_PER_JOB__ -d -a 4  __yalla_dir__/__job_name__machines.txt  __yalla_dir__/HOSTS/__job_name__mach
+split -l __CORES_PER_JOB__ -d -a 4  __yalla_dir__/__job_name__num_cores.txt  __yalla_dir__/HOSTS/num_cores___job_name__mach
 cd __yalla_dir__/HOSTS
 sort -u ../__job_name__machines.txt > b
 for f in __job_name__mach*; do
     sort -u $f > a
     grep -Fxvf a b > ex_$f
     echo nid11111 >> ex_$f
+    cat num_cores_$f | awk '{if (n) {printf(",")}; n=2**int($0); printf("%x",n)}' > num_cores_$f.mask
 done
 
 
@@ -30,6 +40,7 @@ task=\`cut -d ' ' -f\$nb_task __yalla_dir__/__job_name__.___job_array__.tasks \`
 export worker_rank=\$((\$2-1))
 formatted_worker_rank=\$(printf "%04d" \$worker_rank) 
 export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex___job_name__mach\${formatted_worker_rank}
+export CPU_MASK=\`cat __yalla_dir__/HOSTS/num_cores___job_name__mach\${formatted_worker_rank}.mask\`
 export SLURM_ARRAY_JOB_ID=\$SLURM_JOB_ID 
 export SLURM_ARRAY_TASK_ID=\$task
 # export SLURM_NTASKS=__NB_CORES_PER_PARALLEL_RUNS__
@@ -61,8 +72,8 @@ sleep 2s
 ##srun hostname >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 nb_runs=$((__PARALLEL_RUNS__+0))
 nb_nodes_runs=$((__YALLA_NODES__+0))
-echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=v,local --cpu_bind=threads __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
-srun -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=v,local --cpu_bind=threads  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
+srun -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 
 echo >>   $YALLA_JOB_OUTPUT   
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
