@@ -73,10 +73,12 @@ sleep 2s
 nb_runs=$((__PARALLEL_RUNS__+0))
 nb_nodes_runs=$((__YALLA_NODES__+0))
 echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
-srun -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 
 echo >>   $YALLA_JOB_OUTPUT   
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
 echo ends of execution on  __PARALLEL_RUNS__ workers __NB_NODES_PER_PARALLEL_RUNS__ nodes each! >>   $YALLA_JOB_OUTPUT
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   
 date >>   $YALLA_JOB_OUTPUT  
+
+sleep 10s

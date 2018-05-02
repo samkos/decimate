@@ -568,7 +568,7 @@ class decimate(engine):
           srun_original_cmd = self.system("which srun")[:-1]
           srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
           f = open(srun_wrapper_file, "w")
-          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $* --cpu_bind=verbose,mask_cpu:$CPU_MASK \n"+
+          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $*  \n"+
                    "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
           f.close()
           os.chmod(srun_wrapper_file, 0755)
