@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define WORKTAG 1
 #define DIETAG 2
@@ -8,6 +9,8 @@
 #define MASQUE_LEN 4
 #define MASQUE 5
 #define WORK_TOTAL 6
+#define WAITING_TIME_BEFORE_CLOSING 10
+
 
 /* Local functions */
 
@@ -67,6 +70,8 @@ main(int argc, char **argv)
   #endif
   /* Shut down MPI */
 
+  sleep(WAITING_TIME_BEFORE_CLOSING);
+  
   MPI_Finalize();
   return 0;
 }
