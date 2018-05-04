@@ -240,7 +240,7 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
-    self.PARAMETER_FILE = "/tmp/parameter_" 
+    self.PARAMETER_FILE = "/tmp/parameter_"
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
@@ -1036,7 +1036,7 @@ echo --------------- command
            self.SCENARIO.find(",%s-%s-%s," % (self.args.step, self.TASK_ID,
                                               self.args.attempt)) >= 0):
       self.log_info("finalizing job : %s-%s " % (self.args.step, self.TASK_ID), 2)
-      filename = '%s/Done-%s-%s' % (self.SAVE_DIR, self.args.step, self.TASK_ID)
+      filename = '%s/Done-%s-%05d' % (self.SAVE_DIR, self.args.step, int(self.TASK_ID))
       open(filename, 'w')
 
       self.send_mail('%s-%s Done' % (self.args.step, self.TASK_ID), 2)
@@ -1144,7 +1144,7 @@ echo --------------- command
             self.TASKS[step][i]['status'] = 'SUCCESS'
             continue
 
-        filename_done = '%s/Done-%s-%s' % (self.SAVE_DIR, what, i)
+        filename_done = '%s/Done-%s-%05d' % (self.SAVE_DIR, what, int(i))
         is_done = os.path.exists(filename_done)
         self.log_info('checking presence of file %s : %s ' % (filename_done, is_done), 3)
 
@@ -3813,7 +3813,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
         l = l + "\n# returning in the right directory \n\n"
         l = l + "cd %s \n" % (job['submit_dir'])
         l = l + '      \n# Touching file to signify the job reached its end\n\n'
-        l = l + '           touch %s/Done-%s-${SLURM_ARRAY_TASK_ID}\n           ' % \
+        l = l + '           touch %s/Done-%s-$(echo 00000${SLURM_ARRAY_TASK_ID} | tail -c 6)\n           ' % \
             (self.SAVE_DIR, job['job_name'])
         l = l + l0 + ' --finalize \n'
 
