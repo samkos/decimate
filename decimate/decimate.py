@@ -240,6 +240,7 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
+    self.PARAMETER_FILE = "/tmp/parameter_" 
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
@@ -436,7 +437,7 @@ class decimate(engine):
                              help='# of job to run in parallel in a pool', default=4)
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
-    self.parser.add_argument("--parameter-compute", type=str,
+    self.parser.add_argument("--parameter-generate", type=str,
                              help=argparse.SUPPRESS)
 
     self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
@@ -722,9 +723,9 @@ echo --------------- command
 
     # generating parameter values for each task
     
-    if self.args.parameter_compute and self.args.parameter_file and self.args.spawned:
+    if self.args.parameter_generate and self.args.parameter_file and self.args.spawned:
       tasks = []
-      for t in RangeSet(self.args.parameter_compute):
+      for t in RangeSet(self.args.parameter_generate):
           tasks = tasks + [t]
 
       self.log_debug('creating parametric files for range [self.TASK_IDS=%s,tasks=%s]' % \
@@ -3772,7 +3773,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                        '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
       generate_parameter = \
                      '# Generating parameters used by yalla single job' + \
-                     '\n%s  --parameter-compute \$task ' % (l0)
+                     '\n%s  --parameter-generate \$task ' % (l0)
       
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
