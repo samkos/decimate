@@ -436,6 +436,8 @@ class decimate(engine):
                              help='# of job to run in parallel in a pool', default=4)
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
+    self.parser.add_argument("--parameter-compute", type=str,
+                             help=argparse.SUPPRESS)
 
     self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
                              help='Use a non persistent burst buffer space', default=False)
@@ -718,15 +720,12 @@ echo --------------- command
       self.finalize()
       sys.exit(0)
 
-    # checking previous step
-    if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
-      # in case of a yalla job every parameter configuration file should be created ahead
-      if self.args.yalla:
-        tasks = []
-        for t in RangeSet(self.TASK_IDS):
+    # generating parameter values for each task
+    
+    if self.args.parameter_compute and self.args.parameter_file and self.args.spawned:
+      tasks = []
+      for t in RangeSet(self.args.parameter_compute):
           tasks = tasks + [t]
-      else:
-        tasks = [self.TASK_ID]
 
       self.log_debug('creating parametric files for range [self.TASK_IDS=%s,tasks=%s]' % \
                      (self.TASK_IDS,tasks),\
@@ -759,6 +758,7 @@ echo --------------- command
         task_parameter_file.close()
         self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
         
+    # checking previous step
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
@@ -3753,7 +3753,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                      # environment_variables + 
 
     check_previous = \
-                     '# Checking the status of previous Jobs\n' + \
+                     '\n# Checking the status of previous Jobs' + \
                      '\n%s  --check-previous-step \n' % (l0) + \
                      "if [ $? -ne 0 ] ; then\n" + \
                      '   echo "[ERROR] FAILED in precedent step : ' + \
@@ -3770,6 +3770,10 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
                        '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
+      generate_parameter = \
+                     '# Generating parameters used by yalla single job' + \
+                     '\n%s  --parameter-compute \$task ' % (l0)
+      
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
                ('cat >> %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
@@ -3902,6 +3906,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
       output = output.replace('__TASKS__', " ".join(map(lambda x:str(x), RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__', job['submit_dir'])
+      output = output.replace('__GENERATE_PARAMETER__',generate_parameter)
       
       if self.args.debug:
         output = output.replace('__DEBUG__', 'debug')

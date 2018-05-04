@@ -1,8 +1,6 @@
+# computing the distribution and placement of tasks on the cores of the pool of nodes 
+
 mkdir -p __yalla_dir__/HOSTS/
-
-
-#scontrol show hostname $SLURM_NODELIST | awk -v ntasks=$SLURM_TASKS_PER_NODE 'BEGIN{n=0} {for (i=0;i<ntasks;i++) { if (!($0==n)) { c=0; n=$0;}; printf("%04d %s\n",c, $0); c++}}' > __job_name__machines.txt
-
 
 scontrol show hostname $SLURM_NODELIST | awk '{for (i=0;i<__USED_CORES_PER_NODE__;i++) { print $0}}' > __yalla_dir__/__job_name__machines.txt
 scontrol show hostname $SLURM_NODELIST | awk 'BEGIN{n=0} {for (i=0;i<__USED_CORES_PER_NODE__;i++) { if (!($0==n)) { c=0; n=$0;}; printf("%04d \n",c); c=c+__TOTAL_CORES_PER_NODE__/__USED_CORES_PER_NODE__}}' > __yalla_dir__/__job_name__num_cores.txt
@@ -22,8 +20,8 @@ for f in __job_name__mach*; do
 done
 
 
-export YALLA_JOB_OUTPUT=__job_submit_dir__/__job_name__.___job_array__.yalla.out
-export YALLA_JOB_ERROR=__job_submit_dir__/__job_name__.___job_array__.yalla.err
+export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.___job_array__.yalla.out
+export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.___job_array__.yalla.err
 
 
 date  >   $YALLA_JOB_OUTPUT
@@ -55,7 +53,11 @@ formatted_task=\$(printf "%04d" \$task)
 export PATH=__yalla_exec_dir__:$PATH
 
 cd __job_submit_dir__
+
+__GENERATE_PARAMETER__
+
 . __yalla_dir__/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+
 EOF
 chmod +x __yalla_dir__/__job_name__.___job_array__.cmd
 
