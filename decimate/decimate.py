@@ -3815,6 +3815,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
         l = l + '      \n# Touching file to signify the job reached its end\n\n'
         l = l + '           touch %s/Done-%s-$(echo 00000${SLURM_ARRAY_TASK_ID} | tail -c 6)\n           ' % \
             (self.SAVE_DIR, job['job_name'])
+        l = l + 'echo job DONE \n'
         l = l + l0 + ' --finalize \n'
 
     l = l + "\n          fi       # closing if of successfull job \n"

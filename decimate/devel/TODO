@@ -1,5 +1,9 @@
 in distrib
   add man to  share/man/man1
+  ad pages on pool
+
+check when job submitted with --check fails more than once, --check is not use when job is restarted
+
 
 
 fix job submitted via a reservation
