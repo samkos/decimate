@@ -83,6 +83,8 @@ class slurm_frontend(decimate):
     self.slurm_parser.add_argument("-sc", "--scratch", action="store_true",
                              help='relaunch a new workflow, erasing all from the previous one',
                              default=False)
+    self.slurm_parser.add_argument("--force-check", action="store_true",
+                             help=argparse.SUPPRESS, default=False)
     
 
     self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
@@ -121,6 +123,9 @@ class slurm_frontend(decimate):
        and not(self.slurm_args.parameter_count) \
        and not(self.slurm_args.version) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
+
+    if self.slurm_args.force_check:
+      decimate_extra_config = decimate_extra_config + ['--force-check']
 
     if self.slurm_args.yalla:
       decimate_extra_config = decimate_extra_config + ['--yalla']

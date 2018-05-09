@@ -1,3 +1,7 @@
+--check-file forces --check
+
+same for --pool-nb
+
 in distrib
   add man to  share/man/man1
   ad pages on pool

@@ -3,7 +3,7 @@
 import argparse
 from ClusterShell.NodeSet import RangeSet, NodeSet
 import datetime
-from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,clean_line
+from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,SACCT_COMMAND,clean_line
 import fcntl
 import getpass
 import glob
@@ -1161,7 +1161,7 @@ class engine(object):
 
       job_to_check_filtered = jobs_to_check.keys()
       #cmd = ";".join(map(lambda x: 'sacct -n -p -j %s' % x, job_to_check_filtered))
-      cmd = ["/opt/slurm/default/bin/sacct","-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
+      cmd = [SACCT_COMMAND,"-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
       cmd = " ".join(cmd)
       self.log_debug('cmd to get new status via sacct : %s' % "".join(cmd),\
                      1,trace='STATUS_DETAIL,STATUS')

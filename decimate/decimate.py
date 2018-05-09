@@ -773,6 +773,9 @@ echo --------------- command
         my_job = self.JOBS[self.args.jobid]
         dep_jobid = my_job['dependency']
         step = self.STEPS[my_job['step']]
+        self.log_info('status of the current job %s: %s ' % 
+                      (my_job['job_name'], self.print_job(my_job, my_job.keys())),
+                      2, trace='COMPUTE_CHECK,CURRENT')
         self.log_info('status of the current step %s: %s ' % 
                       (step['job_name'], self.print_job(step, step.keys())),
                       2, trace='COMPUTE_CHECK,CURRENT')
@@ -1073,10 +1076,6 @@ echo --------------- command
     if not(checking_from_console):
       self.load()
 
-    # if len(RangeSet(tasks))>5:
-    #   print 'FAAAAAAAAAAAAAAAAKE set tasks to 1-5'
-    #   tasks='1-5'
-
     state_has_changed = False
     step = '%s-%s' % (what, attempt)
 
@@ -1098,7 +1097,11 @@ echo --------------- command
         if self.TASK_ID == RangeSet(self.TASK_IDS)[0]:
             check_it = True
     if check_it:
-      self.log_info("checking status of previous job : %s!%s [%s] " % \
+      if from_finalize:
+          self.log_info("checking status of current job : %s!%s [%s] " % \
+                    (what, attempt, tasks), 2)
+      else:
+          self.log_info("checking status of previous job : %s!%s [%s] " % \
                     (what, attempt, tasks), 2)
 
       all_complete = True
@@ -1322,7 +1325,9 @@ echo --------------- command
     else:
           pattern = pattern + "_%s" % (attempt)
           original_output_pattern = original_output_pattern + "_%s" % (attempt)
-    output_file_pattern = pattern.replace('%a', str(task_id)).replace('%j', '*').replace('%J', '*')
+    output_file_pattern = pattern.replace('%a', str(task_id)).\
+                          replace('%j', '*').replace('%J', '*').\
+                          replace('%x', self.JOBS[job_id]['job_name'])
 
     original_error_pattern = "%s.TASK_ID-attempt" % (self.JOBS[job_id]['error'])
     pattern = "%s.task_%04d-attempt" % (self.JOBS[job_id]['error'], int(task_id))
@@ -1332,7 +1337,9 @@ echo --------------- command
     else:
           pattern = pattern + "_%s" % (attempt)
           original_error_pattern = original_error_pattern + "_%s" % (attempt)
-    error_file_pattern = pattern.replace('%a', str(task_id)).replace('%j', '*').replace('%J', '*')
+    error_file_pattern = pattern.replace('%a', str(task_id)).\
+                         replace('%j', '*').replace('%J', '*').\
+                         replace('%x', self.JOBS[job_id]['job_name'])
 
     running_dir = self.JOBS[job_id]['submit_dir']
 
@@ -1784,7 +1791,7 @@ echo --------------- command
       # fixing dependencies...
       previous_job['make_depend'] = job_id_new
       self.log_info('resubmitted previous_job %s fixed make_depend????:  %s' % \
-                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL,,HEAL_DEPEND')
+                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL,HEAL_DEPEND')
       if next_job_id:
         job['make_depend'] = next_job_id
         job['dependency'] = job_previous_id_new
@@ -3637,8 +3644,8 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     if job['check']:
       l0 = l0 + " --check"
 
-    # if job['check-file']:
-    #   l0 = l0 + " --check-file='%s'" % job['check-file']
+    if self.args.check_file:
+       l0 = l0 + " --check-file='%s'" % self.args.check_file
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
