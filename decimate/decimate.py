@@ -2680,7 +2680,7 @@ echo --------------- command
         self.log_info('empty job %s filename forced to %s' % (n, job[n]), \
                       4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
       
-    (job_script_content, job) = self.wrap_job_script(job, original_script_content_lines,
+    (job_script_content, job, finalizing_job) = self.wrap_job_script(job, original_script_content_lines,
                                                     job_file_args_overloaded)
 
     if not('nodes' in job.keys()):
@@ -2963,7 +2963,7 @@ echo --------------- command
         new_job['items'] = len(array_item)
         new_job['step'] = step
         new_job['check_previous'] = (first_one_in_step and dep)
-        (job_id, cmd) = self.submit_chunk_job(new_job, registration)
+        (job_id, cmd) = self.submit_chunk_job(new_job, finalizing_job, registration)
         dep = job_id
         job_ids = job_ids + [job_id]
         self.log_debug('submitting job depending on %s with array (%s) --> job_id=%s' % \
@@ -3016,7 +3016,7 @@ echo --------------- command
   # submitting one job
   #########################################################################
 
-  def submit_chunk_job(self, job, registration=True):
+  def submit_chunk_job(self, job, finalizing_job, registration=True):
 
     self.log_debug('in submit_chunk JOBS start: %s' % ','.join(map(str, self.JOBS.keys())), \
                    4, trace='CHUNK')
@@ -3067,9 +3067,11 @@ echo --------------- command
     if job['yalla']:
 
       error_file = '%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['job_name']), attempt)
+                (job['error'].replace('%a', job['job_name']).\
+                replace('%x', job['job_name']), attempt)
       output_file = '%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['job_name']), attempt)
+                (job['output'].replace('%a', job['job_name']).\
+                replace('%x', job['job_name']), attempt)
 
       error_file  ='%s.task_%%04a-attempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
@@ -3136,14 +3138,38 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
           
     job_content_template = job_content_template + \
                            job_array_tid_mask %  (output_file,error_file) +\
-                           """
-# creation of directory if it does not exist
-mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
+                           "\n# creation of directory if it does not exist" +\
+                           """\nmkdir -p $(dirname "$output_file")  $(dirname "$error_file") """
 
-                           """ +\
-                           "run_job () { \n"  + \
+
+    copying_files_to_tmp = "\n# Copying often accessed files into node's /tmp directory\n\n"
+
+    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
+                    " ".join(self.files_to_copy_to_tmp)
+
+    # no need apriory to copy dbatch in /tmp
+    # we are treating python /tmp/dbatch as a special case
+    # when wrapping the job
+    #
+    # for f in ['dbatch','dstat']:
+    #   decimate_cmd=self.system('which %s' % f)[:-1]
+    #   files_to_sync = files_to_sync + " " + decimate_cmd
+
+    copying_files_to_tmp = copying_files_to_tmp + RSYNC_CMD % files_to_sync 
+
+    if self.args.yalla:
+        job_content_template = job_content_template + copying_files_to_tmp
+    
+    job_content_template = job_content_template + "# main job\nrun_job () { \n"
+
+    if not(self.args.yalla):
+        job_content_template = job_content_template + copying_files_to_tmp
+
+    job_content_template = job_content_template +\
                            "".join(open(job['script_file'], "r").readlines()) +\
                            " } \n run_job > $output_file 2> $error_file"
+
+    job_content_template = job_content_template + "\n" + finalizing_job
     
     job_content_updated = job_content_template.replace('__ATTEMPT__', "%s" % attempt)
     job_content_updated = job_content_updated.replace('__ATTEMPT_INITIAL__', "%s" % \
@@ -3743,22 +3769,6 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
 
     prefix = '#!/bin/bash\n'
 
-    prefix = prefix + "\n# Copying often accessed files into node's /tmp directory\n\n"
-    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
-                    " ".join(self.files_to_copy_to_tmp)
-
-    # no need apriory to copy dbatch in /tmp
-    # we are treating python /tmp/dbatch as a special case
-    # when wrapping the job
-    #
-    # for f in ['dbatch','dstat']:
-    #   decimate_cmd=self.system('which %s' % f)[:-1]
-    #   files_to_sync = files_to_sync + " " + decimate_cmd
-
-    prefix = prefix + RSYNC_CMD % files_to_sync 
-
-                     # '\n# Setting Environment variables and preparing node\n\n%s\n' % 
-                     # environment_variables + 
 
     check_previous = \
                      '\n# Checking the status of previous Jobs' + \
@@ -3813,19 +3823,25 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
           if [ $? -ne 0 ] ; then
               echo "[ERROR] FAILED in current step : exiting immediately..."
               #exit 1
-          else """ + '\n\n ################# finalizing job ####################\n'
-    if self.args.fake:
-        l = l + l0 + ' --finalize --fake\n'
-    else:
-        l = l + "\n# returning in the right directory \n\n"
-        l = l + "cd %s \n" % (job['submit_dir'])
-        l = l + '      \n# Touching file to signify the job reached its end\n\n'
-        l = l + '           touch %s/Done-%s-$(echo 00000${SLURM_ARRAY_TASK_ID} | tail -c 6)\n           ' % \
-            (self.SAVE_DIR, job['job_name'])
-        l = l + 'echo job DONE \n'
-        l = l + l0 + ' --finalize \n'
+          else """ + '\n\n ################# finalizing job ####################\n  echo \n'
 
-    l = l + "\n          fi       # closing if of successfull job \n"
+    finalizing_job =  "\n check_job () { \n"  
+
+    
+    if self.args.fake:
+       finalizing_job = finalizing_job + l0 + ' --finalize --fake\n'
+    else:
+       finalizing_job = finalizing_job + "\n# returning in the right directory \n\n"
+       finalizing_job = finalizing_job + "cd %s \n" % (job['submit_dir'])
+       finalizing_job = finalizing_job + '      \n# Touching file to signify the job reached its end\n\n'
+       finalizing_job = finalizing_job + '           touch %s/Done-%s-$(echo 00000${SLURM_ARRAY_TASK_ID} | tail -c 6)\n           ' % \
+            (self.SAVE_DIR, job['job_name'])
+       finalizing_job = finalizing_job + 'echo job DONE \n'
+       finalizing_job = finalizing_job + l0 + ' --finalize \n'
+
+       finalizing_job = finalizing_job + "\n} \n check_job >> $output_file 2>> $error_file"
+
+    l = l + "# Finalization is taken care outside of run.... \n \n          fi       # closing if of successfull job \n"
 
     self.log_debug('wrap job before yalla filling =%s' % self.print_job(job), \
                    4, trace='WRAP')
@@ -3910,8 +3926,8 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
       output = output.replace('__job_name__', str(job['job_name']))
       output = output.replace('__job_array__', str(job['array']))
-      output = output.replace('__job_output__', stream['output'])
-      output = output.replace('__job_error__', stream['error'])
+      output = output.replace('__job_output__', stream['output'].replace('%x', job['job_name']))
+      output = output.replace('__job_error__', stream['error'].replace('%x', job['job_name']))
       output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
       output = output.replace('__TASKS__', " ".join(map(lambda x:str(x), RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__', job['submit_dir'])
@@ -3934,7 +3950,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       # l = l + '\n\n# Cleaning the node before releasing it\n\n\\rm -rf /tmp/*py'
 
     self.log_info('end fo =\n%s' % l, 2)
-    return (l, job)
+    return (l, job, finalizing_job)
 
   #########################################################################
   # submitting all the first jobs
