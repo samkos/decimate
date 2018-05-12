@@ -1765,7 +1765,7 @@ echo --------------- command
       (job_previous_id_new, cmd_previous_new) = self.submit_and_activate_job(previous_job)
 
       job['dependency'] = job_previous_id_new
-      job['attempt'] = job['attempt']
+
       # ########## for myself, I did not even do an attempt yet... was just checking previous
       job['array'] = '1-1'  # resubmit the whole job as other part will be suicided
       # job['array'] = job['initial_array'] # resubmit the whole job as other part will be suicided
@@ -2502,7 +2502,8 @@ echo --------------- command
   def print_job(self, job, short_format=True,
                 print_only=['check_previous', 'script_file', 'array', 'inital_array',
                             'job_name', 'status', 'content', 'job_id', 'step',
-                            'dependency', 'make_depend', 'attempt', 'global_completion','ntasks','nodes'],
+                            'dependency', 'make_depend', 'attempt', 'global_completion','ntasks','nodes',
+                            'yalla','yalla_parallel_runs'],
                 filter=['python /tmp/dart_mitgcm.py'], filtered=['content'], allkey=True, \
                 print_all=False, except_none=False):
 
@@ -2617,7 +2618,8 @@ echo --------------- command
 
     self.log_debug('in submit JOBS start: %s' % (','.join(map(str, self.JOBS.keys()))), 2, trace='JOBS')
 
-    job_default_value = {'array': '1-1', \
+    job_default_value = {'account' : None,
+                         'array': '1-1', \
                          'attempt': 0, \
                          'check': None,
                          'initial_attempt': 0, \
@@ -3608,7 +3610,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     args = vars(self.slurm_args)
     l = "###DECIM### Original job script was : %s \n" % os.path.abspath(job['script'])
 
-    self.log_debug('slurm_options=/%s/' % pprint.pformat(self.slurm_options), 4, trace='PARSE')
+    self.log_debug('slurm_options=/%s/' % pprint.pformat(self.slurm_options), 4, trace='SLURM_OPTIONS')
     self.log_debug('job_file_args_overloaded=/%s/' % job_file_args_overloaded, 4, trace='PARSE')
     for li in original_script_content_lines:
       if li[:7] == "#SBATCH":
@@ -3691,6 +3693,9 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
     if self.args.yalla:
       l0 = l0 + " --yalla "
+
+    if self.args.yalla_parallel_runs:
+      l0 = l0 + " --yalla-parallel-runs %s " % self.args.yalla_parallel_runs
 
     if self.args.nocleaning:
       l0 = l0 + " --nocleaning "
@@ -3787,14 +3792,14 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
-                       '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
+                       '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
       generate_parameter = \
                      '# Generating parameters used by yalla single job' + \
                      '\n%s  --parameter-generate \$task ' % (l0)
       
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
-               ('cat >> %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
+               ('cat > %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
       prefix0 = ""
@@ -3878,7 +3883,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
           pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
-      
+          used_cores_per_node = self.CORES_PER_NODE
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \

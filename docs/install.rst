@@ -56,16 +56,6 @@ Or alternatively, using the source tarball::
 
     $ pip install --user decimate-0.9.x.tar.gz
 
-Then, you just need to update your ``PYTHONPATH`` environment variable to be
-able to import the library and ``PATH`` to easily use the :ref:`tools`::
-
-    $ export PYTHONPATH=$PYTHONPATH:~/.local/lib
-    $ export PATH=$PATH:~/.local/bin
-
-Configuration files are installed in ``~/.local/etc/decimate`` and are
-automatically loaded before system-wide ones (for more info about supported
-user config files, please see the :ref:`decimate-config` config section).
-
 
 
 Installing *Decimate* using Anaconda

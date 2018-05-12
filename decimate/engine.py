@@ -798,6 +798,7 @@ class engine(object):
     pickle.dump(self.steps_submitted, self.pickle_file)
     pickle.dump(self.steps_submitted_history, self.pickle_file)
     pickle.dump(self.args.yalla, self.pickle_file)
+    pickle.dump(self.args.yalla_parallel_runs, self.pickle_file)
     self.user_save()
     self.pickle_file.close()
 
@@ -875,6 +876,7 @@ class engine(object):
           self.steps_submitted = pickle.load(self.pickle_file)
           self.steps_submitted_history = pickle.load(self.pickle_file)
           self.args.yalla = pickle.load(self.pickle_file)
+          self.args.yalla_parallel_runs = pickle.load(self.pickle_file)
           self.log_debug('in load yalla=%s' % self.args.yalla,trace='LOAD,YALLA')
           self.user_load()
           self.pickle_file.close()

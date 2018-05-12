@@ -243,24 +243,41 @@ class slurm_frontend(decimate):
     self.log_debug('Submitted batch job %s' % job_id, trace='SUBMIT_JOB,STATUS_DETAIL',)
 
     if self.slurm_args.check:
-      final_checking_job = copy.deepcopy(new_job)
+      final_checking_job = {}
       for n in ['job_name','error','output']:
         final_checking_job[n] = new_job[n]+"_chk"
       final_checking_job['ntasks'] = 1
+      final_checking_job['nodes'] = 1
       final_checking_job['dependency'] = job_id
       final_checking_job['time'] = "05:00"
       final_checking_job['script'] = "%s/scripts/end_job.sh" % self.DECIMATE_DIR
-      del final_checking_job['script_file']
       final_checking_job['array'] = "1-1"
-
+      
       self.slurm_args.script = self.args.script = final_checking_job['script']
       self.slurm_args.error = final_checking_job['error']
       self.slurm_args.output = final_checking_job['output']
       self.slurm_args.job_name = final_checking_job['job_name']
+      self.slurm_args.array = final_checking_job['array']
+      self.slurm_args.time = final_checking_job['time']
+      self.slurm_args.yalla = False
+      self.slurm_args.check = False
+      self.slurm_args.check_file = None
+      self.slurm_args.dependency = final_checking_job['dependency']
+
+      args = self.user_filtered_args()
+      self.args = self.parser.parse_args(args)
+
+
       self.log_debug('*********** final_checking_job **********',\
-                     4,trace='SUBMIT,CHECK_FINAL')
+                     4,trace='SUBMIT,CHECK_FINAL,FINAL_DETAIL')
       self.log_debug('final_checking_job=%s' % pprint.pformat(final_checking_job),\
                      4,trace='CHECK,FINAL_DETAIL')
+      self.log_debug('final_checking_job/slurm_args=%s' % pprint.pformat(self.slurm_args),\
+                     4,trace='CHECK,FINAL_DETAIL')
+      self.log_debug('final_checking_job/self.args=%s' % pprint.pformat(self.args),\
+                     4,trace='CHECK,FINAL_DETAIL')
+      
+      
       (job_id, cmd) = self.submit_job(final_checking_job)
 
 
