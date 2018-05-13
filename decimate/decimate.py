@@ -1762,6 +1762,10 @@ echo --------------- command
 
       self.args.attempt = int(self.args.attempt) + 1
       self.log_info('resubmitting previous_job %s ' % self.print_job(previous_job), 2, trace='HEAL')
+      self.log_info('resubmitting previous_job %s for one more attempt' % \
+                    self.print_job(previous_job), 2, trace='HEAL,HEAL_YALLA')
+      self.log_info('resubmitting same myself previous_job[yalla] = %s, prevous_job[yalla_parallel_run]=%s' % \
+                    (previous_job['yalla'],previous_job['yalla_parallel_runs']), 2, trace='HEAL,HEAL_YALLA')
       (job_previous_id_new, cmd_previous_new) = self.submit_and_activate_job(previous_job)
 
       job['dependency'] = job_previous_id_new
@@ -1770,7 +1774,9 @@ echo --------------- command
       job['array'] = '1-1'  # resubmit the whole job as other part will be suicided
       # job['array'] = job['initial_array'] # resubmit the whole job as other part will be suicided
       self.log_info('resubmitting same myself job %s for same attempt' % \
-                    self.print_job(job), 2, trace='HEAL')
+                    self.print_job(job), 2, trace='HEAL,HEAL_YALLA')
+      self.log_info('resubmitting same myself job[yalla] = %s, job[yalla_parallel_run]=%s' % \
+                    (job['yalla'],job['yalla_parallel_runs']), 2, trace='HEAL,HEAL_YALLA')
       (job_id_new, cmd_new) = self.submit_and_activate_job(job)
       job = self.JOBS[job_id_new]
       previous_job = self.JOBS[job_previous_id_new]
@@ -2624,7 +2630,8 @@ echo --------------- command
                          'check': None,
                          'initial_attempt': 0, \
                          'make_depend': None, \
-                         'yalla': 0,
+                         'yalla': False,
+                         'yalla_parallel_runs': 0,
                          'burst_buffer_size': 0,
                          'burst_buffer_space': 0,
                          'submit_dir': os.getcwd()
@@ -3603,6 +3610,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
   def wrap_job_script(self, job, original_script_content_lines, job_file_args_overloaded):
     self.log_debug("adding prefix and suffix to job %s [%s] : " % (job['script'], job['array']), \
                    4, trace='WRAP')
+    self.log_debug('wrap self.args=%s' % pprint.pformat(self.args), 4, trace='WRAP')
 
     l0 = ""
 
@@ -3693,9 +3701,8 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
     if self.args.yalla:
       l0 = l0 + " --yalla "
-
-    if self.args.yalla_parallel_runs:
-      l0 = l0 + " --yalla-parallel-runs %s " % self.args.yalla_parallel_runs
+      if self.args.yalla_parallel_runs:
+          l0 = l0 + " --yalla-parallel-runs %s " % self.args.yalla_parallel_runs
 
     if self.args.nocleaning:
       l0 = l0 + " --nocleaning "

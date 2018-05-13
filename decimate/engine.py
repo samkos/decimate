@@ -1259,7 +1259,12 @@ class engine(object):
                       continue
 
                   step = self.JOBS[job_id]['step']
-                  task_id = int(task.split('_')[1].split('.')[0])
+                  jobid_and_task = task.split('_')
+                  if len(jobid_and_task)>1:
+                      taskNumber = jobid_and_task[1]
+                  else:
+                      taskNumber = "1"
+                  task_id = int(taskNumber.split('.')[0])
                   items = step.split('-')
                   what = "-".join(items[:-1])
                   attempt = items[-1]
