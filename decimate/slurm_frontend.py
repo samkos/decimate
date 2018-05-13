@@ -252,27 +252,25 @@ class slurm_frontend(decimate):
       final_checking_job['time'] = "05:00"
       final_checking_job['script'] = "%s/scripts/end_job.sh" % self.DECIMATE_DIR
       final_checking_job['array'] = "1-1"
-      final_checking_job['debug'] = new_job['debug']
-      final_checking_job['info'] = new_job['info']
-      final_checking_job['filter'] = new_job['filter']
       
-      print 'ZZZZZZZZZZZ final_checking_job',pprint.pformat(final_checking_job)
+      self.slurm_args.script = self.args.script = final_checking_job['script']
+      self.slurm_args.error = final_checking_job['error']
+      self.slurm_args.output = final_checking_job['output']
+      self.slurm_args.job_name = final_checking_job['job_name']
+      self.slurm_args.array = final_checking_job['array']
+      self.slurm_args.time = final_checking_job['time']
+      self.slurm_args.yalla = False
+      self.slurm_args.check = False
+      self.slurm_args.check_file = None
+      self.args.yalla = False
+      self.args.check = False
+      self.args.check_file = None
+      self.slurm_args.dependency = final_checking_job['dependency']
 
-      self.user_initialize_parser()
-
-      for c in ['filter','job_name']:
-        args = ['--%s=%s' % (c, final_checking_job[c])]
-        
-      for c in ['debug','info']:
-        for i in range(new_job[c]):
-          args = args + ['--%s' % c]
-          
-      print 'ZZZZZZZZZZZ args',args
-
+      args = self.user_filtered_args()
       self.args = self.parser.parse_args(args)
 
-      print 'ZZZZZZZZZZZ self.args',pprint.pformat(self.args)
-      
+
       self.log_debug('*********** final_checking_job **********',\
                      4,trace='SUBMIT,CHECK_FINAL,FINAL_DETAIL')
       self.log_debug('final_checking_job=%s' % pprint.pformat(final_checking_job),\
