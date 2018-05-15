@@ -19,7 +19,7 @@ import sys
 import termios
 
 
-DECIMATE_VERSION = '0.9.7'
+DECIMATE_VERSION = '0.10.0'
 
 RSYNC_CMD = "timeout 60 bash -c 'until time srun -N ${SLURM_NNODES} --ntasks=${SLURM_NNODES} " + \
             "--ntasks-per-node=1 rsync %s /tmp; do > /dev/null :; done  > /dev/null 2>&1' \n"
@@ -214,7 +214,8 @@ class decimate(engine):
               'decimate.pyc', 'engine.pyc', 'env.pyc', 'slurm_frontend.pyc']:
         self.FILES_TO_COPY = self.FILES_TO_COPY + ['%s/%s' % (self.DECIMATE_DIR, f)]
 
-        
+
+    self.slurm_args = {}
 
     # checking
     self.check_python_version()
@@ -511,9 +512,10 @@ class decimate(engine):
 
     self.currently_healing_workflow = False
 
-    if self.slurm_args.version:
-      self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
-      sys.exit(0)
+    if len(self.slurm_args):
+        if self.slurm_args.version:
+            self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
+            sys.exit(0)
 
     if self.args.max_jobs < 8:
         self.error("maximumm jobs in the queue should be at least of 8", exit=True)
@@ -2624,8 +2626,11 @@ echo --------------- command
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
     original_script_content_lines = open(job['script'], 'r').readlines()
-    (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
-
+    if len(self.slurm_args):
+        (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
+    else:
+        job_file_args_overloaded = []
+        
     self.log_debug('after reading job script file %s job =%s' % \
                    (job['script'], self.print_job(job, print_only=job.keys())), \
                    4, trace='WRAP,PARSE')
