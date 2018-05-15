@@ -3,14 +3,14 @@
 import argparse
 from ClusterShell.NodeSet import RangeSet, NodeSet
 import datetime
-from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,clean_line
+from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,SACCT_COMMAND,clean_line
 import fcntl
 import getpass
 import glob
 import logging
 import logging.handlers
 import os
-import pickle
+import cPickle as pickle
 import pprint
 import re
 import subprocess
@@ -798,6 +798,7 @@ class engine(object):
     pickle.dump(self.steps_submitted, self.pickle_file)
     pickle.dump(self.steps_submitted_history, self.pickle_file)
     pickle.dump(self.args.yalla, self.pickle_file)
+    pickle.dump(self.args.yalla_parallel_runs, self.pickle_file)
     self.user_save()
     self.pickle_file.close()
 
@@ -875,6 +876,7 @@ class engine(object):
           self.steps_submitted = pickle.load(self.pickle_file)
           self.steps_submitted_history = pickle.load(self.pickle_file)
           self.args.yalla = pickle.load(self.pickle_file)
+          self.args.yalla_parallel_runs = pickle.load(self.pickle_file)
           self.log_debug('in load yalla=%s' % self.args.yalla,trace='LOAD,YALLA')
           self.user_load()
           self.pickle_file.close()
@@ -1161,7 +1163,7 @@ class engine(object):
 
       job_to_check_filtered = jobs_to_check.keys()
       #cmd = ";".join(map(lambda x: 'sacct -n -p -j %s' % x, job_to_check_filtered))
-      cmd = ["/opt/slurm/default/bin/sacct","-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
+      cmd = [SACCT_COMMAND,"-n","-p","-j",",".join(map(lambda x : str(x),jobs_to_check))]
       cmd = " ".join(cmd)
       self.log_debug('cmd to get new status via sacct : %s' % "".join(cmd),\
                      1,trace='STATUS_DETAIL,STATUS')
@@ -1257,7 +1259,12 @@ class engine(object):
                       continue
 
                   step = self.JOBS[job_id]['step']
-                  task_id = int(task.split('_')[1].split('.')[0])
+                  jobid_and_task = task.split('_')
+                  if len(jobid_and_task)>1:
+                      taskNumber = jobid_and_task[1]
+                  else:
+                      taskNumber = "1"
+                  task_id = int(taskNumber.split('.')[0])
                   items = step.split('-')
                   what = "-".join(items[:-1])
                   attempt = items[-1]

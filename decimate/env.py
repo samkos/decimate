@@ -36,11 +36,12 @@ NODES_FAILED = False
 MAIL_COMMAND = False
 SCHED_TYPE = "slurm"
 SUBMIT_COMMAND = 'sbatch'
+SACCT_COMMAND = 'sacct'
 EXCLUSIVE = False
 
 def get_machine():
     global CORE_PER_NODE_REGARDING_QUEUE, NODES_FAILED,\
-        MAIL_COMMAND, SCHED_TYPE, DEFAULT_QUEUE, SUBMIT_COMMAND
+        MAIL_COMMAND, SCHED_TYPE, DEFAULT_QUEUE, SUBMIT_COMMAND, SACCT_COMMAND
 
     """
     determines the machine maestro is running on and sets
@@ -66,6 +67,7 @@ def get_machine():
         tmp_directory = "/scratch/tmp/"
         MAIL_COMMAND = """ssh gateway1 "ssh cdl3 'mail -s \\"%s\\" %s < %s'" """
         SUBMIT_COMMAND = 'sbatch'
+        SACCT_COMMAND = '/opt/slurm/default/bin/sacct'
         EXCLUSIVE = True
     elif (machine[:3] == "nid" or machine[:3] == "cdl" or machine[:7] == "gateway"):
         machine = "shaheen"
@@ -75,6 +77,7 @@ def get_machine():
         MAIL_COMMAND = """ssh cdl2.hpc.kaust.edu.sa 'mail -s "%s" %s < %s' """
         DEFAULT_QUEUE = "workq"
         SUBMIT_COMMAND = 'sbatch'
+        SACCT_COMMAND = '/opt/slurm/default/bin/sacct'
         EXCLUSIVE = True
         cores_per_node = 32
     elif (machine[:2] == "db"):

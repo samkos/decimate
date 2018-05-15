@@ -114,3 +114,8 @@ parameter (typically *__Name_of_parameter__*) with a value coming
 from the parametric file processed by *Decimate*.::
 
   #DECIM PROCESS_TEMPLATE_FILES 
+
+ Job script default parameters
+-----------------------------
+
+*current_combination*  the index of the combination of parameters set for the current job.

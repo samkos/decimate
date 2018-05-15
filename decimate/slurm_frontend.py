@@ -83,6 +83,8 @@ class slurm_frontend(decimate):
     self.slurm_parser.add_argument("-sc", "--scratch", action="store_true",
                              help='relaunch a new workflow, erasing all from the previous one',
                              default=False)
+    self.slurm_parser.add_argument("--force-check", action="store_true",
+                             help=argparse.SUPPRESS, default=False)
     
 
     self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
@@ -92,6 +94,8 @@ class slurm_frontend(decimate):
 
     self.parser.add_argument("-P", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
+    self.parser.add_argument("-Pc", "--parameter-count", action="store_true",
+                                   help='counts all parameters combination to scan and exit', default=False)
     self.parser.add_argument("-Pl", "--parameter-list", action="store_true",
                                    help='lists all parameters combination to scan and exit', default=False)
     self.parser.add_argument("-PF", "--parameter-filter", type=str,
@@ -115,11 +119,20 @@ class slurm_frontend(decimate):
     if (self.slurm_args.decimate_help or decimate_extra_config == ["-h"]):
       return ['-h']
 
-    if not(self.job_script) and not(self.slurm_args.parameter_list) and not(self.slurm_args.version) and len(decimate_args) == 0:
+    if not(self.job_script) and not(self.slurm_args.parameter_list) \
+       and not(self.slurm_args.parameter_count) \
+       and not(self.slurm_args.version) and len(decimate_args) == 0:
       self.error('job script missing...', exit=True)
+
+    if self.slurm_args.force_check:
+      decimate_extra_config = decimate_extra_config + ['--force-check']
 
     if self.slurm_args.yalla:
       decimate_extra_config = decimate_extra_config + ['--yalla']
+      if self.slurm_args.yalla_parallel_runs:
+        decimate_extra_config = decimate_extra_config + \
+                              ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
+
 
     if self.slurm_args.filter:
       decimate_extra_config = decimate_extra_config + ['--filter',self.slurm_args.filter]
@@ -131,10 +144,6 @@ class slurm_frontend(decimate):
     if self.slurm_args.max_jobs:
       decimate_extra_config = decimate_extra_config + \
                               ['--max-jobs', "%s" % self.slurm_args.max_jobs]
-
-    if self.slurm_args.yalla_parallel_runs:
-      decimate_extra_config = decimate_extra_config + \
-                              ['--yalla-parallel-runs', "%s" % self.slurm_args.yalla_parallel_runs]
 
     if self.slurm_args.parameter_file:
       decimate_extra_config = decimate_extra_config + \
@@ -151,6 +160,10 @@ class slurm_frontend(decimate):
     if self.slurm_args.parameter_list:
       decimate_extra_config = decimate_extra_config + \
                               [ '--parameter-list' ]
+
+    if self.slurm_args.parameter_count:
+      decimate_extra_config = decimate_extra_config + \
+                              [ '--parameter-count' ]
 
     if self.slurm_args.use_burst_buffer_size:
       decimate_extra_config = decimate_extra_config + ['--use-burst-buffer-size']
@@ -239,15 +252,36 @@ class slurm_frontend(decimate):
       final_checking_job['script'] = "%s/scripts/end_job.sh" % self.DECIMATE_DIR
       del final_checking_job['script_file']
       final_checking_job['array'] = "1-1"
+      final_checking_job['yalla'] = False
+      final_checking_job['yalla_parallel_runs'] = 0
 
       self.slurm_args.script = self.args.script = final_checking_job['script']
       self.slurm_args.error = final_checking_job['error']
       self.slurm_args.output = final_checking_job['output']
       self.slurm_args.job_name = final_checking_job['job_name']
+      self.slurm_args.array = final_checking_job['array']
+      self.slurm_args.time = final_checking_job['time']
+      self.slurm_args.yalla = False
+      self.slurm_args.yalla_parallel_runs = 0
+      self.slurm_args.check = False
+      self.slurm_args.check_file = None
+      self.args.yalla = False
+      self.args.yalla_parallel_runs = 0
+      self.args.check = False
+      self.args.check_file = None
+      self.slurm_args.dependency = final_checking_job['dependency']
+
+
       self.log_debug('*********** final_checking_job **********',\
-                     4,trace='SUBMIT,CHECK_FINAL')
+                     4,trace='SUBMIT,CHECK_FINAL,FINAL_DETAIL')
       self.log_debug('final_checking_job=%s' % pprint.pformat(final_checking_job),\
                      4,trace='CHECK,FINAL_DETAIL')
+      self.log_debug('final_checking_job/slurm_args=%s' % pprint.pformat(self.slurm_args),\
+                     4,trace='CHECK,FINAL_DETAIL')
+      self.log_debug('final_checking_job/self.args=%s' % pprint.pformat(self.args),\
+                     4,trace='CHECK,FINAL_DETAIL')
+      
+      
       (job_id, cmd) = self.submit_job(final_checking_job)
 
 

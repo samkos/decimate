@@ -142,6 +142,7 @@ Job Management:
 Parametric Jobs:
   -P,  --parameter-file=PARAM_FILE file listing all parameter
                                           combinations to cover
+  -Pc, --parameter-count counts all parameters combination to scan and exit
   -Pl, --parameter-list lists all parameters combination to scan and exit
 
   -Pf, --parameter-filter=FILTER filter while reading parameter file
@@ -240,6 +241,7 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
+    self.PARAMETER_FILE = "/tmp/parameter_"
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
@@ -436,6 +438,8 @@ class decimate(engine):
                              help='# of job to run in parallel in a pool', default=4)
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help='file listing all parameter combinations to cover')
+    self.parser.add_argument("--parameter-generate", type=str,
+                             help=argparse.SUPPRESS)
 
     self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
                              help='Use a non persistent burst buffer space', default=False)
@@ -569,8 +573,8 @@ class decimate(engine):
           srun_original_cmd = self.system("which srun")[:-1]
           srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
           f = open(srun_wrapper_file, "w")
-          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED $*  \n"+
-                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
+          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $*  \n"+
+                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
           f.close()
           os.chmod(srun_wrapper_file, 0755)
           
@@ -630,7 +634,7 @@ echo --------------- command
       try:
         args = self.args.taskid.split(',')
         self.TASK_ID = int(args[0])
-        self.TASK_IDS = args[1]
+        self.TASK_IDS = self.args.taskid
       except Exception:
         self.error('pb in reading taskid', exception=True, exit=True)
         self.TASK_ID = 1
@@ -719,18 +723,16 @@ echo --------------- command
       self.finalize()
       sys.exit(0)
 
-    # checking previous step
-    if self.args.check_previous_step and self.args.parameter_file and self.args.spawned:
-      # in case of a yalla job every parameter configuration file should be created ahead
-      if self.args.yalla:
-        tasks = []
-        for t in RangeSet(self.TASK_IDS):
+    # generating parameter values for each task
+    
+    if self.args.parameter_generate and self.args.parameter_file and self.args.spawned:
+      tasks = []
+      for t in RangeSet(self.args.parameter_generate):
           tasks = tasks + [t]
-      else:
-        tasks = [self.TASK_ID]
 
-      self.log_debug('creating parametric files for range [%s]' % self.TASK_IDS,\
-                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
+      self.log_debug('creating parametric files for range [self.TASK_IDS=%s,tasks=%s]' % \
+                     (self.TASK_IDS,tasks),\
+                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
       
       for t in tasks:
         param_file = '%s.%s' % (self.PARAMETER_FILE,t)
@@ -757,8 +759,9 @@ echo --------------- command
       
         task_parameter_file.write('\n')
         task_parameter_file.close()
-        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD')
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
         
+    # checking previous step
     if self.args.check_previous_step:
       lock_file = self.take_lock(self.FEED_LOCK_FILE)
       self.load()
@@ -772,6 +775,9 @@ echo --------------- command
         my_job = self.JOBS[self.args.jobid]
         dep_jobid = my_job['dependency']
         step = self.STEPS[my_job['step']]
+        self.log_info('status of the current job %s: %s ' % 
+                      (my_job['job_name'], self.print_job(my_job, my_job.keys())),
+                      2, trace='COMPUTE_CHECK,CURRENT')
         self.log_info('status of the current step %s: %s ' % 
                       (step['job_name'], self.print_job(step, step.keys())),
                       2, trace='COMPUTE_CHECK,CURRENT')
@@ -1035,7 +1041,7 @@ echo --------------- command
            self.SCENARIO.find(",%s-%s-%s," % (self.args.step, self.TASK_ID,
                                               self.args.attempt)) >= 0):
       self.log_info("finalizing job : %s-%s " % (self.args.step, self.TASK_ID), 2)
-      filename = '%s/Done-%s-%s' % (self.SAVE_DIR, self.args.step, self.TASK_ID)
+      filename = '%s/Done-%s-%05d' % (self.SAVE_DIR, self.args.step, int(self.TASK_ID))
       open(filename, 'w')
 
       self.send_mail('%s-%s Done' % (self.args.step, self.TASK_ID), 2)
@@ -1072,10 +1078,6 @@ echo --------------- command
     if not(checking_from_console):
       self.load()
 
-    # if len(RangeSet(tasks))>5:
-    #   print 'FAAAAAAAAAAAAAAAAKE set tasks to 1-5'
-    #   tasks='1-5'
-
     state_has_changed = False
     step = '%s-%s' % (what, attempt)
 
@@ -1097,7 +1099,11 @@ echo --------------- command
         if self.TASK_ID == RangeSet(self.TASK_IDS)[0]:
             check_it = True
     if check_it:
-      self.log_info("checking status of previous job : %s!%s [%s] " % \
+      if from_finalize:
+          self.log_info("checking status of current job : %s!%s [%s] " % \
+                    (what, attempt, tasks), 2)
+      else:
+          self.log_info("checking status of previous job : %s!%s [%s] " % \
                     (what, attempt, tasks), 2)
 
       all_complete = True
@@ -1143,7 +1149,7 @@ echo --------------- command
             self.TASKS[step][i]['status'] = 'SUCCESS'
             continue
 
-        filename_done = '%s/Done-%s-%s' % (self.SAVE_DIR, what, i)
+        filename_done = '%s/Done-%s-%05d' % (self.SAVE_DIR, what, int(i))
         is_done = os.path.exists(filename_done)
         self.log_info('checking presence of file %s : %s ' % (filename_done, is_done), 3)
 
@@ -1321,7 +1327,9 @@ echo --------------- command
     else:
           pattern = pattern + "_%s" % (attempt)
           original_output_pattern = original_output_pattern + "_%s" % (attempt)
-    output_file_pattern = pattern.replace('%a', str(task_id)).replace('%j', '*').replace('%J', '*')
+    output_file_pattern = pattern.replace('%a', str(task_id)).\
+                          replace('%j', '*').replace('%J', '*').\
+                          replace('%x', self.JOBS[job_id]['job_name'])
 
     original_error_pattern = "%s.TASK_ID-attempt" % (self.JOBS[job_id]['error'])
     pattern = "%s.task_%04d-attempt" % (self.JOBS[job_id]['error'], int(task_id))
@@ -1331,7 +1339,9 @@ echo --------------- command
     else:
           pattern = pattern + "_%s" % (attempt)
           original_error_pattern = original_error_pattern + "_%s" % (attempt)
-    error_file_pattern = pattern.replace('%a', str(task_id)).replace('%j', '*').replace('%J', '*')
+    error_file_pattern = pattern.replace('%a', str(task_id)).\
+                         replace('%j', '*').replace('%J', '*').\
+                         replace('%x', self.JOBS[job_id]['job_name'])
 
     running_dir = self.JOBS[job_id]['submit_dir']
 
@@ -1754,15 +1764,21 @@ echo --------------- command
 
       self.args.attempt = int(self.args.attempt) + 1
       self.log_info('resubmitting previous_job %s ' % self.print_job(previous_job), 2, trace='HEAL')
+      self.log_info('resubmitting previous_job %s for one more attempt' % \
+                    self.print_job(previous_job), 2, trace='HEAL,HEAL_YALLA')
+      self.log_info('resubmitting same myself previous_job[yalla] = %s, prevous_job[yalla_parallel_run]=%s' % \
+                    (previous_job['yalla'],previous_job['yalla_parallel_runs']), 2, trace='HEAL,HEAL_YALLA')
       (job_previous_id_new, cmd_previous_new) = self.submit_and_activate_job(previous_job)
 
       job['dependency'] = job_previous_id_new
-      job['attempt'] = job['attempt']
+
       # ########## for myself, I did not even do an attempt yet... was just checking previous
       job['array'] = '1-1'  # resubmit the whole job as other part will be suicided
       # job['array'] = job['initial_array'] # resubmit the whole job as other part will be suicided
       self.log_info('resubmitting same myself job %s for same attempt' % \
-                    self.print_job(job), 2, trace='HEAL')
+                    self.print_job(job), 2, trace='HEAL,HEAL_YALLA')
+      self.log_info('resubmitting same myself job[yalla] = %s, job[yalla_parallel_run]=%s' % \
+                    (job['yalla'],job['yalla_parallel_runs']), 2, trace='HEAL,HEAL_YALLA')
       (job_id_new, cmd_new) = self.submit_and_activate_job(job)
       job = self.JOBS[job_id_new]
       previous_job = self.JOBS[job_previous_id_new]
@@ -1783,7 +1799,7 @@ echo --------------- command
       # fixing dependencies...
       previous_job['make_depend'] = job_id_new
       self.log_info('resubmitted previous_job %s fixed make_depend????:  %s' % \
-                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL,,HEAL_DEPEND')
+                    (previous_job_id, self.print_job(previous_job)), 2, trace='HEAL,HEAL_DEPEND')
       if next_job_id:
         job['make_depend'] = next_job_id
         job['dependency'] = job_previous_id_new
@@ -2400,18 +2416,23 @@ echo --------------- command
     if len(columns_to_cast):
         l[columns_to_cast] = l[columns_to_cast].astype(int)
 
-    
-    parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+    l['current_combination'] =  range(0, len(l))
 
-    self.log_debug(parameter_list,\
-                   4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
+    if self.args.parameter_count:
+        parameter_count = '%d combination of %d parameters   ' % (len(l), len(l.columns))
+        self.log_console(parameter_count)
 
     if self.args.parameter_list:
+        parameter_list = '%d combination of %d parameters  : l \n %s' % (len(l), len(l.columns), l)
+ 
+        self.log_debug(parameter_list,\
+                       4, trace='PS,PARAMETRIC_DETAIL,PD,PARAMETRIC_SUMMARY')
+
         self.log_console(parameter_list)
 
     self.array_clustered = []
     clustering_criteria = []
-    for c in ['nodes','ntasks','ntasks_per_nodes']:
+    for c in ['nodes','ntasks','ntasks_per_node','time']:
         if c in l.columns:
             clustering_criteria.append(c)
 
@@ -2457,7 +2478,7 @@ echo --------------- command
                     1, trace='PARAMETRIC_DETAIL,PD,GATHER_JOBS,GJ')
       
 
-    if self.args.parameter_list:
+    if self.args.parameter_list or self.args.parameter_count:
         sys.exit(0)
 
     self.parameters = l
@@ -2489,7 +2510,8 @@ echo --------------- command
   def print_job(self, job, short_format=True,
                 print_only=['check_previous', 'script_file', 'array', 'inital_array',
                             'job_name', 'status', 'content', 'job_id', 'step',
-                            'dependency', 'make_depend', 'attempt', 'global_completion','ntasks','nodes'],
+                            'dependency', 'make_depend', 'attempt', 'global_completion','ntasks','nodes',
+                            'yalla','yalla_parallel_runs'],
                 filter=['python /tmp/dart_mitgcm.py'], filtered=['content'], allkey=True, \
                 print_all=False, except_none=False):
 
@@ -2604,12 +2626,14 @@ echo --------------- command
 
     self.log_debug('in submit JOBS start: %s' % (','.join(map(str, self.JOBS.keys()))), 2, trace='JOBS')
 
-    job_default_value = {'array': '1-1', \
+    job_default_value = {'account' : None,
+                         'array': '1-1', \
                          'attempt': 0, \
                          'check': None,
                          'initial_attempt': 0, \
                          'make_depend': None, \
-                         'yalla': 0,
+                         'yalla': False,
+                         'yalla_parallel_runs': 0,
                          'burst_buffer_size': 0,
                          'burst_buffer_space': 0,
                          'submit_dir': os.getcwd()
@@ -2670,7 +2694,7 @@ echo --------------- command
         self.log_info('empty job %s filename forced to %s' % (n, job[n]), \
                       4, trace='API,WORKFLOW,ACTIVATE_DETAIL,JOB_OUTERR')
       
-    (job_script_content, job) = self.wrap_job_script(job, original_script_content_lines,
+    (job_script_content, job, finalizing_job) = self.wrap_job_script(job, original_script_content_lines,
                                                     job_file_args_overloaded)
 
     if not('nodes' in job.keys()):
@@ -2953,7 +2977,7 @@ echo --------------- command
         new_job['items'] = len(array_item)
         new_job['step'] = step
         new_job['check_previous'] = (first_one_in_step and dep)
-        (job_id, cmd) = self.submit_chunk_job(new_job, registration)
+        (job_id, cmd) = self.submit_chunk_job(new_job, finalizing_job, registration)
         dep = job_id
         job_ids = job_ids + [job_id]
         self.log_debug('submitting job depending on %s with array (%s) --> job_id=%s' % \
@@ -3006,7 +3030,7 @@ echo --------------- command
   # submitting one job
   #########################################################################
 
-  def submit_chunk_job(self, job, registration=True):
+  def submit_chunk_job(self, job, finalizing_job, registration=True):
 
     self.log_debug('in submit_chunk JOBS start: %s' % ','.join(map(str, self.JOBS.keys())), \
                    4, trace='CHUNK')
@@ -3057,9 +3081,11 @@ echo --------------- command
     if job['yalla']:
 
       error_file = '%s.task_yyy-attempt_%s' % \
-                (job['error'].replace('%a', job['array'][0:20]), attempt)
+                (job['error'].replace('%a', job['job_name']).\
+                replace('%x', job['job_name']), attempt)
       output_file = '%s.task_yyy-attempt_%s' % \
-                (job['output'].replace('%a', job['array'][0:20]), attempt)
+                (job['output'].replace('%a', job['job_name']).\
+                replace('%x', job['job_name']), attempt)
 
       error_file  ='%s.task_%%04a-attempt_%s' % (job['error'], attempt)
       output_file = '%s.task_%%04a-attempt_%s' % (job['output'], attempt)
@@ -3069,8 +3095,8 @@ echo --------------- command
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
-                '--error=%s ' % error_file.replace("%04a",job['array']),
-                '--output=%s' % output_file.replace("%04a",job['array'])]
+                '--error=%s ' % error_file.replace("%04a",job['array']).replace("%a",job['job_name']),
+                '--output=%s' % output_file.replace("%04a",job['array']).replace("%a",job['job_name'])]
       self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
 
@@ -3104,23 +3130,60 @@ echo --------------- command
           job_content_template = job_content_template + \
                                  "#DW jobdw type=scratch access_mode=striped capacity=%s" % \
                                  (job['burst_buffer_size']) + "\n"
-
-    job_content_template = job_content_template + \
-                           """
+    if self.args.yalla:
+        job_array_tid_mask =                            """
+o="%s"
+e="%s"
+printf -v formatted_array_task_id """ + '"' + (job['job_name']) + '"' + """
+printf -v formatted_array_task_ids """ + '"' + (job['array']) + '"' + """
+echo formatted_array_task_id=$formatted_array_task_id
+output_file=`echo $o|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+    """ 
+    else:
+              job_array_tid_mask =                            """
 o="%s"
 e="%s"
 printf -v formatted_array_task_id "%%04d" $SLURM_ARRAY_TASK_ID
 echo formatted_array_task_id=$formatted_array_task_id
 output_file=`echo $o|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
 error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_TASK_ID/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+    """
+          
+    job_content_template = job_content_template + \
+                           job_array_tid_mask %  (output_file,error_file) +\
+                           "\n# creation of directory if it does not exist" +\
+                           """\nmkdir -p $(dirname "$output_file")  $(dirname "$error_file") """
 
-# creation of directory if it does not exist
-mkdir -p $(dirname "$output_file")  $(dirname "$error_file") 
 
-""" % (output_file,error_file) +\
-                           "run_job () { \n"  + \
+    copying_files_to_tmp = "\n# Copying often accessed files into node's /tmp directory\n\n"
+
+    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
+                    " ".join(self.files_to_copy_to_tmp)
+
+    # no need apriory to copy dbatch in /tmp
+    # we are treating python /tmp/dbatch as a special case
+    # when wrapping the job
+    #
+    # for f in ['dbatch','dstat']:
+    #   decimate_cmd=self.system('which %s' % f)[:-1]
+    #   files_to_sync = files_to_sync + " " + decimate_cmd
+
+    copying_files_to_tmp = copying_files_to_tmp + RSYNC_CMD % files_to_sync 
+
+    if self.args.yalla:
+        job_content_template = job_content_template + copying_files_to_tmp
+    
+    job_content_template = job_content_template + "# main job\nrun_job () { \n"
+
+    if not(self.args.yalla):
+        job_content_template = job_content_template + copying_files_to_tmp
+
+    job_content_template = job_content_template +\
                            "".join(open(job['script_file'], "r").readlines()) +\
                            " } \n run_job > $output_file 2> $error_file"
+
+    job_content_template = job_content_template + "\n" + finalizing_job
     
     job_content_updated = job_content_template.replace('__ATTEMPT__', "%s" % attempt)
     job_content_updated = job_content_updated.replace('__ATTEMPT_INITIAL__', "%s" % \
@@ -3141,7 +3204,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     step = job['step']
     job['cmd'] = cmd
     job['array'] = array_range
-
+ 
     job['status'] = 'WAITING'
     job['completion'] = []
     job['success'] = []
@@ -3150,7 +3213,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     job['success_percent'] = 0
     job['failure_percent'] = 0
 
-    self.log_debug("submitting cmd: " + " ".join(cmd), 4, trace='SUBMIT')
+    self.log_debug("submitting cmd: " + " ".join(cmd), 4, trace='SUBMIT,SUBMIT_CMD')
     # unique jid building
     job_id = '%s-%s-%s' % (step, array_range, time.strftime('%Y-%b-%d-%H:%M:%S'))
     job_id = '%s-%s' % (step, array_range[:20])
@@ -3322,12 +3385,12 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       self.log_debug("job submitted : %s depends on %s" % (job_id, job['dependency']), \
                      1, trace='ACTIVATE_DETAIL,RESTART')
     else:
-      self.log_info("should submit job %s (%s)" % (job['job_name'], job['array'][0:20]))
+      self.log_info("should submit job %s (%s)" % (job['job_name'], job['array'][0:30]))
       self.log_info(" with cmd = %s " % " ".join(cmd), 2)
       job_id = "%s" % job['job_name']
 
     job_script_updated = open('%s_%s_%s_%s' % \
-                              (job['script_file'], job['array'][0:20], \
+                              (job['script_file'], job['array'][0:30], \
                                self.args.attempt, job_id), "w")
     for jid in self.waiting_job_final_id.keys():
         new_job_id = self.waiting_job_final_id[jid]
@@ -3552,6 +3615,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
   def wrap_job_script(self, job, original_script_content_lines, job_file_args_overloaded):
     self.log_debug("adding prefix and suffix to job %s [%s] : " % (job['script'], job['array']), \
                    4, trace='WRAP')
+    self.log_debug('wrap self.args=%s' % pprint.pformat(self.args), 4, trace='WRAP')
 
     l0 = ""
 
@@ -3559,7 +3623,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     args = vars(self.slurm_args)
     l = "###DECIM### Original job script was : %s \n" % os.path.abspath(job['script'])
 
-    self.log_debug('slurm_options=/%s/' % pprint.pformat(self.slurm_options), 4, trace='PARSE')
+    self.log_debug('slurm_options=/%s/' % pprint.pformat(self.slurm_options), 4, trace='SLURM_OPTIONS')
     self.log_debug('job_file_args_overloaded=/%s/' % job_file_args_overloaded, 4, trace='PARSE')
     for li in original_script_content_lines:
       if li[:7] == "#SBATCH":
@@ -3621,8 +3685,8 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     if job['check']:
       l0 = l0 + " --check"
 
-    # if job['check-file']:
-    #   l0 = l0 + " --check-file='%s'" % job['check-file']
+    if self.args.check_file:
+       l0 = l0 + " --check-file='%s'" % self.args.check_file
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
@@ -3642,6 +3706,8 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
 
     if self.args.yalla:
       l0 = l0 + " --yalla "
+      if self.args.yalla_parallel_runs:
+          l0 = l0 + " --yalla-parallel-runs %s " % self.args.yalla_parallel_runs
 
     if self.args.nocleaning:
       l0 = l0 + " --nocleaning "
@@ -3720,25 +3786,9 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
 
     prefix = '#!/bin/bash\n'
 
-    prefix = prefix + "\n# Copying often accessed files into node's /tmp directory\n\n"
-    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
-                    " ".join(self.files_to_copy_to_tmp)
-
-    # no need apriory to copy dbatch in /tmp
-    # we are treating python /tmp/dbatch as a special case
-    # when wrapping the job
-    #
-    # for f in ['dbatch','dstat']:
-    #   decimate_cmd=self.system('which %s' % f)[:-1]
-    #   files_to_sync = files_to_sync + " " + decimate_cmd
-
-    prefix = prefix + RSYNC_CMD % files_to_sync 
-
-                     # '\n# Setting Environment variables and preparing node\n\n%s\n' % 
-                     # environment_variables + 
 
     check_previous = \
-                     '# Checking the status of previous Jobs\n' + \
+                     '\n# Checking the status of previous Jobs' + \
                      '\n%s  --check-previous-step \n' % (l0) + \
                      "if [ $? -ne 0 ] ; then\n" + \
                      '   echo "[ERROR] FAILED in precedent step : ' + \
@@ -3754,10 +3804,14 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
-                       '--check-previous-step > $output_file.checking.out 2> $error_file.checking.err')
+                       '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
+      generate_parameter = \
+                     '# Generating parameters used by yalla single job' + \
+                     '\n%s  --parameter-generate \$task ' % (l0)
+      
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
-               ('cat >> %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
+               ('cat > %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
       prefix0 = ""
@@ -3767,7 +3821,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
     if self.args.parameter_file:
         prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
-        
+        prefix0 = prefix0 + '\necho executing   %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
 
       
@@ -3786,18 +3840,25 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
           if [ $? -ne 0 ] ; then
               echo "[ERROR] FAILED in current step : exiting immediately..."
               #exit 1
-          else """ + '\n\n ################# finalizing job ####################\n'
-    if self.args.fake:
-        l = l + l0 + ' --finalize --fake\n'
-    else:
-        l = l + "\n# returning in the right directory \n\n"
-        l = l + "cd %s \n" % (job['submit_dir'])
-        l = l + '      \n# Touching file to signify the job reached its end\n\n'
-        l = l + '           touch %s/Done-%s-${SLURM_ARRAY_TASK_ID}\n           ' % \
-            (self.SAVE_DIR, job['job_name'])
-        l = l + l0 + ' --finalize \n'
+          else """ + '\n\n ################# finalizing job ####################\n  echo \n'
 
-    l = l + "\n          fi       # closing if of successfull job \n"
+    finalizing_job =  "\n check_job () { \n"  
+
+    
+    if self.args.fake:
+       finalizing_job = finalizing_job + l0 + ' --finalize --fake\n'
+    else:
+       finalizing_job = finalizing_job + "\n# returning in the right directory \n\n"
+       finalizing_job = finalizing_job + "cd %s \n" % (job['submit_dir'])
+       finalizing_job = finalizing_job + '      \n# Touching file to signify the job reached its end\n\n'
+       finalizing_job = finalizing_job + '           touch %s/Done-%s-$(echo 00000${SLURM_ARRAY_TASK_ID} | tail -c 6)\n           ' % \
+            (self.SAVE_DIR, job['job_name'])
+       finalizing_job = finalizing_job + 'echo job DONE \n'
+       finalizing_job = finalizing_job + l0 + ' --finalize \n'
+
+       finalizing_job = finalizing_job + "\n} \n check_job >> $output_file 2>> $error_file"
+
+    l = l + "# Finalization is taken care outside of run.... \n \n          fi       # closing if of successfull job \n"
 
     self.log_debug('wrap job before yalla filling =%s' % self.print_job(job), \
                    4, trace='WRAP')
@@ -3825,12 +3886,16 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       
       if job['ntasks'] and not(job['nodes']):
           all_tasks = job['ntasks'] * job['yalla_parallel_runs']
-          pool_nodes_nb = all_tasks/self.CORES_PER_NODE
-          if all_tasks % self.CORES_PER_NODE:
+          used_cores_per_node = self.CORES_PER_NODE
+          if job['ntasks_per_node']:
+              used_cores_per_node = min(self.CORES_PER_NODE,job['ntasks_per_node'])
+                        
+          pool_nodes_nb = all_tasks/used_cores_per_node
+          if all_tasks % used_cores_per_node:
               pool_nodes_nb = pool_nodes_nb + 1
       else: 
           pool_nodes_nb = (job['nodes'] * job['yalla_parallel_runs'])
-      
+          used_cores_per_node = self.CORES_PER_NODE
               
       self.log_debug('yalla related parameters in job:%s' % \
                      self.print_job(job, print_only=['time', 'ntasks', 'nodes', 'array', \
@@ -3868,6 +3933,9 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__YALLA_NODES__', str( self.yalla_pool_nodes_nb))
+      output = output.replace('__USED_CORES_PER_NODE__', str(used_cores_per_node))
+      output = output.replace('__TOTAL_CORES_PER_NODE__', str(self.CORES_PER_NODE))
+      output = output.replace('__CORES_PER_JOB__', str(job['ntasks']))
       if (job['nodes']):
           output = output.replace('__NB_NODES_PER_PARALLEL_RUNS__', str(job['nodes']))
       else:
@@ -3875,11 +3943,12 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       output = output.replace('__NB_CORES_PER_PARALLEL_RUNS__', str(job['ntasks']))
       output = output.replace('__job_name__', str(job['job_name']))
       output = output.replace('__job_array__', str(job['array']))
-      output = output.replace('__job_output__', stream['output'])
-      output = output.replace('__job_error__', stream['error'])
+      output = output.replace('__job_output__', stream['output'].replace('%x', job['job_name']))
+      output = output.replace('__job_error__', stream['error'].replace('%x', job['job_name']))
       output = output.replace('__NB_JOBS__', str(len(RangeSet(job['array']))))
       output = output.replace('__TASKS__', " ".join(map(lambda x:str(x), RangeSet(job['array']))))
       output = output.replace('__job_submit_dir__', job['submit_dir'])
+      output = output.replace('__GENERATE_PARAMETER__',generate_parameter)
       
       if self.args.debug:
         output = output.replace('__DEBUG__', 'debug')
@@ -3898,7 +3967,7 @@ mkdir -p $(dirname "$output_file")  $(dirname "$error_file")
       # l = l + '\n\n# Cleaning the node before releasing it\n\n\\rm -rf /tmp/*py'
 
     self.log_info('end fo =\n%s' % l, 2)
-    return (l, job)
+    return (l, job, finalizing_job)
 
   #########################################################################
   # submitting all the first jobs
