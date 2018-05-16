@@ -94,7 +94,7 @@ def get_machine():
         # SCHED_TYPE = "pbs"
         DEFAULT_QUEUE = "debug"
         EXCLUSIVE = False
-        cores_per_node = 8
+        cores_per_node = 2
     elif (machine[:11] == "samy-EL1352"):
         machine = "home"
         CORE_PER_NODE_REGARDING_QUEUE["debug"] = 4

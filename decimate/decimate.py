@@ -3184,6 +3184,9 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     job_content_updated = job_content_updated.replace('__ATTEMPT_INITIAL__', "%s" % \
                                                       job['initial_attempt'])
     job_content_updated = job_content_updated.replace('__ARRAY__', "%s" % job['array'])
+    job_content_updated = job_content_updated.replace('__YALLA_PARALLEL_RUNS__', \
+                                                      "%s" % job['yalla_parallel_runs'])
+    
     if self.args.yalla:
       array_unfold = ""
       for index in RangeSet(array_range):
@@ -3702,7 +3705,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     if self.args.yalla:
       l0 = l0 + " --yalla "
       if self.args.yalla_parallel_runs:
-          l0 = l0 + " --yalla-parallel-runs %s " % self.args.yalla_parallel_runs
+          l0 = l0 + " --yalla-parallel-runs __YALLA_PARALLEL_RUNS__ " 
 
     if self.args.nocleaning:
       l0 = l0 + " --nocleaning "
