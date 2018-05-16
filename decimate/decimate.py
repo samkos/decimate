@@ -909,6 +909,13 @@ echo --------------- command
     self.log_info('in print_wokflow steps[%s] ' % ",".join(steps), 1, trace='PRINT')
     # self.log_info('in print_wokflow self.STEPS[2]=\n%s ' % pprint.pformat(self.STEPS[steps[1]]))
     for s in steps:
+
+        # No need to print status for _chk steps...
+        step_name_without_attempt = "-".join(s.split('-')[:-1])
+        if (step_name_without_attempt.find('_chk') == (len(step_name_without_attempt)-4)):
+          continue
+
+        
         status = self.STEPS[s]['status']
         if self.args.status_long or self.args.status_all or all_steps:
           array_item = self.STEPS[s]['array']

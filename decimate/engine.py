@@ -1293,6 +1293,10 @@ class engine(object):
     # checking coherency of result
     unconsistent_steps = []
     for step_name in self.STEPS.keys():
+      # No need to check consistency for _chk steps...
+      step_name_without_attempt = "-".join(step_name.split('-')[:-1])
+      if (step_name_without_attempt.find('_chk') == (len(step_name_without_attempt)-4)):
+          continue
       step = self.STEPS[step_name]
 #      if self.STEPS[step_name]['status'] in ['SUCCESS', 'WAITING','PENDING','FAILURE','ABORTED']:
       if self.STEPS[step_name]['status'] in ['WAITING','PENDING','RUNNING']:
