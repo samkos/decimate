@@ -430,12 +430,17 @@ class decimate(engine):
     if self.frontend_cmd=="dbatch":
       self.parser.add_argument("--template", action="store_true",
                                help='create template files')
-      self.parser.add_argument("--process-templates", type=str, 
+    else:
+      self.parser.add_argument("--template", action="store_true",
                                help=argparse.SUPPRESS)
-      if not(self.user_initialize_parser() == 'default'):
+      
+    self.parser.add_argument("--process-templates", type=str, 
+                             help=argparse.SUPPRESS)
+    
+    if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
-          self.parser.add_argument("--create-template", action="store_true",
-                                   help='Download all the template files in the current directory')
+        self.parser.add_argument("--create-template", action="store_true",
+                                 help='Download all the template files in the current directory')
 
     self.parser.add_argument("--all", action="store_true", default=False,
                              help=argparse.SUPPRESS)
@@ -472,7 +477,7 @@ class decimate(engine):
                                  help='do release all the job of a step.', default=False)
 
         self.parser.add_argument("-xy", "--yalla", action="store_true",
-        help='Use yalla pool', default=False)
+                                 help='Use yalla pool', default=False)
         self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
                                  help='# of job to run in parallel in a pool', default=4)
         self.parser.add_argument("-xyf", "--parameter-file", type=str,
@@ -491,6 +496,39 @@ class decimate(engine):
         self.parser.add_argument("-xs", "--burst-buffer-space", type=str,
                                  help='name of the persistent burst buffer space used',
                                  default='Tst01')
+    else:
+        self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
+                                 help=argparse.SUPPRESS)
+        self.parser.add_argument("-xj", "--max-jobs", type=int, default=450,
+                                 help=argparse.SUPPRESS)
+        
+        self.parser.add_argument("-sc", "--stripe-count", type=int, default=0,
+                                 help=argparse.SUPPRESS)
+
+        self.parser.add_argument("-xa", "--all-released", action="store_true",
+                                 help=argparse.SUPPRESS)
+
+        self.parser.add_argument("-xy", "--yalla", action="store_true",
+                                 help=argparse.SUPPRESS, default=False)
+        self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
+                                 help=argparse.SUPPRESS, default=4)
+        self.parser.add_argument("-xyf", "--parameter-file", type=str,
+                                 help=argparse.SUPPRESS)
+
+        self.parser.add_argument("--parameter-generate", type=str,
+                                 help=argparse.SUPPRESS)
+
+        self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
+                                 help=argparse.SUPPRESS, default=False)
+        self.parser.add_argument("-bbs", "--use-burst-buffer-space", action="store_true",
+                                 help=argparse.SUPPRESS, default=False)
+        self.parser.add_argument("-xz", "--burst-buffer_size", type=str,
+                                 help=argparse.SUPPRESS,
+                                 default='80TiB')
+        self.parser.add_argument("-xs", "--burst-buffer-space", type=str,
+                                 help=argparse.SUPPRESS,
+                                 default='Tst01')
+        
 
   #########################################################################
   # check for tne option on the command line defined by the user
