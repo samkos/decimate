@@ -1158,10 +1158,10 @@ echo --------------- command
 
         if user_check == SUCCESS:
             if not(is_done) and user_check:
-                s = ('ZZZZZZZ step %s-%s was not complete but was validated successfully ' + \
+                s0 = ('ZZZZZZZ step %s-%s was not complete but was validated successfully ' + \
                      '+by a check made by a user defined function') % (what, i)
-                self.log_info(s)
-                self.append_mail(s)
+                self.log_info(s0)
+                self.append_mail(s0)
 
             if self.CanLock:
                 open(filename_complete, 'w')
@@ -1388,8 +1388,8 @@ echo --------------- command
       if self.args.check_file:
          # if a user check procedure was given as a script file
          # executing it
-         cmd = "%s %s %s %s %s %s %s %s" % \
-               (self.args.check_file, what, attempt, task_id, running_dir, output_file, error_file, is_done)
+         cmd = "what='%s';  attempt='%s';  task_id='%s';  running_dir='%s';  output_file='%s';  error_file='%s';  is_done='%s'; . %s" % \
+               (what, attempt, task_id, running_dir, output_file, error_file, is_done, self.args.check_file)
          self.log_debug('checking via user_script with cmd/%s/' % cmd, \
                         4, trace='USER_CHECK')
          (return_code, result) = self.system(cmd, return_code=True)
