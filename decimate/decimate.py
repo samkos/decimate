@@ -302,6 +302,9 @@ class decimate(engine):
     if self.frontend_cmd=="dlog":
       self.parser.add_argument("-l", "--log", action="store_true",
                                help='display and tail current log')
+    else:
+      self.parser.add_argument("-l", "--log", action="store_true",
+                               help=argparse.SUPPRESS)
 
     if self.frontend_cmd=="dstat":
       self.parser.add_argument("-s", "--status", action="store_true",
@@ -310,7 +313,14 @@ class decimate(engine):
                                help='list status of all the jobs of the workflow')
       self.parser.add_argument("-sl", "--status-long", action="store_true",
                              help='list detailed status of jobs of the workflow')
-
+    else:
+      self.parser.add_argument("-s", "--status", action="store_true",
+                               help=argparse.SUPPRESS)
+      self.parser.add_argument("-sa", "--status-all", action="store_true",
+                               help=argparse.SUPPRESS)
+      self.parser.add_argument("-sl", "--status-long", action="store_true",
+                               help=argparse.SUPPRESS)
+        
     if self.frontend_cmd=="dbatch":
       self.parser.add_argument("-k", "--kill", action="store_true",
                                help='kills job of this workflow')
@@ -327,6 +337,9 @@ class decimate(engine):
     if self.frontend_cmd=="dconsole":
         self.parser.add_argument("-x", "--explore", action="store_true",
                                  help='start a console to explore the results', default=False)
+    else:
+        self.parser.add_argument("-x", "--explore", action="store_true",
+                                 help=argparse.SUPPRESS)
 
     # fake option to separate option targetted at decimate from the slurm frontend
 
@@ -383,6 +396,13 @@ class decimate(engine):
       self.parser.add_argument("--quick-launch-no-load", action="store_true",
                                help='launches jobs quicky only saving state at the end',
                                default=False)
+    else:
+      self.parser.add_argument("-ql", "--quick-launch", action="store_true",
+                               help=argparse.SUPPRESS,
+                               default=False)
+      self.parser.add_argument("--quick-launch-no-load", action="store_true",
+                               help=argparse.SUPPRESS,
+                               default=False)
 
     # Force checking of jobs
     self.parser.add_argument("--force-check", action="store_true",
@@ -432,6 +452,12 @@ class decimate(engine):
                                help='rollback to step xxx')
       self.parser.add_argument("-rl", "--rollback-list", action="store_true", default=False,
                                help='list available step to rollback to')
+    else:
+      self.parser.add_argument("-r2", "--rollback", type=str,
+                               help=argparse.SUPPRESS)
+      self.parser.add_argument("-rl", "--rollback-list", action="store_true", default=False,
+                               help=argparse.SUPPRESS)
+          
 
     if self.frontend_cmd=="dbatch":
         self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
@@ -532,6 +558,18 @@ class decimate(engine):
 
     if self.slurm_args.version:
       self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
+      sys.exit(0)
+
+    if self.args.status or self.args.status_long or self.args.status_all:
+      self.print_workflow()
+      if not(self.args.log):
+          sys.exit(0)
+
+    if self.args.log:
+      self.tail_log_file(keep_probing=True, no_timestamp=True, nb_lines_tailed=5,
+                         stop_tailing=['workflow is finishing',
+                                       'workflow is aborting'])
+      self.log_info('=============== workflow is finishing ==============')
       sys.exit(0)
 
     if self.args.max_jobs < 8:
@@ -720,17 +758,6 @@ echo --------------- command
       self.forward_mail()
       sys.exit(0)
 
-    if self.args.status or self.args.status_long or self.args.status_all:
-      self.print_workflow()
-      if not(self.args.log):
-          sys.exit(0)
-
-    if self.args.log:
-      self.tail_log_file(keep_probing=True, no_timestamp=True, nb_lines_tailed=5,
-                         stop_tailing=['workflow is finishing',
-                                       'workflow is aborting'])
-      self.log_info('=============== workflow is finishing ==============')
-      sys.exit(0)
 
     if self.args.finalize:
       self.finalize()

@@ -289,48 +289,58 @@ class engine(object):
     self.parser.add_argument("-f","--filter", type=str, default='no_filter', \
                              help='filtering traces')
     
-    if not(self.frontend_cmd=="dbatch"):
-        return
-    
-    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
-                                 help='sends a mail tracking the progression of the workflow')
+    self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
 
-    # self.parser.add_argument("--kill", action="store_true", help="Killing all processes")
-    # self.parser.add_argument("--scratch", action="store_true",\
-    #                 help="Restarting the whole process from scratch cleaning everything")
-    # self.parser.add_argument("--restart", action="store_true", \
-    #                           help="Restarting the process from where it stopped")
+    self.parser.add_argument("--info-offset", type=int, help=argparse.SUPPRESS, default=0)
+    self.parser.add_argument("--debug-offset", type=int, help=argparse.SUPPRESS, default=0)
+
+    self.parser.add_argument("--banner", action="store_true", help=argparse.SUPPRESS, default=True)
+
+    if self.frontend_cmd=="dbatch":
+        self.parser.add_argument("-r","--reservation", type=str, help='SLURM reservation')
+        self.parser.add_argument("-p","--partition", type=str, help='SLURM partition')
+    
+        self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
+                                 help='sends a mail tracking the progression of the workflow')
+        self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
+                                 help='do not fix unconsistent steps', default=False)
+        self.parser.add_argument("-a","--account", type=str, help='forcing the submitting account')
+        self.parser.add_argument("--create-template", action="store_true", \
+                                 help='create template')
+    else:
+        self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
+                                 help=argparse.SUPPRESS)
+        self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
+                                 help=argparse.SUPPRESS, default=False)
+        self.parser.add_argument("-a","--account", type=str, help=argparse.SUPPRESS)
+        self.parser.add_argument("--create-template", action="store_true", \
+                                 help=argparse.SUPPRESS)
 
     self.parser.add_argument("--kill", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--scratch", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--restart", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--nocleaning", action="store_true", default=False, \
-                             help=argparse.SUPPRESS)
-    self.parser.add_argument("--create-template", action="store_true", \
-                             help='create template')
 
     self.parser.add_argument("--go-on", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--mail", type=str, help=argparse.SUPPRESS)
-    self.parser.add_argument("-a","--account", type=str, help='forcing the submitting account')
     self.parser.add_argument("--fake", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--save", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--load", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--dry", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--pbs", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("-x","--exclude-nodes", type=str, help=argparse.SUPPRESS)
-    self.parser.add_argument("-r","--reservation", type=str, help='SLURM reservation')
-    self.parser.add_argument("-p","--partition", type=str, help='SLURM partition')
-    self.parser.add_argument("-np", "--no-pending", action="store_true",\
-                             help='do not keep pending the log', default=False)
 
-    self.parser.add_argument("--info-offset", type=int, help=argparse.SUPPRESS, default=0)
-    self.parser.add_argument("--debug-offset", type=int, help=argparse.SUPPRESS, default=0)
 
-    self.parser.add_argument("--banner", action="store_true", help=argparse.SUPPRESS, default=True)
-    self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
-                             help='do not fix unconsistent steps', default=False)
+    if self.frontend_cmd=="dlog":
+        self.parser.add_argument("-np", "--no-pending", action="store_true",\
+                                 help='do not keep pending the log', default=False)
+    else:
+        self.parser.add_argument("-np", "--no-pending", action="store_true",\
+                                 help=argparse.SUPPRESS, default=False)
+        
+    self.parser.add_argument("--nocleaning", action="store_true", default=False, \
+                             help=argparse.SUPPRESS)
 
+    
 
   #########################################################################
   # main router
