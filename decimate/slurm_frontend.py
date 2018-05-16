@@ -22,6 +22,8 @@ class slurm_frontend(decimate):
 
   def __init__(self):
 
+    self.frontend_cmd = sys.argv[0].split("/")[-1]
+
     decimate.__init__(self,app_name='decimate', decimate_version_required='0.5',
                       app_version='0.1',extra_args=True)
 
@@ -73,35 +75,37 @@ class slurm_frontend(decimate):
     self.slurm_parser.add_argument('--debug', action="count", default=0, help=argparse.SUPPRESS)
     self.slurm_parser.add_argument('--info', action="count", default=0, help=argparse.SUPPRESS)
 
-
-    self.slurm_parser.add_argument("--resume", action="store_true",
-                             help='resume the already launched step and workflow in this directory',
-                             default=True)
-    self.slurm_parser.add_argument("--restart", action="store_true",
-                             help='restart the already launched step or workflow in this directory',
-                             default=True)
-    self.slurm_parser.add_argument("-sc", "--scratch", action="store_true",
-                             help='relaunch a new workflow, erasing all from the previous one',
-                             default=False)
     self.slurm_parser.add_argument("--force-check", action="store_true",
-                             help=argparse.SUPPRESS, default=False)
-    
+                               help=argparse.SUPPRESS, default=False)
+   
 
-    self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
-                                   help='Use yalla pool', default=False)
-    self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                                   help='# of job to run in parallel in a pool', default=4)
+    if self.frontend_cmd=="dbatch":
+      self.slurm_parser.add_argument("--resume", action="store_true",
+                               help='resume the already launched step and workflow in this directory',
+                               default=True)
+      self.slurm_parser.add_argument("--restart", action="store_true",
+                               help='restart the already launched step or workflow in this directory',
+                               default=True)
+      self.slurm_parser.add_argument("-sc", "--scratch", action="store_true",
+                               help='relaunch a new workflow, erasing all from the previous one',
+                               default=False)
+ 
 
-    self.parser.add_argument("-P", "--parameter-file", type=str,
-                             help='file listing all parameter combinations to cover')
-    self.parser.add_argument("-Pc", "--parameter-count", action="store_true",
-                                   help='counts all parameters combination to scan and exit', default=False)
-    self.parser.add_argument("-Pl", "--parameter-list", action="store_true",
-                                   help='lists all parameters combination to scan and exit', default=False)
-    self.parser.add_argument("-PF", "--parameter-filter", type=str,
-                             help='filter to apply on combinations to cover')
-    self.parser.add_argument("-Pa", "--parameter-range", type=str,
-                             help='filtered range to apply on combinations to cover')
+      self.slurm_parser.add_argument("-xy", "--yalla", action="store_true",
+                                     help='Use yalla pool', default=False)
+      self.slurm_parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
+                                     help='# of job to run in parallel in a pool', default=4)
+
+      self.parser.add_argument("-P", "--parameter-file", type=str,
+                               help='file listing all parameter combinations to cover')
+      self.parser.add_argument("-Pc", "--parameter-count", action="store_true",
+                                     help='counts all parameters combination to scan and exit', default=False)
+      self.parser.add_argument("-Pl", "--parameter-list", action="store_true",
+                                     help='lists all parameters combination to scan and exit', default=False)
+      self.parser.add_argument("-PF", "--parameter-filter", type=str,
+                               help='filter to apply on combinations to cover')
+      self.parser.add_argument("-Pa", "--parameter-range", type=str,
+                               help='filtered range to apply on combinations to cover')
 
     self.slurm_args = self.slurm_parser.parse_args(args)
 

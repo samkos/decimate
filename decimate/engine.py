@@ -280,14 +280,20 @@ class engine(object):
 
     global LOG
     
+    LOG = self
+
     #self.log_debug('[Engine:initialize_parser] entering',4,trace='CALL')
 
     self.parser.add_argument("-i","--info", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-d","--debug", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-f","--filter", type=str, default='no_filter', \
                              help='filtering traces')
+    
+    if not(self.frontend_cmd=="dbatch"):
+        return
+    
     self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
-                             help='sends a mail tracking the progression of the workflow')
+                                 help='sends a mail tracking the progression of the workflow')
 
     # self.parser.add_argument("--kill", action="store_true", help="Killing all processes")
     # self.parser.add_argument("--scratch", action="store_true",\
@@ -325,7 +331,6 @@ class engine(object):
     self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
                              help='do not fix unconsistent steps', default=False)
 
-    LOG = self
 
   #########################################################################
   # main router
