@@ -418,9 +418,9 @@ class decimate(engine):
     if not(self.user_initialize_parser() == 'default'):
               # hidding some engine options
         self.parser.add_argument("-r", "--reservation", type=str,
-                                 help=self.activate_option('submit','run in the given reservation name'))
+                                 help=self.activate_option('reservation','run in the given reservation name'))
         self.parser.add_argument("-p", "--partition", type=str,
-                                 help=self.activate_option('submit','set the default partition'))
+                                 help=self.activate_option('partition','set the default partition'))
 
     self.parser.add_argument("-r2", "--rollback", type=str,
                              help=self.activate_option('rollback','rollback to step xxx'))
