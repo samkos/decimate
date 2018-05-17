@@ -151,10 +151,12 @@ class my_dict(dict):
 class engine(object):
 
   def __init__(self,app_name="app",app_version="?",app_dir_log=False,
-               engine_version_required=ENGINE_VERSION,extra_args=False):
+               engine_version_required=ENGINE_VERSION,extra_args=False,options='ALL'):
     #########################################################################
     # set initial global variables
     #########################################################################
+
+    self.options = ",%s," % options
 
     self.NewLock = False
     self.CanLock = True
@@ -272,6 +274,23 @@ class engine(object):
     self.log_debug('[Engine:start] entering')
     engine.run(self)
 
+  
+
+  #########################################################################
+  # check for tne option on the command line
+  #########################################################################
+
+  def activate_option(self,option,msg):
+
+      if self.options==',ALL,':
+          return msg
+
+      if self.options.find(",%s," % option)>-1:
+          return msg
+      else:
+          return argparse.SUPPRESS
+  
+
   #########################################################################
   # check for tne option on the command line
   #########################################################################
@@ -280,52 +299,57 @@ class engine(object):
 
     global LOG
     
+    LOG = self
+
     #self.log_debug('[Engine:initialize_parser] entering',4,trace='CALL')
 
     self.parser.add_argument("-i","--info", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-d","--debug", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-f","--filter", type=str, default='no_filter', \
                              help='filtering traces')
-    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
-                             help='sends a mail tracking the progression of the workflow')
+    
+    self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
 
-    # self.parser.add_argument("--kill", action="store_true", help="Killing all processes")
-    # self.parser.add_argument("--scratch", action="store_true",\
-    #                 help="Restarting the whole process from scratch cleaning everything")
-    # self.parser.add_argument("--restart", action="store_true", \
-    #                           help="Restarting the process from where it stopped")
+    self.parser.add_argument("--info-offset", type=int, help=argparse.SUPPRESS, default=0)
+    self.parser.add_argument("--debug-offset", type=int, help=argparse.SUPPRESS, default=0)
+
+    self.parser.add_argument("--banner", action="store_true", help=argparse.SUPPRESS, default=True)
+
+    self.parser.add_argument("-r","--reservation", type=str,
+                             help=self.activate_option('reservation','SLURM reservation'))
+    self.parser.add_argument("-p","--partition", type=str,
+                             help=self.activate_option('partition','SLURM partition'))
+    
+    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
+                             help=self.activate_option('mail','sends a mail tracking the progression of the workflow'))
+    self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
+                             help=self.activate_option('unconsistent','do not fix unconsistent steps'), default=False)
+    self.parser.add_argument("-a","--account", type=str,
+                             help=self.activate_option('template','forcing the submitting account'))
+    self.parser.add_argument("--create-template", action="store_true", \
+                             help=self.activate_option('template','create template'))
 
     self.parser.add_argument("--kill", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--scratch", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--restart", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--nocleaning", action="store_true", default=False, \
-                             help=argparse.SUPPRESS)
-    self.parser.add_argument("--create-template", action="store_true", \
-                             help='create template')
 
     self.parser.add_argument("--go-on", action="store_true", help=argparse.SUPPRESS)
-    self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--mail", type=str, help=argparse.SUPPRESS)
-    self.parser.add_argument("-a","--account", type=str, help='forcing the submitting account')
     self.parser.add_argument("--fake", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--save", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--load", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--dry", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--pbs", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("-x","--exclude-nodes", type=str, help=argparse.SUPPRESS)
-    self.parser.add_argument("-r","--reservation", type=str, help='SLURM reservation')
-    self.parser.add_argument("-p","--partition", type=str, help='SLURM partition')
+
+
     self.parser.add_argument("-np", "--no-pending", action="store_true",\
-                             help='do not keep pending the log', default=False)
+                             help=self.activate_option('log','do not keep pending the log'), default=False)
+        
+    self.parser.add_argument("--nocleaning", action="store_true", default=False, \
+                             help=argparse.SUPPRESS)
 
-    self.parser.add_argument("--info-offset", type=int, help=argparse.SUPPRESS, default=0)
-    self.parser.add_argument("--debug-offset", type=int, help=argparse.SUPPRESS, default=0)
-
-    self.parser.add_argument("--banner", action="store_true", help=argparse.SUPPRESS, default=True)
-    self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
-                             help='do not fix unconsistent steps', default=False)
-
-    LOG = self
+    
 
   #########################################################################
   # main router
@@ -1293,6 +1317,10 @@ class engine(object):
     # checking coherency of result
     unconsistent_steps = []
     for step_name in self.STEPS.keys():
+      # No need to check consistency for _chk steps...
+      step_name_without_attempt = "-".join(step_name.split('-')[:-1])
+      if (step_name_without_attempt.find('_chk') == (len(step_name_without_attempt)-4)):
+          continue
       step = self.STEPS[step_name]
 #      if self.STEPS[step_name]['status'] in ['SUCCESS', 'WAITING','PENDING','FAILURE','ABORTED']:
       if self.STEPS[step_name]['status'] in ['WAITING','PENDING','RUNNING']:
