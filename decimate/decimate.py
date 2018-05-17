@@ -3725,7 +3725,6 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
         l0 = l0 + " --partition='%s'" % self.args.partition
 
     if self.args.reservation:
-        print '******* adding reservation'
         l0 = l0 + " --reservation='%s'" % self.args.reservation
 
     if self.args.account:
