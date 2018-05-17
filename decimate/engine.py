@@ -306,7 +306,7 @@ class engine(object):
     self.parser.add_argument("-i","--info", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-d","--debug", action="count", default=0, help=argparse.SUPPRESS)
     self.parser.add_argument("-f","--filter", type=str, default='no_filter', \
-                             help='filtering traces')
+                             help=self.activate_option('trace','filtering traces'))
     
     self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
 

@@ -314,10 +314,10 @@ class decimate(engine):
     self.parser.add_argument("-k", "--kill", action="store_true",
                              help=self.activate_option('submit','kills job of this workflow'))
     self.parser.add_argument("--resume", action="store_true",
-                             help=self.activate_option('submit','resume the already launched step and workflow in this directory'),
+                             help=self.activate_option('restart','resume the already launched step and workflow in this directory'),
                              default=True)
     self.parser.add_argument("--restart", action="store_true",
-                             help=self.activate_option('submit','restart the already launched step or workflow in this directory'),
+                             help=self.activate_option('restart','restart the already launched step or workflow in this directory'),
                              default=True)
     self.parser.add_argument("-sc", "--scratch", action="store_true",
                              help=self.activate_option('submit','relaunch a new workflow, erasing all from the previous one'),
@@ -332,12 +332,12 @@ class decimate(engine):
                              help=argparse.SUPPRESS)
 
     self.parser.add_argument("--check",  action="store_true", default=False,
-                             help=self.activate_option('submit',"check at the end of the step"))
+                             help=self.activate_option('debug',"check at the end of the step"))
     self.parser.add_argument("--check-file", type=str,
                              help=argparse.SUPPRESS)
         
     self.parser.add_argument("-pe", "--print-environment", action="store_true", default=False,
-                             help=self.activate_option('submit',"print environment variables in job output file"))
+                             help=self.activate_option('debug',"print environment variables in job output file"))
 
     # send key to console
     self.parser.add_argument("--input", type=str, default="", help=argparse.SUPPRESS)
@@ -374,10 +374,10 @@ class decimate(engine):
     # temporary fixes to deal with heavy/huge workflows to overcome the saving
     # of global context
     self.parser.add_argument("-ql", "--quick-launch", action="store_true",
-                             help=self.activate_option('submit','launches jobs quicky only saving state at the end'),
+                             help=self.activate_option('debug','launches jobs quicky only saving state at the end'),
                              default=False)
     self.parser.add_argument("--quick-launch-no-load", action="store_true",
-                             help=self.activate_option('submit','launches jobs quicky only saving state at the end'),
+                             help=self.activate_option('debug','launches jobs quicky only saving state at the end'),
                              default=False)
 
     # Force checking of jobs
@@ -419,9 +419,9 @@ class decimate(engine):
     if not(self.user_initialize_parser() == 'default'):
               # hidding some engine options
         self.parser.add_argument("-r", "--reservation", type=str,
-                                 help=self.activate_option('submit','run in the given reservation name'))
+                                 help=self.activate_option('reservation','run in the given reservation name'))
         self.parser.add_argument("-p", "--partition", type=str,
-                                 help=self.activate_option('submit','set the default partition'))
+                                 help=self.activate_option('partition','set the default partition'))
 
     self.parser.add_argument("-r2", "--rollback", type=str,
                              help=self.activate_option('rollback','rollback to step xxx'))
@@ -430,15 +430,15 @@ class decimate(engine):
           
 
     self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
-                             help=self.activate_option('submit','Number of time a step can fail successively (3 per default)'))
+                             help=self.activate_option('failover','Number of time a step can fail successively (3 per default)'))
     self.parser.add_argument("-xj", "--max-jobs", type=int, default=450,
-                             help=self.activate_option('submit','Maximimum jobs queued at a time (450 per default)'))
+                             help=self.activate_option('breakit','Maximimum jobs queued at a time (450 per default)'))
 
     self.parser.add_argument("-sc", "--stripe-count", type=int, default=0,
                              help=self.activate_option('burst_buffer','stripe count set for new directory created (0 per default)'))
     
     self.parser.add_argument("-xa", "--all-released", action="store_true",
-                             help=self.activate_option('submit','do release all the job of a step.'), default=False)
+                             help=self.activate_option('debug','do release all the job of a step.'), default=False)
 
     self.parser.add_argument("-xy", "--yalla", action="store_true",
                              help=self.activate_option('yalla','Use yalla pool'), default=False)
@@ -3708,7 +3708,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       l0 = l0 + " --check"
 
     if self.args.check_file:
-       l0 = l0 + " --check-file='%s'" % self.args.check_file
+       l0 = l0 + " --chekc-file='%s'" % self.args.check_file
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition

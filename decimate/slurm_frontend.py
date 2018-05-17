@@ -331,7 +331,7 @@ class slurm_frontend(decimate):
       return SUCCESS
 
 def batch():
-    K = slurm_frontend('submit,reservation,partition,parameter,yalla')
+    K = slurm_frontend('submit,reservation,partition,parameter,yalla,failover,breakit')
     K.start()
 
 def kill():
