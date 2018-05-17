@@ -196,7 +196,8 @@ def working_directory(directory):
 class decimate(engine):
 
   def __init__(self, app_name='decimate', app_version='???',
-               decimate_version_required=DECIMATE_VERSION, extra_args=False):
+               decimate_version_required=DECIMATE_VERSION, extra_args=False,
+               options='ALL'):
 
     self.DECIMATE_VERSION = DECIMATE_VERSION
     self.APPLICATION_NAME = app_name
@@ -236,7 +237,7 @@ class decimate(engine):
     self.heal_workflow_started = False
 
     engine.__init__(self, engine_version_required='0.23', app_name=app_name,
-                    app_version=app_version, extra_args=extra_args)
+                    app_version=app_version, extra_args=extra_args,options=options)
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
@@ -299,61 +300,43 @@ class decimate(engine):
     engine.initialize_parser(self)
 
     # self.log_debug('[Decimate:initialize_parser] entering',4,trace='CALL')
-    if self.frontend_cmd=="dlog":
-      self.parser.add_argument("-l", "--log", action="store_true",
-                               help='display and tail current log')
-    else:
-      self.parser.add_argument("-l", "--log", action="store_true",
-                               help=argparse.SUPPRESS)
+    self.parser.add_argument("-l", "--log", action="store_true",
+                               help=self.activate_option('log','display and tail current log'))
 
-    if self.frontend_cmd=="dstat":
-      self.parser.add_argument("-s", "--status", action="store_true",
-                               help='list status of jobs and of the workflow')
-      self.parser.add_argument("-sa", "--status-all", action="store_true",
-                               help='list status of all the jobs of the workflow')
-      self.parser.add_argument("-sl", "--status-long", action="store_true",
-                             help='list detailed status of jobs of the workflow')
-    else:
-      self.parser.add_argument("-s", "--status", action="store_true",
-                               help=argparse.SUPPRESS)
-      self.parser.add_argument("-sa", "--status-all", action="store_true",
-                               help=argparse.SUPPRESS)
-      self.parser.add_argument("-sl", "--status-long", action="store_true",
-                               help=argparse.SUPPRESS)
-        
-    if self.frontend_cmd=="dbatch":
-      self.parser.add_argument("-k", "--kill", action="store_true",
-                               help='kills job of this workflow')
-      self.parser.add_argument("--resume", action="store_true",
-                               help='resume the already launched step and workflow in this directory',
-                               default=True)
-      self.parser.add_argument("--restart", action="store_true",
-                               help='restart the already launched step or workflow in this directory',
-                               default=True)
-      self.parser.add_argument("-sc", "--scratch", action="store_true",
-                               help='relaunch a new workflow, erasing all from the previous one',
-                               default=False)
+    self.parser.add_argument("-s", "--status", action="store_true",
+                             help=self.activate_option('stat','list status of jobs and of the workflow'))
+    self.parser.add_argument("-sa", "--status-all", action="store_true",
+                             help=self.activate_option('stat','list status of all the jobs of the workflow'))
+    self.parser.add_argument("-sl", "--status-long", action="store_true",
+                             help=self.activate_option('stat','list detailed status of jobs of the workflow'))
 
-    if self.frontend_cmd=="dconsole":
-        self.parser.add_argument("-x", "--explore", action="store_true",
-                                 help='start a console to explore the results', default=False)
-    else:
-        self.parser.add_argument("-x", "--explore", action="store_true",
-                                 help=argparse.SUPPRESS)
+    self.parser.add_argument("-k", "--kill", action="store_true",
+                             help=self.activate_option('submit','kills job of this workflow'))
+    self.parser.add_argument("--resume", action="store_true",
+                             help=self.activate_option('submit','resume the already launched step and workflow in this directory'),
+                             default=True)
+    self.parser.add_argument("--restart", action="store_true",
+                             help=self.activate_option('submit','restart the already launched step or workflow in this directory'),
+                             default=True)
+    self.parser.add_argument("-sc", "--scratch", action="store_true",
+                             help=self.activate_option('submit','relaunch a new workflow, erasing all from the previous one'),
+                             default=False)
+
+    self.parser.add_argument("-x", "--explore", action="store_true",
+                             help=self.activate_option('console','start a console to explore the results'), default=False)
 
     # fake option to separate option targetted at decimate from the slurm frontend
 
     self.parser.add_argument("--decimate", action="store_true",
                              help=argparse.SUPPRESS)
 
-    if self.frontend_cmd=="dbatch":
-        self.parser.add_argument("--check",  action="store_true", default=False,
-                                 help="check at the end of the step")
-        self.parser.add_argument("--check-file", type=str,
-                                 help=argparse.SUPPRESS)
+    self.parser.add_argument("--check",  action="store_true", default=False,
+                             help=self.activate_option('submit',"check at the end of the step"))
+    self.parser.add_argument("--check-file", type=str,
+                             help=argparse.SUPPRESS)
         
-        self.parser.add_argument("-pe", "--print-environment", action="store_true", default=False,
-                                 help="print environment variables in job output file")
+    self.parser.add_argument("-pe", "--print-environment", action="store_true", default=False,
+                             help=self.activate_option('submit',"print environment variables in job output file"))
 
     # send key to console
     self.parser.add_argument("--input", type=str, default="", help=argparse.SUPPRESS)
@@ -389,28 +372,19 @@ class decimate(engine):
 
     # temporary fixes to deal with heavy/huge workflows to overcome the saving
     # of global context
-    if self.frontend_cmd=="dbatch":
-      self.parser.add_argument("-ql", "--quick-launch", action="store_true",
-                               help='launches jobs quicky only saving state at the end',
-                               default=False)
-      self.parser.add_argument("--quick-launch-no-load", action="store_true",
-                               help='launches jobs quicky only saving state at the end',
-                               default=False)
-    else:
-      self.parser.add_argument("-ql", "--quick-launch", action="store_true",
-                               help=argparse.SUPPRESS,
-                               default=False)
-      self.parser.add_argument("--quick-launch-no-load", action="store_true",
-                               help=argparse.SUPPRESS,
-                               default=False)
+    self.parser.add_argument("-ql", "--quick-launch", action="store_true",
+                             help=self.activate_option('submit','launches jobs quicky only saving state at the end'),
+                             default=False)
+    self.parser.add_argument("--quick-launch-no-load", action="store_true",
+                             help=self.activate_option('submit','launches jobs quicky only saving state at the end'),
+                             default=False)
 
     # Force checking of jobs
     self.parser.add_argument("--force-check", action="store_true",
                              help=argparse.SUPPRESS, default=False)
 
-    if self.frontend_cmd=="dconsole":
-        self.parser.add_argument("-ncls", "--no-clear-screen", action="store_true",
-                                 help='do not clear the screen in the console', default=False)
+    self.parser.add_argument("-ncls", "--no-clear-screen", action="store_true",
+                             help=self.activate_option('console','do not clear the screen in the console'), default=False)
 
     self.parser.add_argument("-y", "--yes", action="store_true",
                              help=argparse.SUPPRESS, default=False)
@@ -427,12 +401,8 @@ class decimate(engine):
                              help=argparse.SUPPRESS, default=False)
 
     # ease of use of decimate
-    if self.frontend_cmd=="dbatch":
-      self.parser.add_argument("--template", action="store_true",
-                               help='create template files')
-    else:
-      self.parser.add_argument("--template", action="store_true",
-                               help=argparse.SUPPRESS)
+    self.parser.add_argument("--template", action="store_true",
+                             help=self.activate_option('template','create template files'))
       
     self.parser.add_argument("--process-templates", type=str, 
                              help=argparse.SUPPRESS)
@@ -440,94 +410,56 @@ class decimate(engine):
     if not(self.user_initialize_parser() == 'default'):
             # hidding some engine options
         self.parser.add_argument("--create-template", action="store_true",
-                                 help='Download all the template files in the current directory')
+                                 help=self.activate_option('template','Download all the template files in the current directory'))
 
     self.parser.add_argument("--all", action="store_true", default=False,
                              help=argparse.SUPPRESS)
 
-    if self.frontend_cmd=="dbatch":
-      if not(self.user_initialize_parser() == 'default'):
+    if not(self.user_initialize_parser() == 'default'):
               # hidding some engine options
-          self.parser.add_argument("-r", "--reservation", type=str,
-                                   help='run in the given reservation name')
-          self.parser.add_argument("-p", "--partition", type=str,
-                                   help='set the default partition')
+        self.parser.add_argument("-r", "--reservation", type=str,
+                                 help=self.activate_option('submit','run in the given reservation name'))
+        self.parser.add_argument("-p", "--partition", type=str,
+                                 help=self.activate_option('submit','set the default partition'))
 
-      self.parser.add_argument("-r2", "--rollback", type=str,
-                               help='rollback to step xxx')
-      self.parser.add_argument("-rl", "--rollback-list", action="store_true", default=False,
-                               help='list available step to rollback to')
-    else:
-      self.parser.add_argument("-r2", "--rollback", type=str,
-                               help=argparse.SUPPRESS)
-      self.parser.add_argument("-rl", "--rollback-list", action="store_true", default=False,
-                               help=argparse.SUPPRESS)
+    self.parser.add_argument("-r2", "--rollback", type=str,
+                             help=self.activate_option('rollback','rollback to step xxx'))
+    self.parser.add_argument("-rl", "--rollback-list", action="store_true", default=False,
+                             help=self.activate_option('rollback','list available step to rollback to'))
           
 
-    if self.frontend_cmd=="dbatch":
-        self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
-                                 help='Number of time a step can fail successively (3 per default)')
-        self.parser.add_argument("-xj", "--max-jobs", type=int, default=450,
-                                 help='Maximimum jobs queued at a time (450 per default)')
+    self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
+                             help=self.activate_option('submit','Number of time a step can fail successively (3 per default)'))
+    self.parser.add_argument("-xj", "--max-jobs", type=int, default=450,
+                             help=self.activate_option('submit','Maximimum jobs queued at a time (450 per default)'))
 
-        self.parser.add_argument("-sc", "--stripe-count", type=int, default=0,
-                                 help='stripe count set for new directory created (0 per default)')
+    self.parser.add_argument("-sc", "--stripe-count", type=int, default=0,
+                             help=self.activate_option('burst_buffer','stripe count set for new directory created (0 per default)'))
+    
+    self.parser.add_argument("-xa", "--all-released", action="store_true",
+                             help=self.activate_option('submit','do release all the job of a step.'), default=False)
 
-        self.parser.add_argument("-xa", "--all-released", action="store_true",
-                                 help='do release all the job of a step.', default=False)
+    self.parser.add_argument("-xy", "--yalla", action="store_true",
+                             help=self.activate_option('yalla','Use yalla pool'), default=False)
+    self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
+                             help=self.activate_option('yalla','# of job to run in parallel in a pool'), default=4)
 
-        self.parser.add_argument("-xy", "--yalla", action="store_true",
-                                 help='Use yalla pool', default=False)
-        self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                                 help='# of job to run in parallel in a pool', default=4)
-        self.parser.add_argument("-xyf", "--parameter-file", type=str,
-                                 help='file listing all parameter combinations to cover')
-
-        self.parser.add_argument("--parameter-generate", type=str,
-                                 help=argparse.SUPPRESS)
-
-        self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
-                                 help='Use a non persistent burst buffer space', default=False)
-        self.parser.add_argument("-bbs", "--use-burst-buffer-space", action="store_true",
-                                 help='Use a non persistent burst buffer space', default=False)
-        self.parser.add_argument("-xz", "--burst-buffer_size", type=str,
-                                 help='use a non persistent burst buffer space of size',
-                                 default='80TiB')
-        self.parser.add_argument("-xs", "--burst-buffer-space", type=str,
-                                 help='name of the persistent burst buffer space used',
-                                 default='Tst01')
-    else:
-        self.parser.add_argument("-xr", "--max-retry", type=int, default=3,
-                                 help=argparse.SUPPRESS)
-        self.parser.add_argument("-xj", "--max-jobs", type=int, default=450,
-                                 help=argparse.SUPPRESS)
-        
-        self.parser.add_argument("-sc", "--stripe-count", type=int, default=0,
-                                 help=argparse.SUPPRESS)
-
-        self.parser.add_argument("-xa", "--all-released", action="store_true",
-                                 help=argparse.SUPPRESS)
-
-        self.parser.add_argument("-xy", "--yalla", action="store_true",
-                                 help=argparse.SUPPRESS, default=False)
-        self.parser.add_argument("-xyp", "--yalla-parallel-runs", type=int,
-                                 help=argparse.SUPPRESS, default=4)
-        self.parser.add_argument("-xyf", "--parameter-file", type=str,
-                                 help=argparse.SUPPRESS)
-
-        self.parser.add_argument("--parameter-generate", type=str,
-                                 help=argparse.SUPPRESS)
-
-        self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
-                                 help=argparse.SUPPRESS, default=False)
-        self.parser.add_argument("-bbs", "--use-burst-buffer-space", action="store_true",
-                                 help=argparse.SUPPRESS, default=False)
-        self.parser.add_argument("-xz", "--burst-buffer_size", type=str,
-                                 help=argparse.SUPPRESS,
-                                 default='80TiB')
-        self.parser.add_argument("-xs", "--burst-buffer-space", type=str,
-                                 help=argparse.SUPPRESS,
-                                 default='Tst01')
+    self.parser.add_argument("-xyf", "--parameter-file", type=str,
+                             help=self.activate_option('parameter','file listing all parameter combinations to cover'))
+    
+    self.parser.add_argument("--parameter-generate", type=str,
+                             help=argparse.SUPPRESS)
+    
+    self.parser.add_argument("-bbz", "--use-burst-buffer-size", action="store_true",
+                             help=self.activate_option('burst_buffer','Use a non persistent burst buffer space'), default=False)
+    self.parser.add_argument("-bbs", "--use-burst-buffer-space", action="store_true",
+                             help=self.activate_option('burst_buffer','Use a non persistent burst buffer space'), default=False)
+    self.parser.add_argument("-xz", "--burst-buffer_size", type=str,
+                             help=self.activate_option('burst_buffer','use a non persistent burst buffer space of size'),
+                             default='80TiB')
+    self.parser.add_argument("-xs", "--burst-buffer-space", type=str,
+                             help=self.activate_option('burst_buffer','name of the persistent burst buffer space used'),
+                             default='Tst01')
         
 
   #########################################################################
@@ -4541,8 +4473,8 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                        (job_id, self.console_current_step_name, task_nb), exception=True, exit=False)
             # self.ask("continue ? ", default='y' )
             continue
-          error_mask = job['error'].replace('%j', '*').replace('%J', '*').replace('%a', '*')
-          output_mask = job['output'].replace('%j', '*').replace('%J', '*').replace('%a', '*')
+          error_mask = job['error'].replace('%j', '*').replace('%J', '*').replace('%a', '*').replace('%x', '*')
+          output_mask = job['output'].replace('%j', '*').replace('%J', '*').replace('%a', '*').replace('%x', '*')
           files_error = files_output = ''
           if x in ['o', 'O', 'r', 'R']:
             files_output = '%s*.task_%04d*' % (output_mask, task_nb)

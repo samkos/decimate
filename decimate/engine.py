@@ -151,10 +151,12 @@ class my_dict(dict):
 class engine(object):
 
   def __init__(self,app_name="app",app_version="?",app_dir_log=False,
-               engine_version_required=ENGINE_VERSION,extra_args=False):
+               engine_version_required=ENGINE_VERSION,extra_args=False,options='ALL'):
     #########################################################################
     # set initial global variables
     #########################################################################
+
+    self.options = ",%s," % options
 
     self.NewLock = False
     self.CanLock = True
@@ -272,6 +274,23 @@ class engine(object):
     self.log_debug('[Engine:start] entering')
     engine.run(self)
 
+  
+
+  #########################################################################
+  # check for tne option on the command line
+  #########################################################################
+
+  def activate_option(self,option,msg):
+
+      if self.options==',ALL,':
+          return msg
+
+      if self.options.find(",%s," % option)>-1:
+          return msg
+      else:
+          return argparse.SUPPRESS
+  
+
   #########################################################################
   # check for tne option on the command line
   #########################################################################
@@ -296,25 +315,19 @@ class engine(object):
 
     self.parser.add_argument("--banner", action="store_true", help=argparse.SUPPRESS, default=True)
 
-    if self.frontend_cmd=="dbatch":
-        self.parser.add_argument("-r","--reservation", type=str, help='SLURM reservation')
-        self.parser.add_argument("-p","--partition", type=str, help='SLURM partition')
+    self.parser.add_argument("-r","--reservation", type=str,
+                             help=self.activate_option('reservation','SLURM reservation'))
+    self.parser.add_argument("-p","--partition", type=str,
+                             help=self.activate_option('partition','SLURM partition'))
     
-        self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
-                                 help='sends a mail tracking the progression of the workflow')
-        self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
-                                 help='do not fix unconsistent steps', default=False)
-        self.parser.add_argument("-a","--account", type=str, help='forcing the submitting account')
-        self.parser.add_argument("--create-template", action="store_true", \
-                                 help='create template')
-    else:
-        self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
-                                 help=argparse.SUPPRESS)
-        self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
-                                 help=argparse.SUPPRESS, default=False)
-        self.parser.add_argument("-a","--account", type=str, help=argparse.SUPPRESS)
-        self.parser.add_argument("--create-template", action="store_true", \
-                                 help=argparse.SUPPRESS)
+    self.parser.add_argument("-m","--mail-verbosity", action="count", default=0,
+                             help=self.activate_option('mail','sends a mail tracking the progression of the workflow'))
+    self.parser.add_argument("-nfu","--no-fix-unconsistent", action="store_true",\
+                             help=self.activate_option('unconsistent','do not fix unconsistent steps'), default=False)
+    self.parser.add_argument("-a","--account", type=str,
+                             help=self.activate_option('template','forcing the submitting account'))
+    self.parser.add_argument("--create-template", action="store_true", \
+                             help=self.activate_option('template','create template'))
 
     self.parser.add_argument("--kill", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--scratch", action="store_true", help=argparse.SUPPRESS)
@@ -330,12 +343,8 @@ class engine(object):
     self.parser.add_argument("-x","--exclude-nodes", type=str, help=argparse.SUPPRESS)
 
 
-    if self.frontend_cmd=="dlog":
-        self.parser.add_argument("-np", "--no-pending", action="store_true",\
-                                 help='do not keep pending the log', default=False)
-    else:
-        self.parser.add_argument("-np", "--no-pending", action="store_true",\
-                                 help=argparse.SUPPRESS, default=False)
+    self.parser.add_argument("-np", "--no-pending", action="store_true",\
+                             help=self.activate_option('log','do not keep pending the log'), default=False)
         
     self.parser.add_argument("--nocleaning", action="store_true", default=False, \
                              help=argparse.SUPPRESS)
