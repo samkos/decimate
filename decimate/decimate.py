@@ -531,10 +531,9 @@ class decimate(engine):
 
     self.currently_healing_workflow = False
 
-    if len(self.slurm_args):
-        if self.slurm_args.version:
-            self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
-            sys.exit(0)
+    if self.slurm_args.version:
+        self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
+        sys.exit(0)
 
     if self.args.status or self.args.status_long or self.args.status_all:
       self.print_workflow()
@@ -3593,7 +3592,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                    4, trace='PARSE')
 
     p_args = vars(self.args)
-    if len(self.slurm_args):
+    if self.slurm_args:
         p_slurm_args = vars(self.slurm_args)
     else:
         p_slurm_args = {}
@@ -3649,7 +3648,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     l0 = ""
 
     # analyzing existing scheduler flags...
-    if len(self.slurm_args):
+    if self.slurm_args:
         args = vars(self.slurm_args)
     else:
         args = {}
