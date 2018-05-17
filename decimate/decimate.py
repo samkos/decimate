@@ -3718,7 +3718,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       l0 = l0 + " --check"
 
     if self.args.check_file:
-       l0 = l0 + " --chekc-file='%s'" % self.args.check_file
+       l0 = l0 + " --check-file='%s'" % self.args.check_file
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
@@ -3832,6 +3832,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       tasks = []
       for t in RangeSet(job['array']):
           tasks = tasks + [t]
+      #???????????? replace by '$task' ???????????
       prefix = prefix + \
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
@@ -3839,7 +3840,9 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                        '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
       generate_parameter = \
                      '# Generating parameters used by yalla single job' + \
-                     '\n%s  --parameter-generate \$task ' % (l0)
+                     '\n%s  --parameter-generate \$task ' % \
+                     (l0.replace('${SLURM_ARRAY_TASK_ID}', '\\$task').\
+                      replace('${SLURM_ARRAY_JOB_ID}', '\\${SLURM_JOB_ID}'))
       
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
