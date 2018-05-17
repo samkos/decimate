@@ -218,7 +218,7 @@ class decimate(engine):
 
 
     self.slurm_args = {}
-
+    
     # checking
     self.check_python_version()
     self.check_decimate_version(decimate_version_required)
@@ -447,6 +447,10 @@ class decimate(engine):
 
     self.parser.add_argument("-xyf", "--parameter-file", type=str,
                              help=self.activate_option('parameter','file listing all parameter combinations to cover'))
+    self.parser.add_argument("-PF", "--parameter-filter", type=str,
+                             help=self.activate_option('parameter','filter to apply on combinations to cover'))
+    self.parser.add_argument("-Pa", "--parameter-range", type=str,
+                             help=self.activate_option('parameter','filtered range to apply on combinations to cover'))
     
     self.parser.add_argument("--parameter-generate", type=str,
                              help=argparse.SUPPRESS)
@@ -1543,11 +1547,11 @@ echo --------------- command
         s = next_steps_candidates[0]
         next_steps_candidates = next_steps_candidates[1:]
         if already_found:
-          if args.ends > 0:
+          if self.args.ends > 0:
             if not(int(s.split('-')[0]) == int(self.args.ends)):
                 break
         next_steps = next_steps + [s]
-        if args.ends > 0:
+        if self.args.ends > 0:
           if int(s.split('-')[0]) == int(self.args.ends):
             already_found = True
 
@@ -2669,10 +2673,7 @@ echo --------------- command
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
     original_script_content_lines = open(job['script'], 'r').readlines()
-    if len(self.slurm_args):
-        (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
-    else:
-        job_file_args_overloaded = []
+    (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
         
     self.log_debug('after reading job script file %s job =%s' % \
                    (job['script'], self.print_job(job, print_only=job.keys())), \
@@ -3569,7 +3570,8 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     self.log_debug('[Decimate:complete_slurm_args] entering', 4, trace='CALL')
 
     if not(self.slurm_parser):
-      self.create_slurm_parser()
+        self.log_debug('create slurm_parser', 4, trace='PARSE')
+        self.create_slurm_parser()
 
     # parsing job_script
     job_file_args = []
@@ -3587,9 +3589,14 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     job_file_slurm_args, job_file_extra_args = self.slurm_parser.parse_known_args(job_file_args)
     self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args), \
                    4, trace='PARSE')
+    self.log_debug('slurm_args from self.slurm_args=%s' % pprint.pformat(self.slurm_args), \
+                   4, trace='PARSE')
 
     p_args = vars(self.args)
-    p_slurm_args = vars(self.slurm_args)
+    if len(self.slurm_args):
+        p_slurm_args = vars(self.slurm_args)
+    else:
+        p_slurm_args = {}
     p_job_file_slurm_args = vars(job_file_slurm_args)
 
     job_file_args_overloaded = []
@@ -3642,7 +3649,11 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     l0 = ""
 
     # analyzing existing scheduler flags...
-    args = vars(self.slurm_args)
+    if len(self.slurm_args):
+        args = vars(self.slurm_args)
+    else:
+        args = {}
+        
     l = "###DECIM### Original job script was : %s \n" % os.path.abspath(job['script'])
 
     self.log_debug('slurm_options=/%s/' % pprint.pformat(self.slurm_options), 4, trace='SLURM_OPTIONS')

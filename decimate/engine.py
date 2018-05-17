@@ -338,7 +338,8 @@ class engine(object):
     self.parser.add_argument("--fake", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("--save", type=str, help=argparse.SUPPRESS)
     self.parser.add_argument("--load", type=str, help=argparse.SUPPRESS)
-    self.parser.add_argument("--dry", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("--dry", action="store_true",
+                             help=self.activate_option('debug','dry run: job are not actually submitted'))
     self.parser.add_argument("--pbs", action="store_true", help=argparse.SUPPRESS)
     self.parser.add_argument("-x","--exclude-nodes", type=str, help=argparse.SUPPRESS)
 
