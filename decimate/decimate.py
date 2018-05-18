@@ -3178,7 +3178,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
     copying_files_to_tmp = "\n# Copying often accessed files into node's /tmp directory\n\n"
 
-    files_to_sync = "%s/*py*" % (self.SAVE_DIR) + \
+    files_to_sync = "%s/*py* " % (self.SAVE_DIR) + \
                     " ".join(self.files_to_copy_to_tmp)
 
     # no need apriory to copy dbatch in /tmp
