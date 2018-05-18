@@ -4,6 +4,18 @@ when --check-file is on, check that the file is executable
 
 same for --pool-nb
 
+
+when pool work on max-jobs so that each pool is counted as 1 job
+
+restart failed jobs inside a pool
+
+get rid of the file listing all tasks
+
+support multiple pool per job
+
+while in a pool mutualize the access to log and statud file
+
+
 in distrib
   add man to  share/man/man1
   ad pages on pool
@@ -11,11 +23,15 @@ in distrib
 check when job submitted with --check fails more than once, --check is not use when job is restarted
 
 
+add a bush of stuff to print at the end of the job to flush the buffer and be sure last line is available
+
 
 fix job submitted via a reservation
 
 there's still something adherent to shaheen as it create mail directory in
 [INFO ] creating mail directory /scratch/tmp//kortass/decimate_buffer/
+
+discover slurm environment thanks to sinfo -Nel
 
 create an option to upload examples, includes them in distribution
 

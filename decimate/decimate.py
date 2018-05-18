@@ -19,7 +19,7 @@ import sys
 import termios
 
 
-DECIMATE_VERSION = '0.10.0'
+DECIMATE_VERSION = '0.9.7'
 
 RSYNC_CMD = "timeout 60 bash -c 'until time srun -N ${SLURM_NNODES} --ntasks=${SLURM_NNODES} " + \
             "--ntasks-per-node=1 rsync %s /tmp; do > /dev/null :; done  > /dev/null 2>&1' \n"
@@ -531,9 +531,10 @@ class decimate(engine):
 
     self.currently_healing_workflow = False
 
-    if self.slurm_args.version:
-        self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
-        sys.exit(0)
+    if self.slurm_args:
+        if self.slurm_args.version:
+            self.log_info("this command is part of Decimate version %s " % DECIMATE_VERSION)
+            sys.exit(0)
 
     if self.args.status or self.args.status_long or self.args.status_all:
       self.print_workflow()
@@ -3718,7 +3719,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       l0 = l0 + " --check"
 
     if self.args.check_file:
-       l0 = l0 + " --chekc-file='%s'" % self.args.check_file
+       l0 = l0 + " --check-file='%s'" % self.args.check_file
 
     if self.args.partition:
         l0 = l0 + " --partition='%s'" % self.args.partition
@@ -3831,6 +3832,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       tasks = []
       for t in RangeSet(job['array']):
           tasks = tasks + [t]
+      #???????????? replace by '$task' ???????????
       prefix = prefix + \
                check_previous.replace('${SLURM_ARRAY_TASK_ID}', '%s' % tasks[0]).\
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
@@ -3838,7 +3840,9 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                        '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
       generate_parameter = \
                      '# Generating parameters used by yalla single job' + \
-                     '\n%s  --parameter-generate \$task ' % (l0)
+                     '\n%s  --parameter-generate \$task ' % \
+                     (l0.replace('${SLURM_ARRAY_TASK_ID}', '\\$task').\
+                      replace('${SLURM_ARRAY_JOB_ID}', '\\${SLURM_JOB_ID}'))
       
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
