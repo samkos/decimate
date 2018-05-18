@@ -19,7 +19,7 @@ import sys
 import termios
 
 
-DECIMATE_VERSION = '0.10.0'
+DECIMATE_VERSION = '0.9.7'
 
 RSYNC_CMD = "timeout 60 bash -c 'until time srun -N ${SLURM_NNODES} --ntasks=${SLURM_NNODES} " + \
             "--ntasks-per-node=1 rsync %s /tmp; do > /dev/null :; done  > /dev/null 2>&1' \n"
