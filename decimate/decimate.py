@@ -1380,7 +1380,8 @@ echo --------------- command
           output_file_candidates.sort()
           output_file = output_file_candidates[-1]
           self.log_debug('output_file to be scanned : >%s< chosen from [%s]' % \
-                         (output_file, ",".join(output_file_candidates)), 2)
+                         (output_file, ",".join(output_file_candidates)), \
+                         2, trace='CHECK,USER_CHECK')
       else:
           self.log_debug('ZZZZZZ weird... no output file produced of actual pattern %s' % \
                          output_file_pattern, 3, trace='CHECK_PATTERN')
@@ -1394,7 +1395,8 @@ echo --------------- command
           error_file_candidates.sort()
           error_file = error_file_candidates[-1]
           self.log_info('error_file to be scanned : >%s< chosen from [%s]' % \
-                        (error_file, ",".join(error_file_candidates)), 2)
+                        (error_file, ",".join(error_file_candidates)), \
+                        2, trace='CHECK,USER_CHECK')
       else:
           self.log_debug('ZZZZZZ weird... no error file produced of pattern %s' % \
                          error_file_pattern, 3, trace='CHECK_PATTERN')
@@ -1405,11 +1407,15 @@ echo --------------- command
     s = "CHECKING step : %s task %s " % (step, task_id)
 
     self.log_info(s, 2, trace='USER_CHECK')
+
+    self.log_debug('checking_from_console=%s, self.args.decimate=%s, self.args.check=%s, self.args.check_file=%s' % \
+                   (checking_from_console,self.args.decimate,self.args.check,self.args.check_file),\
+                   2, trace='CHECK,USER_CHECK')
     
     if checking_from_console and not(self.args.decimate):
       self.log_console(s, noCR=True)
         
-    if self.args.check or checking_from_console:
+    if self.args.check_previous_step or self.args.check or checking_from_console:
       if self.args.check_file:
          # if a user check procedure was given as a script file
          # executing it
