@@ -244,6 +244,7 @@ class slurm_frontend(decimate):
     self.log_debug('Submitted batch job %s' % job_id, trace='SUBMIT_JOB,STATUS_DETAIL',)
 
     if self.slurm_args.check:
+      self.log_debug('new_job= %s' % self.print_job(new_job,print_all=True), 4, trace='TEMPLATE')
       final_checking_job = copy.deepcopy(new_job)
       for n in ['job_name','error','output']:
         final_checking_job[n] = new_job[n]+"_chk"
