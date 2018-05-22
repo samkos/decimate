@@ -5,6 +5,8 @@ when --check-file is on, check that the file is executable
 same for --pool-nb
 
 
+cp the param file in some safe place so that it can be modified while a job  is running
+
 when pool work on max-jobs so that each pool is counted as 1 job
 
 restart failed jobs inside a pool
