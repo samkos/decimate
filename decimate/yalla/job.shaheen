@@ -20,8 +20,8 @@ for f in __job_name__mach*; do
 done
 
 
-export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.___job_array__.yalla.out
-export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.___job_array__.yalla.err
+export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.yalla.out
+export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.yalla.err
 
 
 date  >   $YALLA_JOB_OUTPUT
@@ -32,9 +32,9 @@ echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPU
 
 # building command to be run by yalla...
 
-cat > __yalla_dir__/__job_name__.___job_array__.cmd <<EOF
+cat > __yalla_dir__/__job_name__.cmd <<EOF
 export nb_task=\$1
-task=\`cut -d ' ' -f\$nb_task __yalla_dir__/__job_name__.___job_array__.tasks \`
+task=\`cut -d ' ' -f\$nb_task __yalla_dir__/__job_name__.tasks \`
 export worker_rank=\$((\$2-1))
 formatted_worker_rank=\$(printf "%04d" \$worker_rank) 
 export HOSTS_EXCLUDED=__yalla_dir__/HOSTS/ex___job_name__mach\${formatted_worker_rank}
@@ -56,12 +56,12 @@ cd __job_submit_dir__
 
 __GENERATE_PARAMETER__
 
-. __yalla_dir__/__job_name__.job.__ARRAY__  > __job_output__ 2>  __job_error__ 
+. __yalla_dir__/__job_name__.job  > __job_output__ 2>  __job_error__ 
 
 EOF
-chmod +x __yalla_dir__/__job_name__.___job_array__.cmd
+chmod +x __yalla_dir__/__job_name__.cmd
 
-echo __ARRAY_UNFOLD__ > __yalla_dir__/__job_name__.___job_array__.tasks
+echo __ARRAY_UNFOLD__ > __yalla_dir__/__job_name__.tasks
 
 # computing nodes that will wait work to do
 
@@ -74,8 +74,8 @@ sleep 2s
 ##srun hostname >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 nb_runs=$((__PARALLEL_RUNS__+0))
 nb_nodes_runs=$((__YALLA_NODES__+0))
-echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
-srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.___job_array__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
+echo running srun $YALLA_SRUN_PARAMS -N $((nb_nodes_runs)) -n  $((nb_runs)) --hint=nomultithread --ntasks-per-core=1 --mem_bind=local --cpu_bind=v,rank __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.cmd %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT
+srun -N $((nb_nodes_runs)) -n  $((nb_runs))  __yalla_exec_dir__/yalla__DEBUG__.exe '__yalla_dir__/__job_name__.cmd %d %d' __NB_JOBS__ >> $YALLA_JOB_OUTPUT 2>> $YALLA_JOB_ERROR
 
 echo >>   $YALLA_JOB_OUTPUT   
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT   

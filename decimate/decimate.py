@@ -3121,8 +3121,8 @@ echo --------------- command
                ['--time=%s' % job['time'],
                 '--ntasks=%s' % (int(job['ntasks']) * job['yalla_parallel_runs']),
                 '--nodes=%s' % self.yalla_pool_nodes_nb,
-                '--error=%s ' % error_file.replace("%04a",job['array']).replace("%a",job['job_name']),
-                '--output=%s' % output_file.replace("%04a",job['array']).replace("%a",job['job_name'])]
+                '--error=%s ' % error_file.replace("%04a",job['array'][:20]).replace("%a",job['job_name']),
+                '--output=%s' % output_file.replace("%04a",job['array'][:20]).replace("%a",job['job_name'])]
       self.log_debug('output_file=/%s/' % output_file,4,trace='X')
       self.log_debug('prolog=/%s/' % pprint.pformat(prolog),4,trace='X')
 
@@ -3163,8 +3163,8 @@ e="%s"
 printf -v formatted_array_task_id """ + '"' + (job['job_name']) + '"' + """
 printf -v formatted_array_task_ids """ + '"' + (job['array']) + '"' + """
 echo formatted_array_task_id=$formatted_array_task_id
-output_file=`echo $o|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
-error_file=`echo $e|sed "s/%%04a/$formatted_array_task_ids/g;s/%%a/$formatted_array_task_id/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+output_file=`echo $o|sed "s/%%04a/${formatted_array_task_ids:0:20}/g;s/%%a/${formatted_array_task_id:0:20}/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
+error_file=`echo $e|sed "s/%%04a/${formatted_array_task_ids:0:20}/g;s/%%a/${formatted_array_task_id:0:20}/g;s/%%j\|%%J/$SLURM_JOB_ID/g;s/%%x/$SLURM_JOB_NAME/g"`
     """ 
     else:
               job_array_tid_mask =                            """
@@ -3852,7 +3852,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       
       prefix = prefix + \
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
-               ('cat > %s/YALLA/%s.job.__ARRAY__ << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
+               ('cat > %s/YALLA/%s.job << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
       prefix0 = ""
