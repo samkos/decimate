@@ -571,86 +571,11 @@ class decimate(engine):
 
     if self.args.yalla and not(self.args.spawned):
         makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
-        yalla_exe = "%s/yalla.exe" % (self.YALLA_EXEC_DIR)
-        if not(os.path.exists(yalla_exe)):
-          if not os.path.isfile(makefile_name):
-              self.error("yalla not available on %s ... \
-                     no makefile %s available for this type of machine"
-                         % (self.machine, makefile_name), exit=True)
+        if not os.path.isfile(makefile_name):
+            self.error("yalla not available on %s ... \
+            no makefile %s available for this type of machine"
+                       % (self.machine, makefile_name), exit=True)
 
-          # installation of yalla
-          self.log_console('Installing pool support...', trace='YALLA')
-
-          # compiling yalla.exe master-slave orchestrator
-          cmd = ("mkdir -p %s; cd %s; cp %s/yalla.c .; " + 
-                 "make -f %s > %s/yalla_compile.out 2>&1") % \
-                (self.YALLA_EXEC_DIR, self.YALLA_EXEC_DIR, self.YALLA_SOURCE_DIR, makefile_name, self.LOG_DIR)
-          self.log_debug('Compile cmd = \n%s' % cmd, 3, trace='YALLA')
-          output = os.system(cmd)
-          self.log_debug('output of yalla.exe compilation %s' % output, 3, trace='YALLA')
-
-        if not(os.path.exists(yalla_exe)):
-          self.error('could not compile yalla successfully\n output=\n%s' % output,
-                     exit=True, exception=True)
-
-        yalla_srun_wrapper = "%s/srun" % (self.YALLA_EXEC_DIR)
-        if not(os.path.exists(yalla_srun_wrapper)):
-          # creating srun wrapper
-          #
-          srun_original_cmd = self.system("which srun")[:-1]
-          srun_wrapper_file = "%s/srun" % self.YALLA_EXEC_DIR
-          f = open(srun_wrapper_file, "w")
-          f.write(("echo wrapping srun : actually running %s  -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $*  \n"+
-                   "%s $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED --cpu_bind=verbose,mask_cpu:$CPU_MASK $* ") % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
-          f.close()
-          os.chmod(srun_wrapper_file, 0755)
-          
-        if not(os.path.exists(yalla_srun_wrapper)):
-          self.error('could not install yalla_srun_wrapper successfully\n output=\n%s' % output,
-                     exit=True, exception=True)
-
-        yalla_srun_debug_wrapper = "%s/srun_debug" % (self.YALLA_EXEC_DIR)
-        if not(os.path.exists(yalla_srun_debug_wrapper)):
-          # creating srun wrapper
-          #
-          srun_debug_wrapper_file = "%s/srun_debug" % self.YALLA_EXEC_DIR
-          f = open(srun_debug_wrapper_file, "w")
-          f.write(\
-                   """
-echo wrapping srun : actually running %s -x $HOSTS_EXCLUDED $*
-
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-echo ============================ in wrapper srun ===================================
-
-echo running %s -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
-
-echo --------------- hosts_excluded --------------------
-cat $HOSTS_EXCLUDED
-echo ---------------------------------------------------
-
-echo -------------- slurm environment variables
-env | grep SLURM
-echo ----------------------------
-
-
-
-echo --------------- command
-/opt/slurm/default/bin/srun -vvv $YALLA_SRUN_PARAMS -x $HOSTS_EXCLUDED $* 
-""" % (srun_original_cmd,"/opt/slurm/default/bin/srun"))
-                  
-          f.close()
-          os.chmod(srun_debug_wrapper_file, 0755)
-          
-        if not(os.path.exists(yalla_srun_debug_wrapper)):
-          self.error('could not install yalla_srun_debug_wrapper successfully\n output=\n%s' % output,
-                     exit=True, exception=True)
 
     # reading of the parameter file
     self.array_clustered = []
@@ -3971,7 +3896,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       output = "".join(open(input_file, "r").readlines())
       output = output.replace('__save_dir__', self.SAVE_DIR)
       output = output.replace('__yalla_dir__', self.YALLA_DIR)
-      output = output.replace('__yalla_exec_dir__', self.YALLA_EXEC_DIR)
+      output = output.replace('__yalla_exec_dir__', self.YALLA_SOURCE_DIR)
       output = output.replace('__PARALLEL_RUNS__', str(job['yalla_parallel_runs']))
       output = output.replace('__YALLA_NODES__', str( self.yalla_pool_nodes_nb))
       output = output.replace('__USED_CORES_PER_NODE__', str(used_cores_per_node))
