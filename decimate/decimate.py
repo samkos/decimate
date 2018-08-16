@@ -242,7 +242,7 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
-    self.PARAMETER_FILE = "/tmp/parameter_"
+    self.PARAMETER_FILE = "%s/../SAVE/parameter_" % (self.LOG_DIR)
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
@@ -3771,16 +3771,15 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                        '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
       generate_parameter = \
                      '# Generating parameters used by yalla single job' + \
-                     '\n%s  --parameter-generate \$task ' % \
-                     (l0.replace('${SLURM_ARRAY_TASK_ID}', '\\$task').\
-                      replace('${SLURM_ARRAY_JOB_ID}', '\\${SLURM_JOB_ID}'))
+                     '\n%s  --parameter-generate ${SLURM_ARRAY_TASK_ID} ' % \
+                     (l0)
       
-      prefix = prefix + \
+      prefix = prefix +\
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
                ('cat > %s/YALLA/%s.job << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
       prefix = prefix + "cd %s \n" % (job['submit_dir'])
 
-      prefix0 = ""
+      prefix0 = generate_parameter + "\n"
     else:
       prefix0 = check_previous
       

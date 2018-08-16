@@ -5,11 +5,12 @@
 export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.yalla.out
 export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.yalla.err
 
-
+run_yalla_job () {
+    
 date  >   $YALLA_JOB_OUTPUT
-echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
-echo starts of execution on  __PARALLEL_RUNS__ workers with __NB_NODES_PER_PARALLEL_RUNS__ cores each! >>   $YALLA_JOB_OUTPUT
-echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- 
+echo starts of execution on  __PARALLEL_RUNS__ workers with __NB_NODES_PER_PARALLEL_RUNS__ cores each! 
+echo ----------------------------------------------------- 
 
 
 . __yalla_exec_dir__/launch_slurm.sh __NB_NODES_PER_PARALLEL_RUNS__
@@ -41,3 +42,6 @@ echo -------------------------------------------
 echo -------------------------------------------
 
 sleep 10s
+}
+
+run_yalla_job > $YALLA_JOB_OUTPUT 2> $YALLA_JOB_ERROR
