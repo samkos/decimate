@@ -570,11 +570,11 @@ class decimate(engine):
     # initialization of some parameters appearing in traces
 
     if self.args.yalla and not(self.args.spawned):
-        makefile_name = "%s/Makefile.%s" % (self.YALLA_SOURCE_DIR, self.machine)
-        if not os.path.isfile(makefile_name):
+        jobfile_name = "%s/job.%s" % (self.YALLA_SOURCE_DIR, self.machine)
+        if not os.path.isfile(jobfile_name):
             self.error("yalla not available on %s ... \
-            no makefile %s available for this type of machine"
-                       % (self.machine, makefile_name), exit=True)
+            no jobfile %s available for this type of machine"
+                       % (self.machine, jobfile_name), exit=True)
 
 
     # reading of the parameter file

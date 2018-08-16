@@ -1,0 +1,44 @@
+
+# computing the distribution and placement of tasks on the cores of the pool of nodes 
+
+
+
+export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.yalla.out
+export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.yalla.err
+
+
+date  >   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
+echo starts of execution on  __PARALLEL_RUNS__ workers with __NB_NODES_PER_PARALLEL_RUNS__ cores each! >>   $YALLA_JOB_OUTPUT
+echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
+
+
+. __yalla_exec_dir__/sam2/launch_slurm.sh __NB_NODES_PER_PARALLEL_RUNS__
+
+SLURM_NPROCS=$((32 * $SLURM_NNODES))
+
+export PATH=__yalla_exec_dir__/sam2/:$PATH
+
+NB_RUNS=__NB_JOBS__
+echo running $NB_RUNS runs on $SLURM_NNODES slaves
+
+
+scan_queue &
+
+
+
+sbatch -W --array=1-$NB_RUNS -o %04a.out -e %04a.err __yalla_dir__/__job_name__.job  
+
+sleep 5
+
+echo -------------------------------------------
+echo placement statistics
+echo -------------------------------------------
+
+cat *err | awk '{print $(NF-1)}' | sort | uniq -c
+echo -------------------------------------------
+echo BYE BYE
+echo -------------------------------------------
+echo -------------------------------------------
+
+sleep 10s

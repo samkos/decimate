@@ -88,13 +88,14 @@ def get_machine():
         SUBMIT_COMMAND = 'sbatch'
         EXCLUSIVE = False
     elif (machine[:7] == "kw14425"):
-        machine = "sam"
-        CORE_PER_NODE_REGARDING_QUEUE["debug"] = 4
+        machine = "sam32"
+        CORE_PER_NODE_REGARDING_QUEUE["debug"] = 32
+        CORE_PER_NODE_REGARDING_QUEUE["workq"] = 32
         MAIL_COMMAND = """mail -s "%s" %s < %s """
         # SCHED_TYPE = "pbs"
-        DEFAULT_QUEUE = "debug"
+        DEFAULT_QUEUE = "workq"
         EXCLUSIVE = False
-        cores_per_node = 2
+        cores_per_node = 32
     elif (machine[:11] == "samy-EL1352"):
         machine = "home"
         CORE_PER_NODE_REGARDING_QUEUE["debug"] = 4
