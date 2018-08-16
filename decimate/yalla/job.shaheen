@@ -12,7 +12,7 @@ echo starts of execution on  __PARALLEL_RUNS__ workers with __NB_NODES_PER_PARAL
 echo ----------------------------------------------------- >>   $YALLA_JOB_OUTPUT
 
 
-__yalla_exec_dir__/launch_slurm.sh __NB_NODES_PER_PARALLEL_RUNS__
+. __yalla_exec_dir__/launch_slurm.sh __NB_NODES_PER_PARALLEL_RUNS__
 
 SLURM_NPROCS=$((32 * $SLURM_NNODES))
 

@@ -8,9 +8,10 @@ export MULTIJOB_PATH=/project/k01/kortass/CLE6/DECIMATE_DEBUG/decimate/yalla
 SLURM_NEW_ROOT=$ROOT/.slurm_$node1
 
 export CORES_PER_SLURMD=$1
+echo CORES_PER_SLURMD=$CORES_PER_SLURMD
 
 export SLURMD_PER_NODE=$((32/$CORES_PER_SLURMD))
-
+echo SLURMD_PER_NODE=$SLURMD_PER_NODE
 			  
 \rm -rf $SLURM_NEW_ROOT
 \mkdir -p $SLURM_NEW_ROOT/etc $SLURM_NEW_ROOT/var/run $SLURM_NEW_ROOT//var/log $SLURM_NEW_ROOT//var/spool/slurm
