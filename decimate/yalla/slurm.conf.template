@@ -6,8 +6,16 @@ ControlMachine=__HOSTNAME__
 MpiParams=ports=22000-22999
 SrunPortRange=60001-63000
 
-ProctrackType=proctrack/pgid
-ReturnToService=1
+CoreSpecPlugin=cray
+GresTypes=craynetwork
+
+
+
+ProctrackType=proctrack/cray
+PropagateResourceLimits=None
+PropagateResourceLimitsExcept=AS
+
+ReturnToService=2
 SlurmctldPidFile=__SLURM_CONFDIR__/var/run/slurmctld.pid
 SlurmctldPort=26817
 SlurmdPort=26818
@@ -16,24 +24,34 @@ SlurmdUser=__USER__
 StateSaveLocation=__SLURM_CONFDIR__/var/spool
 
 
-GresTypes=craynetwork
 KillOnBadExit=1
 SwitchType=switch/cray
 TaskPlugin=affinity,cray,cgroup
 TopologyPlugin=topology/none
 TopologyParam=NoInAddrAny
 TreeWidth=79
+InactiveLimit=0
+KillWait=300
+MessageTimeout=60
+MinJobAge=300
+SlurmctldTimeout=120
+SlurmdTimeout=300
+Waittime=0
 
 MaxArraySize=10000
 
 
 # SCHEDULING
-FastSchedule=1
+FastSchedule=2
 SchedulerType=sched/backfill
-#SchedulerPort=7321
+SelectType=select/cray
+
+SchedulerPort=17321
+SelectTypeParameters=CR_CPU_Memory,other_cons_res,NHC_NO_STEPS
+
 #SelectType=select/cons_res
 #SelectTypeParameters=CR_Core
-SelectType=select/linear
+#SelectType=select/linear
 KillWait=5
 
 # LOGGING AND ACCOUNTING
@@ -57,7 +75,7 @@ SlurmdSpoolDir=__SLURM_CONFDIR__/var/spool/slurmd.%n
 #
 #
 # COMPUTE NODES
-NodeName=__INDEXED_NODE_HOSTNAME__  NodeHostName=__NODE_HOSTNAME__ Port=[__PORTS__] Sockets=2 CoresPerSocket=16 ThreadsPerCore=2
+NodeName=__INDEXED_NODE_HOSTNAME__  NodeHostName=__NODE_HOSTNAME__ Port=[__PORTS__] Sockets=2 CoresPerSocket=16 ThreadsPerCore=2 RealMemory=131072 Gres=craynetwork:4
 PartitionName=all Shared=No Nodes=ALL Default=YES  OverSubscribe=NO MaxTime=0:30:00 State=UP
 CryptoType=crypto/munge
 SallocDefaultCommand="srun -n1 -N1 --mem-per-cpu=0 --pty --preserve-env --mpi=none $SHELL"

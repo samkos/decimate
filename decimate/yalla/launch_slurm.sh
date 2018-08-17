@@ -48,6 +48,7 @@ if [ \${HOSTNAME} == '$node1' ] ; then
    echo launching \`which slurmd\` $SLURMD_PER_NODE times on $SLURM_NODELIST
 fi
 for i in \`seq 0 $CORES_PER_SLURMD 31\`; do
+   echo launching \`which slurmd\`  \$i-\$HOSTNAME  
   slurmd  -N \$i-\$HOSTNAME  
 done
 
@@ -57,10 +58,37 @@ done
 
 END
 
+
+cat > start_daemons.$node1 << END
+export PATH=$MY_SLURM_INSTALL/bin:$MY_SLURM_INSTALL/sbin:\$PATH
+export SLURM_CONF=$SLURM_NEW_ROOT/etc/slurm.conf
+export HOSTNAME=\`hostname\`
+export NUM_SLAVE=\$1
+export NUM_SLAVEp1=\$((\$1+1))
+if [ \${NUM_SLAVE} == '0' ] ; then
+   echo launching \`which slurmctld\` on \$HOSTNAME,\$SLURM_CONF
+   slurmctld 
+   #echo launching \`which slurmd\` $SLURMD_PER_NODE times on $SLURM_NODELIST
+fi
+ for i in \`seq 0 $CORES_PER_SLURMD 31\`; do
+    echo launching \`which slurmd\` on \$i-\$HOSTNAME
+
+  slurmd  -N \$i-\$HOSTNAME
+ done
+
+for i in \`seq 1 24\`; do
+  sleep 3600   
+done 
+
+END
+
+
+echo 0-$((${SLURM_NNODES}-1)) bash ./start_daemons.$node1 %o >  start_daemons.master.conf 
+
 echo Available nodes: $SLURM_NODELIST
 
 echo Launching daemons...
-srun bash ./start_daemons.$node1 &
+srun -N $SLURM_NNODES -n $SLURM_NNODES --multi-prog start_daemons.master.conf &
 
 
 ROOT=`pwd`
