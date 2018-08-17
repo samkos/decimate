@@ -11,7 +11,7 @@ GresTypes=craynetwork
 
 
 
-ProctrackType=proctrack/cray
+ProctrackType=proctrack/pgid
 PropagateResourceLimits=None
 PropagateResourceLimitsExcept=AS
 
@@ -31,12 +31,12 @@ TopologyPlugin=topology/none
 TopologyParam=NoInAddrAny
 TreeWidth=79
 InactiveLimit=0
-KillWait=300
-MessageTimeout=60
-MinJobAge=300
-SlurmctldTimeout=120
-SlurmdTimeout=300
-Waittime=0
+# KillWait=300
+# MessageTimeout=60
+# MinJobAge=300
+# SlurmctldTimeout=120
+# SlurmdTimeout=300
+# Waittime=0
 
 MaxArraySize=10000
 
