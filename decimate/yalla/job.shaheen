@@ -2,8 +2,8 @@
 
 
 
-export YALLA_JOB_OUTPUT=__yalla_dir__/__job_name__.yalla.out
-export YALLA_JOB_ERROR=__yalla_dir__/__job_name__.yalla.err
+export YALLA_JOB_OUTPUT=__yalla_dir__/_y___job_name__.yalla.out
+export YALLA_JOB_ERROR=__yalla_dir__/_y___job_name__.yalla.err
 
 run_yalla_job () {
     

@@ -2,10 +2,10 @@
 ROOT=`pwd`
 export node1=`hostname`
 export nodes=$SLURM_NODELIST
-export MY_SLURM_INSTALL=/project/k01/kortass/SLURM/opt/slurm
+export MY_SLURM_INSTALL=/project/k01/kortass/CLE6/SLURM/opt/slurm
 export MULTIJOB_PATH=/project/k01/kortass/CLE6/DECIMATE_DEBUG/decimate/yalla
 
-SLURM_NEW_ROOT=$ROOT/.slurm_$node1
+SLURM_NEW_ROOT=$ROOT/.slurm
 
 export CORES_PER_SLURMD=$1
 echo CORES_PER_SLURMD=$CORES_PER_SLURMD
@@ -15,6 +15,11 @@ echo SLURMD_PER_NODE=$SLURMD_PER_NODE
 			  
 \rm -rf $SLURM_NEW_ROOT
 \mkdir -p $SLURM_NEW_ROOT/etc $SLURM_NEW_ROOT/var/run $SLURM_NEW_ROOT//var/log $SLURM_NEW_ROOT//var/spool/slurm
+
+cd $SLURM_NEW_ROOT/etc; tar xf $MULTIJOB_PATH/etc_slurm.tar
+cd -
+
+#tar fc - -C /opt/slurm/default/etc . | tar xf - -C $SLURM_NEW_ROOT/etc
 
 nnodes=0
 for n in `scontrol show hostname $nodes`; do

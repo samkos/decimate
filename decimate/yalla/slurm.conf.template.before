@@ -3,19 +3,22 @@
 # See the slurm.conf man page for more information.
 #
 ControlMachine=__HOSTNAME__
-MpiParams=ports=18000-20000
+MpiParams=ports=22000-22999
 SrunPortRange=60001-63000
 
-CoreSpecPlugin=cray
-GresTypes=craynetwork
-
-
-
 ProctrackType=proctrack/pgid
+ReturnToService=1
+SwitchType=switch/none
+TaskPlugin=task/none
+
+FastSchedule=2
+SchedulerType=sched/backfill
+#SchedulerPort=7321
+SelectType=select/cons_res
+SelectTypeParameters=CR_Core
 PropagateResourceLimits=None
 PropagateResourceLimitsExcept=AS
 
-ReturnToService=2
 SlurmctldPidFile=__SLURM_CONFDIR__/var/run/slurmctld.pid
 SlurmctldPort=26817
 SlurmdPort=26818
@@ -25,26 +28,11 @@ StateSaveLocation=__SLURM_CONFDIR__/var/spool
 
 
 KillOnBadExit=1
-SwitchType=switch/cray
-TaskPlugin=affinity,cray,cgroup
-TopologyPlugin=topology/none
-TopologyParam=NoInAddrAny
-TreeWidth=79
-InactiveLimit=0
-# KillWait=300
-# MessageTimeout=60
-# MinJobAge=300
-# SlurmctldTimeout=120
-# SlurmdTimeout=300
-# Waittime=0
 
 MaxArraySize=10000
 
 
 # SCHEDULING
-FastSchedule=2
-SchedulerType=sched/backfill
-SelectType=select/cray
 
 SchedulerPort=17321
 SelectTypeParameters=CR_CPU_Memory,other_cons_res,NHC_NO_STEPS

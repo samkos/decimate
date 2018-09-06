@@ -3,7 +3,8 @@ export MASK=`echo $SLURMD_NODENAME $CORES_PER_SLURMD | gawk '{gsub("-"," "); n=0
 
 echo wrapping srun : actually running  /project/k01/kortass/CLE6/SLURM/opt/slurm/bin/srun $*
 echo under NObinding : $SLURM_CPU_BIND
+
 echo running on $SLURM_NODELIST
-/project/k01/kortass/CLE6/SLURM/opt/slurm/bin/srun -vvv $*
+/project/k01/kortass/CLE6/SLURM/opt/slurm/bin/srun $*
 
 
