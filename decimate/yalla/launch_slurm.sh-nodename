@@ -53,9 +53,33 @@ if [ \${HOSTNAME} == '$node1' ] ; then
    echo launching \`which slurmd\` $SLURMD_PER_NODE times on $SLURM_NODELIST
 fi
 for i in \`seq 0 $CORES_PER_SLURMD 31\`; do
-   echo launching \`which slurmd\`  node-\$i
+   echo launching \`which slurmd\`  \$i-\$HOSTNAME  
   slurmd  -N \$i-\$HOSTNAME  
 done
+
+for i in \`seq 1 24\`; do
+  sleep 3600   
+done 
+
+END
+
+
+cat > start_daemons.$node1 << END
+export PATH=$MY_SLURM_INSTALL/bin:$MY_SLURM_INSTALL/sbin:\$PATH
+export SLURM_CONF=$SLURM_NEW_ROOT/etc/slurm.conf
+export HOSTNAME=\`hostname\`
+export NUM_SLAVE=\$1
+export NUM_SLAVEp1=\$((\$1+1))
+if [ \${NUM_SLAVE} == '0' ] ; then
+   echo launching \`which slurmctld\` on \$HOSTNAME,\$SLURM_CONF
+   slurmctld 
+   #echo launching \`which slurmd\` $SLURMD_PER_NODE times on $SLURM_NODELIST
+fi
+ for i in \`seq 0 $CORES_PER_SLURMD 31\`; do
+    echo launching \`which slurmd\` on \$i-\$HOSTNAME
+
+  slurmd  -N \$i-\$HOSTNAME
+ done
 
 for i in \`seq 1 24\`; do
   sleep 3600   
@@ -75,7 +99,7 @@ srun -N $SLURM_NNODES -n $SLURM_NNODES --multi-prog start_daemons.master.conf &
 ROOT=`pwd`
 export node1=`hostname`
 export nodes=$SLURM_NODELIST
-SLURM_NEW_ROOT=$ROOT/.slurm
+SLURM_NEW_ROOT=$ROOT/.slurm_$node1
 
 export SINFO_FORMAT="%P %.5a %.10l %.6D %.6t %N"
 export SQUEUE_FORMAT="%.10i %.9P %.15j %.8u %.8T %.10M %.9l %.6D %R" 

@@ -3,7 +3,7 @@
 # See the slurm.conf man page for more information.
 #
 ControlMachine=__HOSTNAME__
-MpiParams=ports=18000-20000
+MpiParams=ports=20000-32767
 SrunPortRange=60001-63000
 
 CoreSpecPlugin=cray

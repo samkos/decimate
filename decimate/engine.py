@@ -215,9 +215,13 @@ class engine(object):
 
 
     # check the sanity of saved hard-coded path and modify them if needed
-    if not(self.args.rollback or self.args.rollback_list):
-        self.check_if_directory_was_moved()
+    try:
+        if not(self.args.rollback or self.args.rollback_list):
+            self.check_if_directory_was_moved()
+    except:
+        self.log_info('ZZZ self.ags.rollback is not defined')
 
+        
     # automated lock
     self.lock_taken = {'fake_file':-1}
     self.lock_id = {'fake_file':-1}
@@ -308,6 +312,11 @@ class engine(object):
     self.parser.add_argument("-f","--filter", type=str, default='no_filter', \
                              help=self.activate_option('trace','filtering traces'))
     
+    self.parser.add_argument("-l", "--log", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("-s", "--status", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("-sl", "--status-long", action="store_true", help=argparse.SUPPRESS)
+    self.parser.add_argument("-sa", "--status-all", action="store_true", help=argparse.SUPPRESS)
+
     self.parser.add_argument("--log-dir", type=str, help=argparse.SUPPRESS)
 
     self.parser.add_argument("--info-offset", type=int, help=argparse.SUPPRESS, default=0)
