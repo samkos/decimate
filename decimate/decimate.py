@@ -3525,6 +3525,10 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
         if job_file_args_concat.find(underscored_key) > -1:
             self.log_debug('replacing: %s by %s ' % (underscored_key,job[k]), 1, trace='PARSE')
             job_file_args_concat = job_file_args_concat.replace(underscored_key,"%s" % job[k])
+        dollar_bracked_key = "${%s}" % k
+        if job_file_args_concat.find(dollar_bracked_key) > -1:
+            self.log_debug('replacing: %s by %s ' % (dollar_bracked_key,job[k]), 1, trace='PARSE')
+            job_file_args_concat = job_file_args_concat.replace(dollar_bracked_key,"%s" % job[k])
 
     job_file_args = job_file_args_concat.split("XXXXXX")
 
