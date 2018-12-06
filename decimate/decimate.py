@@ -132,7 +132,7 @@ Help options:
   -h,   --help                show this help message
   -H,   --decimate-help       show Decimate help message
   -f,   --filter=FILTERS      activate traces
-                              API, PARSE, USER_CHECK
+                              API, PARSE, USER_CHECK, PD, OVERWRITTING, SUBMIT_JOB
 
 Job Management:
        --kill                 kill all jobs in the workflow either RUNNING, PENDING or WAITING
@@ -242,7 +242,6 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
-    self.PARAMETER_FILE = "%s/../SAVE/parameter_" % (self.LOG_DIR)
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
@@ -673,7 +672,7 @@ class decimate(engine):
 
       self.log_debug('creating parametric files for range [self.TASK_IDS=%s,tasks=%s]' % \
                      (self.TASK_IDS,tasks),\
-                     4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
+                     4, trace='PARAMETRIC,PARAMETRIC_GENERATE,PG,PARAMETRIC_DETAIL,PD,Y')
       
       for t in tasks:
         param_file = '%s.%s' % (self.PARAMETER_FILE,t)
@@ -700,7 +699,7 @@ class decimate(engine):
       
         task_parameter_file.write('\n')
         task_parameter_file.close()
-        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_DETAIL,PD,Y')
+        self.log_debug('file %s created' % param_file, 4, trace='PARAMETRIC,PARAMETRIC_GENERATE,PG,PARAMETRIC_DETAIL,PD,Y')
         
     # checking previous step
     if self.args.check_previous_step:
@@ -3790,6 +3789,12 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                      "    exit 1\n" + \
                      "fi\n\n"
 
+    generate_parameter = \
+                         '# Generating parameters used by yalla single job' + \
+                         '\n%s  --parameter-generate ${SLURM_ARRAY_TASK_ID} ' % \
+                         (l0)
+      
+    
     if job['yalla']:
       tasks = []
       for t in RangeSet(job['array']):
@@ -3800,11 +3805,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                replace('${SLURM_ARRAY_JOB_ID}', '${SLURM_JOB_ID}').\
                replace('--check-previous-step', \
                        '--check-previous-step > $output_file.checking.__ATTEMPT__.out 2> $error_file.checking.__ATTEMPT__.err')
-      generate_parameter = \
-                     '# Generating parameters used by yalla single job' + \
-                     '\n%s  --parameter-generate ${SLURM_ARRAY_TASK_ID} ' % \
-                     (l0)
-      
+
       prefix = prefix +\
                '\n# Defining main loop of tasks in replacement for job_array\n\n' + \
                ('cat > %s/YALLA/%s.job << EOF \n#!/bin/bash\n' % (self.SAVE_DIR,job['job_name']))
@@ -3817,6 +3818,9 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     if self.args.parameter_file:
         prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
                   self.args.parameter_file
+        if not (job['yalla']):         
+            prefix0 = prefix0 + generate_parameter
+        
         prefix0 = prefix0 + '\necho executing   %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
 
