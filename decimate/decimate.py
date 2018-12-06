@@ -2604,6 +2604,11 @@ class decimate(engine):
     self.log_debug('Scanning file %s for additional slurm parameters' % job['script'], \
                    4, trace='PARSE')
     original_script_content_lines = open(job['script'], 'r').readlines()
+
+    self.log_debug('before completing job script file %s job =%s' % \
+                   (job['script'], self.print_job(job, print_only=job.keys())), \
+                   4, trace='WRAP,PARSE')
+
     (job, job_file_args_overloaded) = self.complete_slurm_args(original_script_content_lines, job)
         
     self.log_debug('after reading job script file %s job =%s' % \
@@ -3512,12 +3517,30 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
         self.log_debug('from job_file: %s' % to_be_parsed, 1, trace='PARSE')
         job_file_args = to_be_parsed.split(' ') + job_file_args
 
+        
+    job_file_args_concat = "XXXXXX".join(job_file_args)
+    
+    for k in job.keys():
+        underscored_key = "__%s__" % k
+        if job_file_args_concat.find(underscored_key) > -1:
+            self.log_debug('replacing: %s by %s ' % (underscored_key,job[k]), 1, trace='PARSE')
+            job_file_args_concat = job_file_args_concat.replace(underscored_key,"%s" % job[k])
+
+    job_file_args = job_file_args_concat.split("XXXXXX")
+
+            
     self.log_debug('slurm_args before completion: %s' % pprint.pformat(self.slurm_args), \
                    4, trace='PARSE')
     self.log_debug('slurm_vars=%s' % pprint.pformat(self.slurm_vars),\
                    4,trace='VAR')
-
+    self.log_debug('self.args=%s' % pprint.pformat(self.args), \
+                   4, trace='PARSE')
+    self.log_debug('job_file_args=%s' % pprint.pformat(job_file_args), \
+                   4, trace='PARSE')
+    
+    
     job_file_slurm_args, job_file_extra_args = self.slurm_parser.parse_known_args(job_file_args)
+    
     self.log_debug('slurm_args from job file=%s' % pprint.pformat(job_file_slurm_args), \
                    4, trace='PARSE')
     self.log_debug('slurm_args from self.slurm_args=%s' % pprint.pformat(self.slurm_args), \
