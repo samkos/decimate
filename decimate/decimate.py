@@ -242,6 +242,7 @@ class decimate(engine):
 
     self.FEED_LOCK_FILE = "%s/feed_lock" % self.LOG_DIR
     self.PARAMETER_FILE = "%s/../SAVE/parameter_" % self.LOG_DIR
+    #self.PARAMETER_FILE = "/tmp/parameter_"
     self.MAIL_DIR = "%s/kortass/decimate_buffer/" % TMPDIR
     self.CORES_PER_NODE = CORES_PER_NODE
     
