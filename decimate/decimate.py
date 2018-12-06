@@ -2555,14 +2555,18 @@ class decimate(engine):
                   len(self.array_clustered))
 
     np=1
+    slurm_arg_saved = copy.deepcopy(self.slurm_args)
     for profile in self.array_clustered:
         forcing_fields = profile
         new_job = copy.deepcopy(job)
+        self.slurm_args = copy.deepcopy(slurm_arg_saved)
         self.log_info('profile %d: %s ' % (np,pprint.pformat(profile)))
+        self.log_debug('before merging profile with job script, new_job: %s ' % self.print_job(new_job, print_only=['ntasks']), 2, trace='OVERWRITTING')
         (job_id, cmd) = self.submit_same_profile_job(new_job,forcing_fields,
                                                      registration,resubmit,take_lock,return_all_job_ids,profile_nb=np)
         np = np +1
 
+    self.slurm_args = copy.deepcopy(slurm_arg_saved)
     return (job_id,cmd)
 
 
@@ -3523,11 +3527,11 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
     for k in job.keys():
         underscored_key = "__%s__" % k
         if job_file_args_concat.find(underscored_key) > -1:
-            self.log_debug('replacing: %s by %s ' % (underscored_key,job[k]), 1, trace='PARSE')
+            self.log_debug('replacing: %s by %s ' % (underscored_key,job[k]), 1, trace='PARSE,OVERWRITTING')
             job_file_args_concat = job_file_args_concat.replace(underscored_key,"%s" % job[k])
         dollar_bracked_key = "${%s}" % k
         if job_file_args_concat.find(dollar_bracked_key) > -1:
-            self.log_debug('replacing: %s by %s ' % (dollar_bracked_key,job[k]), 1, trace='PARSE')
+            self.log_debug('replacing: %s by %s ' % (dollar_bracked_key,job[k]), 1, trace='PARSE,OVERWRITTING')
             job_file_args_concat = job_file_args_concat.replace(dollar_bracked_key,"%s" % job[k])
 
     job_file_args = job_file_args_concat.split("XXXXXX")
