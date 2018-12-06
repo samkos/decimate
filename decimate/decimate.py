@@ -3790,7 +3790,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
                      "fi\n\n"
 
     generate_parameter = \
-                         '# Generating parameters used by yalla single job' + \
+                         '\n# Generating parameters used by elementary job' + \
                          '\n%s  --parameter-generate ${SLURM_ARRAY_TASK_ID} ' % \
                          (l0)
       
@@ -3816,10 +3816,12 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       prefix0 = check_previous
       
     if self.args.parameter_file:
-        prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
-                  self.args.parameter_file
         if not (job['yalla']):         
             prefix0 = prefix0 + generate_parameter
+
+        prefix0 = prefix0 + '\n#Sourcing parameters taken from file: %s ' % \
+                  self.args.parameter_file
+
         
         prefix0 = prefix0 + '\necho executing   %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
         prefix0 = prefix0 + '\n.  %s.${SLURM_ARRAY_TASK_ID}' % self.PARAMETER_FILE
