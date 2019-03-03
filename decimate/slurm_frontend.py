@@ -1,7 +1,7 @@
 #!/bin/env/python
 
 import argparse
-from decimate import *
+from .decimate import *
 import pprint
 
 DEBUG = False

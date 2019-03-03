@@ -1,3 +1,12 @@
+add --recheck which force the checking of status
+
+treat the pattern %04a  for error and output file, otherwise the task is ticked as failure in decimate.prepare_user_defined_check_job
+as the following lines don't take this case into account
+    output_file_pattern = pattern.replace('%a', str(task_id)).\
+                          replace('%j', '*').replace('%J', '*').\
+                          replace('%x', self.JOBS[job_id]['job_name'])
+
+
 --check-file forces --check
 
 when --check-file is on, check that the file is executable

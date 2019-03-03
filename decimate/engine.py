@@ -3,14 +3,16 @@
 import argparse
 from ClusterShell.NodeSet import RangeSet, NodeSet
 import datetime
-from env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,SACCT_COMMAND,clean_line
+from .env import MAIL_COMMAND,SUBMIT_COMMAND,SCHED_TYPE,DEFAULT_QUEUE,MY_MACHINE,MY_MACHINE_FULL_NAME,CORES_PER_NODE,SACCT_COMMAND,clean_line
+# to insure  compatibility with python 2 we import input from six module
+from six.moves import input
 import fcntl
 import getpass
 import glob
 import logging
 import logging.handlers
 import os
-import cPickle as pickle
+import pickle
 import pprint
 import re
 import subprocess
@@ -63,88 +65,93 @@ class LockException(Exception):
 
 
 class my_list(object):
-  
-  def __init__(self, *args, **kwargs):
-      # print_debug('Args:',args)
-      # LOG.log_debug('kwargs:',kwargs)
-      if not('name' in kwargs.keys()):
-        self.name_of_dict = 'UNKNOWN'
-      else:
-        self.name_of_dict = kwargs['name']
-        del kwargs['name']
-      LOG.log_debug('%s_L_init %s %s' % (self.name_of_dict, \
-                                         pprint.pformat(args), pprint.pformat(kwargs)),\
-                                        3, trace='DIST' )
-      self.list_content = []
-      #self.update(*args, **kwargs)
-  def __len__(self):
-    LOG.log_debug('%s_L_len %s' % (self.name_of_dict, len(self.list_content)),\
-                                        3, trace='DIST')
-    return len(self.list_content)
-  def __add__(self, other):
-      self.list_content = self.list_content + other
-      LOG.log_debug('%s_A_add %s' % (self.name_of_dict, pprint.pformat(self.list_content)),\
-                                        3, trace='DIST')
-      return self
-  def __getitem__(self, index):
-      LOG.log_debug('%s_L_item[%s]=%s' % (self.name_of_dict,index, self.list_content[index]),\
-                                        3, trace='DIST')
-      result = self.list_content[index]
-      return result
-  def __repr__(self):
-      s = pprint.pformat(self.list_content)
-      LOG.log_debug('%s_L_print[%s]' % (self.name_of_dict,s),\
-                                        3, trace='DIST')
-      return s
-  def __getslice__(self, i, j):
-      LOG.log_debug('%s_L_slice[%s]' % (self.name_of_dict,slice(i, j)),\
-                                        3, trace='DIST')
-      return self.list_content.__getitem__(slice(i, j))
-  def update(self, *args, **kwargs):
-      LOG.log_debug('%s_D_update %s %s' % (self.name_of_dict, \
-                                           pprint.pformat(args), \
-                                           pprint.pformat(kwargs)),\
-                                        3, trace='DIST')
-      for k, v in dict(*args, **kwargs).iteritems():
-          self[k] = v
+  pass
+
+  # momentary commented to port to python3
+  # def __init__(self, *args, **kwargs):
+  #     # print_debug('Args:',args)
+  #     # LOG.log_debug('kwargs:',kwargs)
+  #     if not('name' in kwargs.keys()):
+  #       self.name_of_dict = 'UNKNOWN'
+  #     else:
+  #       self.name_of_dict = kwargs['name']
+  #       del kwargs['name']
+  #     LOG.log_debug('%s_L_init %s %s' % (self.name_of_dict, \
+  #                                        pprint.pformat(args), pprint.pformat(kwargs)),\
+  #                                       3, trace='DIST' )
+  #     self.list_content = []
+  #     #self.update(*args, **kwargs)
+  # def __len__(self):
+  #   LOG.log_debug('%s_L_len %s' % (self.name_of_dict, len(self.list_content)),\
+  #                                       3, trace='DIST')
+  #   return len(self.list_content)
+  # def __add__(self, other):
+  #     self.list_content = self.list_content + other
+  #     LOG.log_debug('%s_A_add %s' % (self.name_of_dict, pprint.pformat(self.list_content)),\
+  #                                       3, trace='DIST')
+  #     return self
+  # def __getitem__(self, index):
+  #     LOG.log_debug('%s_L_item[%s]=%s' % (self.name_of_dict,index, self.list_content[index]),\
+  #                                       3, trace='DIST')
+  #     result = self.list_content[index]
+  #     return result
+  # def __repr__(self):
+  #     s = pprint.pformat(self.list_content)
+  #     LOG.log_debug('%s_L_print[%s]' % (self.name_of_dict,s),\
+  #                                       3, trace='DIST')
+  #     return s
+  # def __getslice__(self, i, j):
+  #     LOG.log_debug('%s_L_slice[%s]' % (self.name_of_dict,slice(i, j)),\
+  #                                       3, trace='DIST')
+  #     return self.list_content.__getitem__(slice(i, j))
+  # def update(self, *args, **kwargs):
+  #     LOG.log_debug('%s_D_update %s %s' % (self.name_of_dict, \
+  #                                          pprint.pformat(args), \
+  #                                          pprint.pformat(kwargs)),\
+  #                                       3, trace='DIST')
+  #     for k, v in dict(*args, **kwargs).iteritems():
+  #         self[k] = v
 
 class my_dict(dict):
+  pass
 
-  def __init__(self, *args, **kwargs):
-      # LOG.log_debug('Args:',args)
-      # LOG.log_debug('kwargs:',kwargs)
-      if not('name' in kwargs.keys()):
-        self.name_of_dict = 'UNKNOWN'
-      else:
-        self.name_of_dict = kwargs['name']
-        del kwargs['name']
-      LOG.log_debug('%s_D_init %s %s' % (self.name_of_dict, \
-                                        pprint.pformat(args),pprint.pformat(kwargs)),\
-                                        3, trace='DIST')
-      self.update(*args, **kwargs)
+  # momentary commented to port to python3
+  #
+  # def __init__(self, *args, **kwargs):
+  #     # LOG.log_debug('Args:',args)
+  #     # LOG.log_debug('kwargs:',kwargs)
+  #     if not('name' in kwargs.keys()):
+  #       self.name_of_dict = 'UNKNOWN'
+  #     else:
+  #       self.name_of_dict = kwargs['name']
+  #       del kwargs['name']
+  #     LOG.log_debug('%s_D_init %s %s' % (self.name_of_dict, \
+  #                                       pprint.pformat(args),pprint.pformat(kwargs)),\
+  #                                       3, trace='DIST')
+  #     self.update(*args, **kwargs)
 
-  def __getitem__(self, key):
-      val = dict.__getitem__(self, key)
-      LOG.log_debug('%s_D_GET[%s]' % (self.name_of_dict, key),\
-                                        3, trace='DIST')
-      return val
+  # def __getitem__(self, key):
+  #     val = dict.__getitem__(self, key)
+  #     LOG.log_debug('%s_D_GET[%s]' % (self.name_of_dict, key),\
+  #                                       3, trace='DIST')
+  #     return val
 
-  def __setitem__(self, key, val):
-      LOG.log_debug('%s_D_SET[%s]=%s' % (self.name_of_dict, key, val),\
-                                        3, trace='DIST')
-      dict.__setitem__(self, key, val)
+  # def __setitem__(self, key, val):
+  #     LOG.log_debug('%s_D_SET[%s]=%s' % (self.name_of_dict, key, val),\
+  #                                       3, trace='DIST')
+  #     dict.__setitem__(self, key, val)
 
-  def __repr__(self):
-      dictrepr = dict.__repr__(self)
-      return '%s(%s)' % (type(self).__name__, dictrepr)
+  # def __repr__(self):
+  #     dictrepr = dict.__repr__(self)
+  #     return '%s(%s)' % (type(self).__name__, dictrepr)
 
-  def update(self, *args, **kwargs):
-      LOG.log_debug('%s_D_update %s %s' % (self.name_of_dict, \
-                                          pprint.pformat(args), \
-                                          pprint.pformat(kwargs)),\
-                                        3, trace='DIST')
-      for k, v in dict(*args, **kwargs).iteritems():
-          self[k] = v
+  # def update(self, *args, **kwargs):
+  #     LOG.log_debug('%s_D_update %s %s' % (self.name_of_dict, \
+  #                                         pprint.pformat(args), \
+  #                                         pprint.pformat(kwargs)),\
+  #                                       3, trace='DIST')
+  #     for k, v in dict(*args, **kwargs).items():
+  #         self[k] = v
 
 
     
@@ -244,25 +251,48 @@ class engine(object):
   def clean(self):
 
     # initialize job tracking arrays
-    self.STEPS = my_dict(name='STEPS')  # {}
-    self.TASKS = my_dict(name='TASKS')  # {}
-    self.JOBS = my_dict(name='JOBS')  # {}
-    self.JOB_ID = my_dict(name='JOB_ID')  # {}
-    self.JOB_BY_NAME = my_dict(name='JOB_BY_NAME')  # {}
-    self.JOB_WORKDIR = my_dict(name='JOB_WORKDIR')  # {}
-    self.JOB_STATUS = my_dict(name='JOB_STATUS')  # {}
-    self.TASK_STATUS = my_dict(name='')  # {}
-    self.timing_results = my_dict(name='timing_results')  # {}
-    self.SYSTEM_OUTPUTS = my_dict(name='')  # {}
-    self.jobs_list = my_list(name="jobs_list")  # []
-    self.jobs_submitted = [] #  my_list(name='jobs_submitted')  # []
-    self.jobs_to_submit = my_list(name='jobs_to_submit')  # []
-    self.last_step_submitted = -1
-    self.steps_submitted_attempts = my_dict(name='steps_submitted_attempts')  # {}
-    self.steps_submitted = my_list(name='steps_submitted')  # []
-    self.steps_submitted_history = my_dict(name='steps_submitted_history')  # {}
-    self.waiting_job_final_id = my_dict(name='')  # {}
 
+    # python3 momentary comment for porting   
+    # self.STEPS = my_dict(name='STEPS')  # {}
+    # self.TASKS = my_dict(name='TASKS')  # {}
+    # self.JOBS = my_dict(name='JOBS')  # {}
+    # self.JOB_ID = my_dict(name='JOB_ID')  # {}
+    # self.JOB_BY_NAME = my_dict(name='JOB_BY_NAME')  # {}
+    # self.JOB_WORKDIR = my_dict(name='JOB_WORKDIR')  # {}
+    # self.JOB_STATUS = my_dict(name='JOB_STATUS')  # {}
+    # self.TASK_STATUS = my_dict(name='')  # {}
+    # self.timing_results = my_dict(name='timing_results')  # {}
+    # self.SYSTEM_OUTPUTS = my_dict(name='')  # {}
+    # self.jobs_list = my_list(name="jobs_list")  # []
+    # self.jobs_submitted = [] #  my_list(name='jobs_submitted')  # []
+    # self.jobs_to_submit = my_list(name='jobs_to_submit')  # []
+    # self.last_step_submitted = -1
+    # self.steps_submitted_attempts = my_dict(name='steps_submitted_attempts')  # {}
+    # self.steps_submitted = my_list(name='steps_submitted')  # []
+    # self.steps_submitted_history = my_dict(name='steps_submitted_history')  # {}
+    # self.waiting_job_final_id = my_dict(name='')  # {}
+
+
+    self.STEPS = {}   # my_dict(name='STEPS')  # {}
+    self.TASKS = {}   # my_dict(name='TASKS')  # {}
+    self.JOBS = {}   # my_dict(name='JOBS')  # {}
+    self.JOB_ID = {}   # my_dict(name='JOB_ID')  # {}
+    self.JOB_BY_NAME = {}   # my_dict(name='JOB_BY_NAME')  # {}
+    self.JOB_WORKDIR = {}   # my_dict(name='JOB_WORKDIR')  # {}
+    self.JOB_STATUS = {}   # my_dict(name='JOB_STATUS')  # {}
+    self.TASK_STATUS = {}   # my_dict(name='')  # {}
+    self.timing_results = {}   # my_dict(name='timing_results')  # {}
+    self.SYSTEM_OUTPUTS = {}   # my_dict(name='')  # {}
+    self.jobs_list = list()  # my_list(name="jobs_list")  # []
+    self.jobs_submitted = [] #  list()  # my_list(name='jobs_submitted')  # []
+    self.jobs_to_submit = list()  # my_list(name='jobs_to_submit')  # []
+    self.last_step_submitted = -1
+    self.steps_submitted_attempts = {}   # my_dict(name='steps_submitted_attempts')  # {}
+    self.steps_submitted = list()  # my_list(name='steps_submitted')  # []
+    self.steps_submitted_history = {}   # my_dict(name='steps_submitted_history')  # {}
+    self.waiting_job_final_id = {}   # my_dict(name='')  # {}
+
+      
     self.user_clean()
 
     self.LOCK_FILE = "%s/lock" % self.LOG_DIR
@@ -491,14 +521,14 @@ class engine(object):
       if len(self.LOG_PREFIX):
           msg = "%s" % (msg)
       if noCR:
-          print'\r[MSG  ] %s ' % (msg),
+          print('\r[MSG  ] %s ' % (msg),end='')
           sys.stdout.flush()
           self.last_noCR = True
       else:
           if self.last_noCR:
               print()
               self.last_noCR = False
-          print '[MSG  ] %s ' % (msg)
+          print('[MSG  ] %s ' % (msg))
 
   def dump_exception(self,where='Not known'):
     exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
@@ -1086,7 +1116,7 @@ class engine(object):
               self.JOBS[job_id]['completion'] = self.JOBS[job_id]['completion'] + [task_id]
               self.JOBS[job_id]['completion_percent'] += 100. / self.JOBS[job_id]['items']
               self.STEPS[step]['completion'] = self.STEPS[step]['completion'] + [task_id]
-              self.STEPS[step]['global_completion'] = self.STEPS[step]['global_completion'] + \
+              self.STEPS[step]['global_completion'] = list(self.STEPS[step]['global_completion']) + \
                                                       [task_id]
               self.STEPS[step]['completion_percent'] += 100. / self.STEPS[step]['items']
               self.STEPS[step]['global_completion_percent'] \
@@ -1141,6 +1171,8 @@ class engine(object):
 #     self.log_debug("get_status:beg -> TASKS=\n%s " % pprint.pformat(self.TASKS),3)
 
     for step in self.STEPS.keys():
+      self.log_debug("step=>%s<" % step,1,trace='STATUS_DETAIL')
+      self.log_debug("self.STEPS=>%s<" % pprint.pformat(self.STEPS),1,trace='STATUS_DETAIL')
       self.log_debug("step=>%s<, self.STEPS[step]['status']=>%s<, self.STEPS[step]['completion_percent']=>%s<" % \
                      (step, self.STEPS[step]['status'], self.STEPS[step]['completion_percent']),\
                      1,trace='STATUS_DETAIL')
@@ -1441,7 +1473,8 @@ class engine(object):
     # 3. update step
     #
     if len(steps_to_check):
-      self.log_info('fixing steps (%s) ', ','.join(steps_to_check.keys()))
+      self.log_debug('fixing steps /%s/ ' %  pprint.pformat(steps_to_check.keys()), 4, trace='STATUS_DETAIL')
+      self.log_info('fixing steps (%s) ' % ( ','.join(steps_to_check.keys())))
       for step in steps_to_check.keys():
         if self.STEPS[step]['status'] in ['WAITING','RUNNING','SUBMITTED']:
           # step_status_found = False
@@ -1683,10 +1716,10 @@ class engine(object):
       output = ""
       while (True):
           # Read line from stdout, break if EOF reached, append line to output
-          line = proc.stdout.readline()
-          self.log_debug('l:%s' % line, 4, trace='SYSTEM,SYSTEM_OUT')
+          line = str(proc.stdout.readline().decode('utf8'))
+          self.log_debug('line of length %d:/%s/' % (len(line),line), 4, trace='SYSTEM,SYSTEM_OUT')
           # line = line.decode()
-          if (line == ""):
+          if (line == "" or line=="b''"):
             break
           output += line
       if len(output):
@@ -1857,7 +1890,7 @@ class engine(object):
           else:
               if no_timestamp:
                   line = re.sub('^.*\[','[',line)
-              print line,  # already has newline
+              print(line,end='')  # already has newline
               sys.stdout.flush()
               if isinstance(stop_tailing, str):
                   if line.find(stop_tailing) > -1:
@@ -2043,7 +2076,7 @@ class engine(object):
         sys.exit(1)
 
     answers = answers.replace(default,'[%s]' % default)
-    input_var = raw_input('[QUESTION] >>>> ' + msg + answers + " ")
+    input_var = input('[QUESTION] >>>> ' + msg + answers + " ")
 
     self.log_debug('received answer=>%s< default=>%s< no=>%s<' % (input_var,default,no),3)
 

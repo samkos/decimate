@@ -3,9 +3,10 @@
 import argparse
 from contextlib import contextmanager
 import copy
-from engine import *
-from env import TMPDIR
+from .engine import *
+from .env import TMPDIR
 import fnmatch
+from functools import reduce
 import itertools
 import math
 import numpy
@@ -19,7 +20,7 @@ import sys
 import termios
 
 
-DECIMATE_VERSION = '0.9.7'
+DECIMATE_VERSION = '0.10.0'
 
 RSYNC_CMD = "timeout 60 bash -c 'until time srun -N ${SLURM_NNODES} --ntasks=${SLURM_NNODES} " + \
             "--ntasks-per-node=1 rsync %s /tmp; do > /dev/null :; done  > /dev/null 2>&1' \n"
@@ -1101,6 +1102,7 @@ class decimate(engine):
         is_done = os.path.exists(filename_done)
         self.log_info('checking presence of file %s : %s ' % (filename_done, is_done), 3)
 
+
         user_check = self.prepare_user_defined_check_job(what, i, attempt, is_done,
                                                          checking_from_console)
         self.log_info("user_check=%s for task %s-%s (step=%s) " % (user_check, what, i, step),
@@ -2024,9 +2026,9 @@ class decimate(engine):
     matches = []
     params = self.parameters.iloc[self.TASK_ID]
     for root, dirnames, filenames in os.walk(from_dir):
-	for filename in fnmatch.filter(filenames, pattern):
+        for filename in fnmatch.filter(filenames, pattern):
             f = os.path.join(root, filename)
-	    matches.append(f)
+            matches.append(f)
             self.log_debug('processing template file %s' % f,4,trace='TEMPLATE')
             content = "".join(open(f).readlines())
             for k in self.parameters.columns:
@@ -2085,13 +2087,13 @@ class decimate(engine):
           if (matchObj) and not(self.args.yes):
             if nb_case == 1:
               for k in self.direct_tag.keys():
-                print "%6s" % k,
+                print("%6s" % k,end='')
               print
 
             if not(self.args.parameter_range) or self.args.parameter_range == nb_case:
-              print "%3d: " % (nb_case),
+              print("%3d: " % (nb_case),end="")
               for k in line.split(" "):
-                print "%6s " % k[:20],
+                print("%6s " % k[:20],end='')
               print
             nb_case = nb_case + 1
 
@@ -3290,10 +3292,14 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
       self.log_debug("submitting : " + " ".join(cmd), 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
       try:
         if not(self.args.dry):
-          output = subprocess.check_output(cmd)
+          output_str = str(subprocess.check_output(cmd).decode("utf-8"))
+          self.log_debug("result of sbatch: /%s/, regexp/%s/" % \
+                         (pprint.pformat(output_str),re.findall(r'\d+', output_str)), 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
+          # extract job number from sbatch result removing all garbage \\ \n after
+          output = int(re.findall(r'\d+', output_str)[0])
         else:
           output = 'Job_%s' % job['job_name']
-        self.log_debug("result of submission:\n%s" % output, 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
+        self.log_debug("result of submission:\n/%s/" % output, 4, trace='ACTIVATE_DETAIL,CMD,RESTART')
       # except subprocess.CalledProcessError as exc:
       #      print(exc.output))
       # else:
@@ -3337,13 +3343,20 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
         job_id = int(job_id)
         # print(job_id)
       else:
-        for l in output.split("\n"):
-          self.log_debug(l, 1)
+        if str(output).find('\n')>-1:
+            job_ids = str(output).split("\n")
+        else:
+            job_ids = [str(output)]
+        self.log_debug("output = /%s/ split=/%s/" % (pprint.pformat(output),job_ids), 4, trace='CMD')
+        for l in job_ids:
+          self.log_debug("l=/%s/" % l, 1, trace='CMD')
           # print(l.split(" "))
           if "Submitted batch job" in l:
             job_id = int(l.split(" ")[-1])
-            waiting_job_id = job['job_id']
-            job['job_id'] = job_id
+          else:
+              job_id = int(l)
+          waiting_job_id = job['job_id']
+          job['job_id'] = job_id
 
       self.log_debug("job submitted : %s depends on %s" % (job_id, job['dependency']), \
                      1, trace='ACTIVATE_DETAIL,RESTART')
@@ -4239,7 +4252,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
   def initialize_explore_workflow(self):
     try:
-      rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
+      rows, columns = str(subprocess.check_output(['stty', 'size']).decode("utf8")).split()
       self.rows = int(rows) - 2
       self.columns = int(columns)
       self.log_debug('terminal size (%s,%s)' % (self.rows, self.columns), 4, trace='TERM')
@@ -4586,7 +4599,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
 
   def general_info(self):
       if not(self.args.no_clear_screen):
-          print "\033[H\033[J",
+          print("\033[H\033[J",end='')
       if False:
           print('Current explored step  : %s from [%s]' % \
                    (self.console_current_step_name, self.console_step_filter))
@@ -4657,7 +4670,7 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
         offset = 0
         current_choices = ""
         if more_message > 1:
-          print "\r" + " " * 80 + "\r",
+          print("\r" + " " * 80 + "\r",end='')
           more_message = more_message - 1
         if len(choice_list) == 0:
             choice_list = choice_list_initial
@@ -4695,10 +4708,10 @@ error_file=`echo $e|sed "s/%%04a/$formatted_array_task_id/g;s/%%a/$SLURM_ARRAY_T
               pick_a_choice = 'pick a choice,'
 
           if len(choice_list):
-            print '\r ----  %s call a command or press space for more ----' % pick_a_choice,
+            print('\r ----  %s call a command or press space for more ----' % pick_a_choice,end='')
             space_accepted = " "
           else:
-            print '\r ---- %s  call a command ----' % pick_a_choice,
+            print('\r ---- %s  call a command ----' % pick_a_choice,end='')
             space_accepted = ""
           more_message = 2
           sys.stdout.flush()
