@@ -106,12 +106,12 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        # 'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.4',
-        # 'Programming Language :: Python :: 3.5',
-        # 'Programming Language :: Python :: 3.6',
+        #'Programming Language :: Python :: 2',
+        #'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
 
         'Operating System :: POSIX',
         "Topic :: Software Development :: Libraries :: Python Modules",
@@ -168,7 +168,7 @@ setup(
         'sample': ['package_data.dat'],
     },
 
-    python_requires='>=2.7,  <3',
+    python_requires='>=2.7',
   
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:

@@ -1,0 +1,53 @@
+#%Module
+
+module-whatis "decimate"
+
+proc ModulesHelp { } {
+    puts stderr "
+experimental decimate SLURM extension.  try
+    dbatch --help
+or 
+    man decimate
+to know more
+
+version using /home/kortass/DECIMATE-DEBUG/out virtual env
+build by
+
+ml python/miniconda3
+cd /home/kortass/DECIMATE_DEBUG
+
+conda create -p /home/kortass/DECIMATE_DEBUG/out3 numpy pandas pip python>=3-y
+
+conda  activate /home/kortass/DECIMATE_DEBUG/out3
+
+pip install clustershell
+pip install setuptools 
+
+gC
+python setup.py install
+
+
+"
+}
+
+#conflict python
+module load python/miniconda3
+
+set prefix /home/kortass/DECIMATE_DEBUG
+
+set CONDA_DEFAULT_ENV $prefix/out3
+
+set-alias de        "dconsole"
+set-alias db        "dbatch"
+set-alias dk        "dkill"
+set-alias dky        "dkill -y"
+set-alias ds       "dstat "
+set-alias dsa       "dstat -sa"
+set-alias dsl       "dstat -sl"
+set-alias dl        "dlog"
+
+prepend-path PATH $prefix/out3/bin
+prepend-path PYTHONPATH $prefix
+prepend-path MANPATH $prefix/docs/_build/man:$prefix/man
+
+
